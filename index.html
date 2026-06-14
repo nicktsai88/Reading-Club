@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎒 邁向5A10+ 國中會考讀書會 ✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Varela Round', 'Noto Sans TC', sans-serif;
+            /* 模擬圖片中的可愛雙色點點背景 */
+            background-color: #fdfbfb;
+            background-image: 
+                radial-gradient(#ffcdd2 2px, transparent 2px),
+                radial-gradient(#b2ebf2 2px, transparent 2px);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            -webkit-tap-highlight-color: transparent;
+            color: #4a4a4a;
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 3px solid #ffe4e6;
+            box-shadow: 0 8px 32px rgba(255, 192, 203, 0.2);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { height: 10px; width: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #fff0f6; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #fda4af; border-radius: 10px; border: 2px solid #fff0f6; }
+        
+        /* 日曆網格排版設定 */
+        .calendar-grid {
+            display: grid;
+            /* 姓名(120px) | 統計(180px) | 每日格子(100px) */
+            grid-template-columns: 120px 220px repeat(auto-fill, minmax(100px, 100px));
+            grid-auto-columns: 100px;
+            grid-auto-flow: column;
+            gap: 6px;
+        }
+
+        .animate-bounce-slow { animation: bounce 3s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(-5%); } 50% { transform: translateY(0); } }
+        
+        /* 對話框氣泡 */
+        .chat-bubble-me { background: #e0f2fe; border-radius: 1rem 1rem 0 1rem; }
+        .chat-bubble-other { background: #fce7f3; border-radius: 1rem 1rem 1rem 0; }
+    </style>
+</head>
+<body class="h-screen w-full flex flex-col overflow-hidden">
+
+    <div id="app" class="w-full h-full flex flex-col overflow-hidden"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "YOUR_API_KEY", 
+            projectId: "demo-project"
+        };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-group-app';
+        
+        let app, auth, db;
+        let currentUser = null;
+        let username = '';
+        let isAdmin = false;
+        
+        // 資料狀態
+        let globalUsers = [];
+        let importantDates = [];
+        let allGrades = {}; // { username: { dateString: { 國文: grade, ... } } }
+        let chatMessages = [];
+        
+        // 系統常數
+        const EXAM_DATE = new Date('2027-05-22T00:00:00');
+        const START_DATE = new Date('2026-06-14T00:00:00'); // 預設起始日
+        const SUBJECTS = ['國文', '英文', '數學', '自然', '社會'];
+        const GRADES = ['A++', 'A+', 'A', 'B++', 'B+', 'B', 'C'];
+        
+        // Unsubscribe functions
+        let unsubUsers, unsubDates, unsubGrades, unsubChat;
+
+        // ==========================================
+        //  初始化 Firebase
+        // ==========================================
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (e) { console.error("Firebase Init Error", e); }
+
+        const initApp = async () => {
+            renderApp();
+            
+            const initAuth = async () => {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            };
+            await initAuth();
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    const savedUser = localStorage.getItem('study_group_user');
+                    if (savedUser) {
+                        username = savedUser;
+                        isAdmin = (username === '管理員' || username === 'Admin');
+                        setupListeners();
+                        renderMain();
+                    } else {
+                        setupLoginListener();
+                        renderLogin();
+                    }
+                }
+            });
+        };
+
+        // ==========================================
+        //  資料庫監聽 (Firestore Rules Compliant)
+        // ==========================================
+        const setupLoginListener = () => {
+            if (!currentUser) return;
+            const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
+            unsubUsers = onSnapshot(usersRef, (snap) => {
+                if(snap.exists()) {
+                    globalUsers = snap.data().users || [];
+                    if(!username) renderLogin();
+                }
+            });
+        };
+
+        const setupListeners = () => {
+            if (!currentUser) return;
+            
+            // 監聽使用者列表 (為了側邊欄與登入)
+            const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
+            if(unsubUsers) unsubUsers();
+            unsubUsers = onSnapshot(usersRef, (snap) => {
+                if(snap.exists()) globalUsers = snap.data().users || [];
+                if(username) renderMainContent(); 
+            });
+
+            // 監聽重要日期
+            const datesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates');
+            if(unsubDates) unsubDates();
+            unsubDates = onSnapshot(datesRef, (snap) => {
+                if(snap.exists()) {
+                    importantDates = snap.data().list || [];
+                } else {
+                    // 初始化預設日期
+                    importantDates = [
+                        { date: '2026-09-09', title: '第1次模擬考' },
+                        { date: '2026-10-13', title: '第1次段考' },
+                        { date: '2026-10-28', title: '第2次模擬考' }
+                    ];
+                    setDoc(datesRef, { list: importantDates });
+                }
+                if(username) renderSidebar();
+            });
+
+            // 監聽聊天室
+            const chatRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat');
+            if(unsubChat) unsubChat();
+            unsubChat = onSnapshot(chatRef, (snap) => {
+                if(snap.exists()) chatMessages = snap.data().messages || [];
+                if(username) renderChat();
+            });
+
+            // 監聽所有使用者的成績
+            const gradesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'AllGrades');
+            if(unsubGrades) unsubGrades();
+            unsubGrades = onSnapshot(gradesRef, (snap) => {
+                if(snap.exists()) allGrades = snap.data().data || {};
+                if(username) renderMainContent();
+            });
+        };
+
+        // ==========================================
+        //  動作邏輯
+        // ==========================================
+        window.handleLogin = async (name) => {
+            if(!name.trim()) return alert("請輸入名稱！");
+            username = name.trim();
+            isAdmin = (username === '管理員' || username === 'Admin');
+            localStorage.setItem('study_group_user', username);
+            
+            // 更新登入列表
+            const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
+            const snap = await getDoc(usersRef);
+            let users = snap.exists() ? snap.data().users || [] : [];
+            if (!users.includes(username)) users.push(username);
+            await setDoc(usersRef, { users }, { merge: true });
+
+            setupListeners();
+            renderMain();
+        };
+
+        window.logout = () => {
+            username = '';
+            isAdmin = false;
+            localStorage.removeItem('study_group_user');
+            if(unsubDates) unsubDates();
+            if(unsubGrades) unsubGrades();
+            if(unsubChat) unsubChat();
+            setupLoginListener();
+            renderLogin();
+        };
+
+        // 計算倒數天數
+        const getDaysLeft = (targetDateStr) => {
+            const now = new Date();
+            // 重設時間為午夜以精確計算天數
+            now.setHours(0,0,0,0);
+            const target = new Date(targetDateStr);
+            target.setHours(0,0,0,0);
+            const diffTime = target - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        };
+
+        // 格式化日期 YYYY-MM-DD
+        const formatDate = (date) => {
+            const d = new Date(date);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        };
+
+        // 產生日期陣列 (從起始日到會考)
+        const generateDateRange = () => {
+            let dates = [];
+            let curr = new Date(START_DATE);
+            while (curr <= EXAM_DATE) {
+                dates.push(formatDate(curr));
+                curr.setDate(curr.getDate() + 1);
+            }
+            return dates;
+        };
+
+        // ==========================================
+        //  UI 渲染 - 登入畫面
+        // ==========================================
+        const renderApp = () => { 
+            document.getElementById('app').innerHTML = `<div id="view-container" class="w-full h-full flex flex-col relative overflow-hidden"></div>`; 
+        };
+
+        window.renderLogin = () => {
+            const container = document.getElementById('view-container');
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-y-auto">
+                    <div class="glass-panel p-8 md:p-12 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] max-w-[95vw] text-center border-4 border-pink-200 relative overflow-hidden">
+                        
+                        <!-- 裝飾 -->
+                        <div class="absolute top-4 left-4 text-4xl animate-bounce-slow">✨</div>
+                        <div class="absolute bottom-4 right-4 text-4xl animate-bounce-slow" style="animation-delay: 1s;">🎓</div>
+
+                        <!-- 學校 Logo 區 -->
+                        <div class="flex justify-center items-center gap-6 mb-8">
+                            <div class="w-20 h-20 bg-white rounded-full p-2 shadow-md border-2 border-red-200">
+                                <img src="school1.jpg" alt="雄中" class="w-full h-full object-contain rounded-full" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23fee2e2%22/><text x=%2250%22 y=%2255%22 font-family=%22sans-serif%22 font-size=%2224%22 text-anchor=%22middle%22 fill=%22%23b91c1c%22 font-weight=%22bold%22>雄中</text></svg>'">
+                            </div>
+                            <div class="text-3xl font-black text-pink-400">X</div>
+                            <div class="w-20 h-20 bg-white rounded-full p-2 shadow-md border-2 border-red-200">
+                                <img src="school2.jpg" alt="雄女" class="w-full h-full object-contain rounded-full" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23fee2e2%22/><text x=%2250%22 y=%2255%22 font-family=%22sans-serif%22 font-size=%2224%22 text-anchor=%22middle%22 fill=%22%23b91c1c%22 font-weight=%22bold%22>雄女</text></svg>'">
+                            </div>
+                        </div>
+
+                        <h1 class="text-3xl md:text-4xl font-black text-rose-500 mb-3 drop-shadow-sm tracking-wide">
+                            🎒 邁向5A10+
+                        </h1>
+                        <h2 class="text-xl font-bold text-teal-600 mb-8 bg-teal-50 inline-block px-6 py-2 rounded-full border border-teal-100">國中會考讀書會 💯</h2>
+                        
+                        <div class="bg-white/60 p-6 rounded-3xl border border-pink-100 mb-6">
+                            <p class="text-sm text-rose-400 font-bold mb-3">👇 點擊你的名字快速登入 👇</p>
+                            <div class="flex flex-wrap justify-center gap-3">
+                                ${globalUsers.length > 0 ? 
+                                    globalUsers.map(u => `<button onclick="handleLogin('${u}')" class="text-md font-bold bg-white border-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:scale-105 px-5 py-2.5 rounded-xl shadow-sm transition-all">👦 ${u}</button>`).join('') 
+                                    : `<span class="text-sm text-gray-400">尚無參賽者，請於下方建立</span>`
+                                }
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <input type="text" id="usernameInput" placeholder="✏️ 輸入新參賽者名稱" class="flex-1 px-5 py-3 text-lg rounded-xl border-2 border-teal-200 focus:outline-none focus:border-teal-400 text-center font-bold text-gray-700 placeholder-teal-300 shadow-inner">
+                            <button onclick="handleLogin(document.getElementById('usernameInput').value)" class="bg-gradient-to-r from-teal-400 to-emerald-400 text-white font-bold py-3 px-6 text-lg rounded-xl shadow-md hover:shadow-lg transition-all transform hover:scale-105">
+                                加入 🔥
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        // ==========================================
+        //  UI 渲染 - 主畫面架構
+        // ==========================================
+        window.renderMain = () => {
+            const container = document.getElementById('view-container');
+            container.innerHTML = `
+                <!-- 頂部導航 -->
+                <div class="bg-white/80 backdrop-blur-md border-b-2 border-pink-200 p-3 flex justify-between items-center shadow-sm shrink-0 z-20 relative">
+                    <div class="flex items-center gap-4 pl-2">
+                        <div class="flex -space-x-3">
+                            <img src="school1.jpg" class="w-10 h-10 rounded-full border-2 border-white shadow-sm z-10 bg-rose-50" onerror="this.style.display='none'">
+                            <img src="school2.jpg" class="w-10 h-10 rounded-full border-2 border-white shadow-sm z-0 bg-rose-50" onerror="this.style.display='none'">
+                        </div>
+                        <h1 class="text-xl md:text-2xl font-black text-rose-500 tracking-wider">邁向5A10+ 讀書會 🏆</h1>
+                    </div>
+                    <div class="flex items-center gap-3 pr-2">
+                        <span class="font-bold text-teal-700 bg-teal-50 px-4 py-1.5 rounded-full border border-teal-200 shadow-sm text-sm">
+                            ${isAdmin ? '👑 管理員' : '👦 參賽者'} : ${username}
+                        </span>
+                        <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-3 py-1.5 rounded-lg transition-colors text-sm border border-rose-200 bg-white shadow-sm">登出 👋</button>
+                    </div>
+                </div>
+
+                <!-- 內容區: 側邊欄 + 橫向捲動日曆 -->
+                <div class="flex-1 flex overflow-hidden">
+                    
+                    <!-- 左側邊欄 (倒數 + 聊天室) -->
+                    <div class="w-80 flex flex-col bg-white/50 border-r-2 border-pink-100 z-10 shrink-0">
+                        <!-- 倒數計時區 -->
+                        <div id="sidebar-countdowns" class="p-4 flex-1 overflow-y-auto custom-scrollbar border-b-2 border-pink-100"></div>
+                        
+                        <!-- 聊天室區 -->
+                        <div class="h-64 flex flex-col bg-white/60">
+                            <div class="bg-pink-100/50 p-2 text-center font-bold text-pink-600 border-b border-pink-100 text-sm">💬 加油打氣留言板</div>
+                            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-sm"></div>
+                            <div class="p-2 bg-white flex gap-2 border-t border-pink-100">
+                                <input type="text" id="chatInput" placeholder="說點什麼..." class="flex-1 px-3 py-2 rounded-lg border border-pink-200 focus:outline-none focus:border-pink-400 bg-gray-50" onkeypress="if(event.key === 'Enter') sendChat()">
+                                <button onclick="sendChat()" class="bg-pink-400 text-white px-3 py-2 rounded-lg font-bold hover:bg-pink-500 transition-colors">送出</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右側主要日曆區 -->
+                    <div class="flex-1 bg-white/30 p-4 overflow-auto custom-scrollbar relative" id="main-grid-container">
+                        <div id="calendar-wrapper" class="inline-block min-w-max pb-4">
+                            <!-- JS將填入網格 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 成績輸入 Modal -->
+                <div id="score-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-opacity duration-200 opacity-0">
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200" id="score-modal-content">
+                        <!-- 標頭 -->
+                        <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white">
+                            <h2 class="text-xl font-bold flex items-center gap-2">📝 紀錄模擬成績 <span id="modal-date" class="bg-white/20 px-2 py-1 rounded text-sm"></span></h2>
+                            <button onclick="closeModal()" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
+                        </div>
+                        
+                        <!-- 內容 -->
+                        <div class="p-6 space-y-5 bg-teal-50/30">
+                            <div>
+                                <label class="block text-teal-800 font-bold mb-2">📚 選擇科目</label>
+                                <div class="grid grid-cols-5 gap-2" id="subject-selector">
+                                    ${SUBJECTS.map(s => `<button onclick="selectSubject('${s}')" id="btn-sub-${s}" class="py-2 rounded-lg border-2 border-teal-200 text-teal-700 font-bold hover:bg-teal-50 transition-colors bg-white">${s}</button>`).join('')}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-rose-800 font-bold mb-2">🎯 成績等級</label>
+                                <div class="grid grid-cols-4 gap-2" id="grade-selector">
+                                    ${GRADES.map(g => `<button onclick="selectGrade('${g}')" id="btn-grade-${g.replace('+','p').replace('+','p')}" class="py-2 rounded-lg border-2 border-rose-200 text-rose-700 font-bold hover:bg-rose-50 transition-colors bg-white">${g}</button>`).join('')}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-purple-800 font-bold mb-2">📸 拍下考卷/成績單 (選填)</label>
+                                <div class="border-2 border-dashed border-purple-200 rounded-xl p-4 text-center bg-white hover:bg-purple-50 transition-colors cursor-pointer relative" onclick="document.getElementById('photo-upload').click()">
+                                    <input type="file" id="photo-upload" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
+                                    <div id="photo-preview-container" class="hidden flex-col items-center">
+                                        <img id="photo-preview" class="h-32 object-contain rounded mb-2 shadow-sm border border-gray-200">
+                                        <span class="text-xs text-purple-500 font-bold bg-purple-100 px-2 py-1 rounded">更換照片</span>
+                                    </div>
+                                    <div id="photo-placeholder" class="text-purple-400">
+                                        <div class="text-3xl mb-1">📷</div>
+                                        <span class="text-sm font-bold">點擊上傳或拍照</span>
+                                    </div>
+                                </div>
+                                <p class="text-[10px] text-gray-400 mt-1">*圖片將自動壓縮以節省空間</p>
+                            </div>
+                        </div>
+
+                        <!-- 底部 -->
+                        <div class="p-4 bg-white border-t border-gray-100 flex justify-end gap-3">
+                            <button onclick="deleteGradeRecord()" id="btn-delete-grade" class="hidden px-5 py-2.5 rounded-xl font-bold text-red-500 bg-red-50 border border-red-200 hover:bg-red-100">刪除紀錄</button>
+                            <div class="flex-1"></div>
+                            <button onclick="closeModal()" class="px-5 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100">取消</button>
+                            <button onclick="saveGrade()" class="px-6 py-2.5 rounded-xl font-bold text-white bg-rose-400 hover:bg-rose-500 shadow-md">儲存 💾</button>
+                        </div>
+                    </div>
+                </div>
+
+            `;
+            if (username) {
+                renderSidebar();
+                renderMainContent();
+                renderChat();
+            }
+        };
+
+        // ==========================================
+        //  UI 渲染 - 左側邊欄 (倒數計時)
+        // ==========================================
+        window.renderSidebar = () => {
+            const container = document.getElementById('sidebar-countdowns');
+            if(!container) return;
+            
+            const examDaysLeft = getDaysLeft(EXAM_DATE);
+            
+            let html = `
+                <div class="bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl p-5 text-center shadow-lg text-white mb-6 transform hover:scale-105 transition-transform">
+                    <h3 class="text-sm font-bold text-pink-100 mb-1">會考大日子 (2027-05-22)</h3>
+                    <div class="text-5xl font-black drop-shadow-md mb-2">${examDaysLeft} <span class="text-xl">天</span></div>
+                    <div class="text-xs bg-black/20 rounded-full inline-block px-3 py-1">🎯 決戰時刻</div>
+                </div>
+                
+                <h4 class="font-bold text-teal-700 mb-3 flex items-center gap-2">🗓️ 模擬考與重要日程</h4>
+                <div class="space-y-3 mb-6">
+            `;
+
+            // 排序日期
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            sortedDates.forEach((item, index) => {
+                const days = getDaysLeft(item.date);
+                if (days >= 0) {
+                    html += `
+                        <div class="bg-white p-3 rounded-xl border border-teal-100 shadow-sm flex justify-between items-center relative overflow-hidden group">
+                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-teal-300"></div>
+                            <div class="pl-2">
+                                <div class="text-sm font-bold text-gray-700">${item.title}</div>
+                                <div class="text-xs text-gray-400">${item.date}</div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xl font-black ${days <= 7 ? 'text-rose-500' : 'text-teal-500'}">${days}</span>
+                                <span class="text-xs text-gray-500">天</span>
+                            </div>
+                            ${isAdmin ? `<button onclick="deleteImportantDate(${index})" class="absolute right-0 top-0 bg-red-100 text-red-500 w-6 h-6 rounded-bl-lg text-xs opacity-0 group-hover:opacity-100 transition-opacity">✕</button>` : ''}
+                        </div>
+                    `;
+                }
+            });
+            html += `</div>`;
+
+            if (isAdmin) {
+                html += `
+                    <div class="bg-teal-50 p-4 rounded-xl border border-teal-200 mt-auto">
+                        <h4 class="text-xs font-bold text-teal-700 mb-2">👑 管理員新增日程</h4>
+                        <input type="text" id="newDateTitle" placeholder="考試名稱" class="w-full text-sm p-2 rounded border border-teal-200 mb-2 focus:outline-none">
+                        <input type="date" id="newDateValue" class="w-full text-sm p-2 rounded border border-teal-200 mb-2 focus:outline-none text-gray-600">
+                        <button onclick="addImportantDate()" class="w-full bg-teal-400 text-white text-sm font-bold py-2 rounded shadow-sm hover:bg-teal-500">新增</button>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        };
+
+        window.addImportantDate = async () => {
+            const title = document.getElementById('newDateTitle').value;
+            const date = document.getElementById('newDateValue').value;
+            if(!title || !date) return alert("請填寫完整名稱與日期");
+            
+            const newDates = [...importantDates, { title, date }];
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+            document.getElementById('newDateTitle').value = '';
+            document.getElementById('newDateValue').value = '';
+        };
+
+        window.deleteImportantDate = async (index) => {
+            if(!confirm("確定刪除此日程？")) return;
+            const newDates = [...importantDates];
+            newDates.splice(index, 1);
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+        };
+
+        // ==========================================
+        //  UI 渲染 - 聊天室
+        // ==========================================
+        window.renderChat = () => {
+            const container = document.getElementById('chat-messages');
+            if(!container) return;
+            
+            container.innerHTML = chatMessages.map(msg => {
+                const isMe = msg.user === username;
+                return `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        <span class="text-[10px] text-gray-400 mb-0.5 px-1">${msg.user}</span>
+                        <div class="${isMe ? 'chat-bubble-me' : 'chat-bubble-other'} px-3 py-2 text-gray-700 shadow-sm inline-block max-w-[90%] break-words border border-gray-100">
+                            ${msg.text}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        };
+
+        window.sendChat = async () => {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            const newMsg = { user: username, text: text, timestamp: new Date().toISOString() };
+            const newChat = [...chatMessages, newMsg];
+            // 保留最後50筆
+            if(newChat.length > 50) newChat.shift();
+            
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), { messages: newChat });
+            input.value = '';
+        };
+
+        // ==========================================
+        //  UI 渲染 - 主日曆網格
+        // ==========================================
+        window.renderMainContent = () => {
+            const wrapper = document.getElementById('calendar-wrapper');
+            if(!wrapper) return;
+
+            const dateRange = generateDateRange();
+            
+            // 標頭列
+            let html = `<div class="calendar-grid mb-2 sticky top-0 z-30">`;
+            html += `<div class="bg-rose-400 text-white font-bold p-3 rounded-xl shadow-md text-center border-2 border-white flex items-center justify-center sticky left-0 z-40">參賽者</div>`;
+            html += `<div class="bg-rose-400 text-white font-bold p-3 rounded-xl shadow-md text-center border-2 border-white flex items-center justify-center sticky left-[126px] z-40">A級距統計 (5科加總)</div>`;
+            
+            dateRange.forEach(d => {
+                const isToday = d === formatDate(new Date());
+                const [year, month, day] = d.split('-');
+                const isImportant = importantDates.find(i => i.date === d);
+                
+                html += `
+                    <div class="${isToday ? 'bg-teal-400' : isImportant ? 'bg-orange-400' : 'bg-pink-300'} text-white font-bold p-2 rounded-xl shadow-sm border-2 border-white flex flex-col items-center justify-center relative">
+                        <span class="text-[10px] opacity-80 leading-none">${month}月</span>
+                        <span class="text-lg leading-none mt-1">${day}</span>
+                        ${isImportant ? `<div class="absolute -top-2 -right-2 text-lg drop-shadow" title="${isImportant.title}">🔥</div>` : ''}
+                    </div>
+                `;
+            });
+            html += `</div>`;
+
+            // 資料列 (依據已登錄的使用者)
+            globalUsers.forEach(user => {
+                const userGrades = allGrades[user] || {};
+                const isMe = user === username;
+                
+                // 計算統計數據
+                let stats = { 'A++': 0, 'A+': 0, 'A': 0 };
+                Object.values(userGrades).forEach(dayGrades => {
+                    Object.values(dayGrades).forEach(item => {
+                        if (stats[item.grade] !== undefined) stats[item.grade]++;
+                    });
+                });
+
+                html += `<div class="calendar-grid mb-2 group">`;
+                
+                // 姓名欄
+                html += `
+                    <div class="${isMe ? 'bg-teal-50 border-teal-300 text-teal-800' : 'bg-white border-pink-200 text-gray-700'} font-black p-3 rounded-xl shadow-sm border-2 text-center flex items-center justify-center sticky left-0 z-20">
+                        ${isMe ? '👦 ' : ''}${user}
+                    </div>
+                `;
+                
+                // 統計欄
+                html += `
+                    <div class="bg-white border-2 border-pink-100 p-2 rounded-xl shadow-sm flex items-center justify-around sticky left-[126px] z-20 font-bold text-xs">
+                        <div class="flex flex-col items-center"><span class="text-rose-500">A++</span><span class="text-lg bg-rose-50 px-2 rounded">${stats['A++']}</span></div>
+                        <div class="flex flex-col items-center"><span class="text-orange-500">A+</span><span class="text-lg bg-orange-50 px-2 rounded">${stats['A+']}</span></div>
+                        <div class="flex flex-col items-center"><span class="text-teal-600">A</span><span class="text-lg bg-teal-50 px-2 rounded">${stats['A']}</span></div>
+                    </div>
+                `;
+                
+                // 每日格子
+                dateRange.forEach(d => {
+                    const dayData = userGrades[d];
+                    const hasData = dayData && Object.keys(dayData).length > 0;
+                    
+                    let cellContent = '';
+                    if (hasData) {
+                        // 產生小徽章
+                        cellContent = `<div class="flex flex-wrap gap-1 justify-center w-full">`;
+                        Object.entries(dayData).forEach(([sub, info]) => {
+                            let color = info.grade.includes('A') ? 'bg-rose-100 text-rose-600 border-rose-200' : 'bg-teal-100 text-teal-700 border-teal-200';
+                            let subName = sub.charAt(0); // 縮寫
+                            cellContent += `<div class="text-[9px] font-bold ${color} border px-1 rounded flex items-center" title="${sub}: ${info.grade}">
+                                ${subName}<span class="ml-0.5 text-[8px]">${info.grade}</span>
+                                ${info.photo ? '<span class="ml-0.5 text-purple-500">📸</span>' : ''}
+                            </div>`;
+                        });
+                        cellContent += `</div>`;
+                    } else {
+                        cellContent = `<span class="opacity-0 group-hover:opacity-100 text-gray-300 text-xs transition-opacity">+</span>`;
+                    }
+
+                    // 只有自己的格子可以點擊
+                    const clickAction = isMe ? `onclick="openScoreModal('${d}')"` : `onclick="viewOthersScore('${user}', '${d}')"`;
+                    const cursorClass = isMe ? 'cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-0.5' : 'cursor-pointer hover:border-pink-300 hover:bg-pink-50';
+
+                    html += `
+                        <div ${clickAction} class="bg-white border-2 border-pink-100 p-1 rounded-xl shadow-sm flex flex-col items-center justify-center transition-all ${cursorClass} h-full min-h-[60px]">
+                            ${cellContent}
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            });
+
+            wrapper.innerHTML = html;
+        };
+
+        // ==========================================
+        //  Modal 與 成績輸入邏輯
+        // ==========================================
+        let modalState = { date: '', subject: '', grade: '', photoBase64: '' };
+
+        window.openScoreModal = (dateStr) => {
+            modalState = { date: dateStr, subject: '', grade: '', photoBase64: '' };
+            document.getElementById('modal-date').innerText = dateStr;
+            
+            // 重置選單狀態
+            SUBJECTS.forEach(s => { document.getElementById(`btn-sub-${s}`).classList.remove('bg-teal-500', 'text-white'); });
+            GRADES.forEach(g => { document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`).classList.remove('bg-rose-500', 'text-white'); });
+            
+            // 照片重置
+            document.getElementById('photo-upload').value = '';
+            document.getElementById('photo-preview-container').classList.add('hidden');
+            document.getElementById('photo-placeholder').classList.remove('hidden');
+            document.getElementById('btn-delete-grade').classList.add('hidden');
+
+            const modal = document.getElementById('score-modal');
+            const content = document.getElementById('score-modal-content');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            }, 10);
+        };
+
+        window.viewOthersScore = (otherUser, dateStr) => {
+            const data = allGrades[otherUser] && allGrades[otherUser][dateStr];
+            if(!data) return; // 無資料不顯示
+            
+            let info = `${otherUser} 在 ${dateStr} 的成績：\n\n`;
+            Object.entries(data).forEach(([sub, item]) => {
+                info += `📌 ${sub}: ${item.grade} ${item.photo ? '(有附圖，為節省流量僅支援自行查看)' : ''}\n`;
+            });
+            alert(info);
+        };
+
+        window.closeModal = () => {
+            const modal = document.getElementById('score-modal');
+            const content = document.getElementById('score-modal-content');
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 200);
+        };
+
+        window.selectSubject = (sub) => {
+            modalState.subject = sub;
+            SUBJECTS.forEach(s => {
+                const el = document.getElementById(`btn-sub-${s}`);
+                if(s === sub) el.classList.add('bg-teal-500', 'text-white');
+                else el.classList.remove('bg-teal-500', 'text-white');
+            });
+            
+            // 載入該科目現有成績
+            const existing = allGrades[username]?.[modalState.date]?.[sub];
+            if (existing) {
+                selectGrade(existing.grade);
+                if (existing.photo) setPhotoPreview(existing.photo);
+                document.getElementById('btn-delete-grade').classList.remove('hidden');
+            } else {
+                modalState.grade = '';
+                modalState.photoBase64 = '';
+                GRADES.forEach(g => { document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`).classList.remove('bg-rose-500', 'text-white'); });
+                document.getElementById('photo-preview-container').classList.add('hidden');
+                document.getElementById('photo-placeholder').classList.remove('hidden');
+                document.getElementById('btn-delete-grade').classList.add('hidden');
+            }
+        };
+
+        window.selectGrade = (grade) => {
+            modalState.grade = grade;
+            GRADES.forEach(g => {
+                const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                if(g === grade) el.classList.add('bg-rose-500', 'text-white');
+                else el.classList.remove('bg-rose-500', 'text-white');
+            });
+        };
+
+        // 圖片壓縮邏輯 (Canvas)
+        window.handlePhotoUpload = (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    // 壓縮至最大寬度 400px 以適應 Firestore 限制
+                    const MAX_WIDTH = 400;
+                    const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    // 轉換為 JPEG，品質 0.6
+                    const base64 = canvas.toDataURL('image/jpeg', 0.6);
+                    setPhotoPreview(base64);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        const setPhotoPreview = (base64) => {
+            modalState.photoBase64 = base64;
+            const preview = document.getElementById('photo-preview');
+            preview.src = base64;
+            document.getElementById('photo-placeholder').classList.add('hidden');
+            document.getElementById('photo-preview-container').classList.remove('hidden');
+            document.getElementById('photo-preview-container').classList.add('flex');
+        };
+
+        window.saveGrade = async () => {
+            if(!modalState.subject) return alert("請選擇科目！");
+            if(!modalState.grade) return alert("請選擇成績等級！");
+
+            // 複製一份當前的 allGrades 來進行修改
+            let updatedGrades = JSON.parse(JSON.stringify(allGrades));
+            
+            if(!updatedGrades[username]) updatedGrades[username] = {};
+            if(!updatedGrades[username][modalState.date]) updatedGrades[username][modalState.date] = {};
+            
+            updatedGrades[username][modalState.date][modalState.subject] = {
+                grade: modalState.grade,
+                photo: modalState.photoBase64 || null
+            };
+
+            try {
+                const gradesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'AllGrades');
+                await setDoc(gradesRef, { data: updatedGrades }, { merge: true });
+                closeModal();
+            } catch(e) {
+                console.error(e);
+                alert("儲存失敗，請確認圖片是否過大！");
+            }
+        };
+
+        window.deleteGradeRecord = async () => {
+            if(!modalState.subject) return;
+            if(!confirm(`確定要刪除 ${modalState.date} 的 ${modalState.subject} 紀錄嗎？`)) return;
+
+            let updatedGrades = JSON.parse(JSON.stringify(allGrades));
+            if(updatedGrades[username]?.[modalState.date]?.[modalState.subject]) {
+                delete updatedGrades[username][modalState.date][modalState.subject];
+                
+                // 若當天空了，把當天節點也刪掉
+                if(Object.keys(updatedGrades[username][modalState.date]).length === 0) {
+                    delete updatedGrades[username][modalState.date];
+                }
+
+                try {
+                    const gradesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'AllGrades');
+                    await setDoc(gradesRef, { data: updatedGrades }, { merge: true });
+                    closeModal();
+                } catch(e) {
+                    console.error(e);
+                }
+            }
+        };
+
+        // Modal 背景點擊關閉
+        document.addEventListener('click', (e) => {
+            const modal = document.getElementById('score-modal');
+            if (e.target === modal) closeModal();
+        });
+
+        // 啟動 App
+        initApp();
+
+    </script>
+</body>
+</html>
