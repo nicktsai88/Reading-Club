@@ -58,6 +58,13 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        const BASE_FIREBASE_CONFIG = {
+            authDomain: "chinese-learning-47f4d.firebaseapp.com",
+            projectId: "chinese-learning-47f4d",
+            storageBucket: "chinese-learning-47f4d.firebasestorage.app",
+            messagingSenderId: "76289812052",
+            appId: "1:76289812052:web:898384a916f9f341f62fc1"
+        };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-group-app';
         
         let app, auth, db;
@@ -104,9 +111,14 @@
                 return;
             }
 
+            const fullConfig = {
+                ...BASE_FIREBASE_CONFIG,
+                apiKey: config.apiKey
+            };
+
             try {
                 if (!app) {
-                    app = initializeApp(config);
+                    app = initializeApp(fullConfig);
                     auth = getAuth(app);
                     db = getFirestore(app);
                 }
@@ -218,36 +230,12 @@
                         <h1 class="text-2xl md:text-3xl font-black text-teal-600 mb-2 drop-shadow-sm text-center">
                             ⚙️ 系統資料庫設定
                         </h1>
-                        <p class="text-sm text-gray-500 mb-6 text-center font-bold">請填入您的 Firebase 設定以啟用雲端同步功能</p>
+                        <p class="text-sm text-gray-500 mb-6 text-center font-bold">請填入您的 Firebase API Key 以啟用雲端同步功能</p>
                         
                         <div class="space-y-3 bg-white/60 p-6 rounded-2xl border border-teal-100">
                             <div>
                                 <label class="block text-xs font-bold text-teal-800 mb-1">API Key (必填) *</label>
                                 <input type="text" id="cfg-apiKey" value="${currentConfig.apiKey || ''}" placeholder="AIzaSy..." class="w-full px-3 py-2 rounded-lg border border-teal-200 focus:outline-none focus:border-teal-400 text-sm font-mono">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-teal-800 mb-1">Project ID (必填) *</label>
-                                <input type="text" id="cfg-projectId" value="${currentConfig.projectId || ''}" placeholder="your-project-id" class="w-full px-3 py-2 rounded-lg border border-teal-200 focus:outline-none focus:border-teal-400 text-sm font-mono">
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-bold text-teal-800 mb-1">Auth Domain</label>
-                                    <input type="text" id="cfg-authDomain" value="${currentConfig.authDomain || ''}" placeholder="xxx.firebaseapp.com" class="w-full px-3 py-2 rounded-lg border border-teal-200 focus:outline-none focus:border-teal-400 text-sm font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-teal-800 mb-1">Storage Bucket</label>
-                                    <input type="text" id="cfg-storageBucket" value="${currentConfig.storageBucket || ''}" placeholder="xxx.firebasestorage.app" class="w-full px-3 py-2 rounded-lg border border-teal-200 focus:outline-none focus:border-teal-400 text-sm font-mono">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-bold text-teal-800 mb-1">Messaging Sender ID</label>
-                                    <input type="text" id="cfg-messagingSenderId" value="${currentConfig.messagingSenderId || ''}" class="w-full px-3 py-2 rounded-lg border border-teal-200 focus:outline-none focus:border-teal-400 text-sm font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-teal-800 mb-1">App ID</label>
-                                    <input type="text" id="cfg-appId" value="${currentConfig.appId || ''}" class="w-full px-3 py-2 rounded-lg border border-teal-200 focus:outline-none focus:border-teal-400 text-sm font-mono">
-                                </div>
                             </div>
                         </div>
                         
@@ -263,23 +251,13 @@
         };
 
         window.saveFirebaseConfig = () => {
-            const rawConfig = {
-                apiKey: document.getElementById('cfg-apiKey').value.trim(),
-                authDomain: document.getElementById('cfg-authDomain').value.trim(),
-                projectId: document.getElementById('cfg-projectId').value.trim(),
-                storageBucket: document.getElementById('cfg-storageBucket').value.trim(),
-                messagingSenderId: document.getElementById('cfg-messagingSenderId').value.trim(),
-                appId: document.getElementById('cfg-appId').value.trim()
-            };
+            const apiKey = document.getElementById('cfg-apiKey').value.trim();
             
-            if (!rawConfig.apiKey || !rawConfig.projectId) {
-                return alert("API Key 與 Project ID 為必填欄位！");
+            if (!apiKey) {
+                return alert("API Key 為必填欄位！");
             }
-            
-            // 移除空值屬性，以免 Firebase 初始化出錯
-            const config = Object.fromEntries(Object.entries(rawConfig).filter(([_, v]) => v !== ''));
 
-            localStorage.setItem('study_group_firebase_config', JSON.stringify(config));
+            localStorage.setItem('study_group_firebase_config', JSON.stringify({ apiKey }));
             alert("設定已儲存！系統將重新啟動。");
             window.location.reload(); 
         };
