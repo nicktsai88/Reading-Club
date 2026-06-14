@@ -9,6 +9,7 @@
     <style>
         body {
             font-family: 'Varela Round', 'Noto Sans TC', sans-serif;
+            /* 模擬圖片中的可愛雙色點點背景 */
             background-color: #fdfbfb;
             background-image: 
                 radial-gradient(#ffcdd2 2px, transparent 2px),
@@ -26,14 +27,24 @@
             box-shadow: 0 8px 32px rgba(255, 192, 203, 0.2);
         }
 
-        .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(253, 164, 175, 0.6); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(253, 164, 175, 1); }
+        .custom-scrollbar::-webkit-scrollbar { height: 10px; width: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #fff0f6; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #fda4af; border-radius: 10px; border: 2px solid #fff0f6; }
+        
+        /* 日曆網格排版設定 */
+        .calendar-grid {
+            display: grid;
+            /* 姓名(120px) | 統計(180px) | 每日格子(100px) */
+            grid-template-columns: 120px 220px repeat(auto-fill, minmax(100px, 100px));
+            grid-auto-columns: 100px;
+            grid-auto-flow: column;
+            gap: 6px;
+        }
 
         .animate-bounce-slow { animation: bounce 3s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(-5%); } 50% { transform: translateY(0); } }
         
+        /* 對話框氣泡 */
         .chat-bubble-me { background: #e0f2fe; border-radius: 1rem 1rem 0 1rem; }
         .chat-bubble-other { background: #fce7f3; border-radius: 1rem 1rem 1rem 0; }
     </style>
@@ -60,6 +71,7 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-group-app';
         
         const EXAM_DATE = new Date('2027-05-22T00:00:00');
+        const START_DATE = new Date('2026-06-14T00:00:00'); 
         const SUBJECTS = ['國文', '英文', '數學', '自然', '社會'];
         const GRADES = ['A++', 'A+', 'A', 'B++', 'B+', 'B', 'C'];
 
@@ -74,10 +86,6 @@
         let allGrades = {}; 
         let chatMessages = [];
         let modalState = { date: '', subject: '', grade: '', photoBase64: '' };
-        
-        // 月曆檢視狀態
-        let currentYear = new Date().getFullYear();
-        let currentMonth = new Date().getMonth(); // 0-11
         
         let unsubUsers, unsubDates, unsubGrades, unsubChat;
 
@@ -98,6 +106,16 @@
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         };
 
+        const generateDateRange = () => {
+            let dates = [];
+            let curr = new Date(START_DATE);
+            while (curr <= EXAM_DATE) {
+                dates.push(formatDate(curr));
+                curr.setDate(curr.getDate() + 1);
+            }
+            return dates;
+        };
+
         const getStoredConfig = () => {
             const stored = localStorage.getItem('study_group_firebase_config');
             if (stored) {
@@ -110,10 +128,10 @@
         };
 
         // ==========================================
-        //  UI 渲染函式 - 系統框架與登入
+        //  UI 渲染函式
         // ==========================================
         window.renderApp = () => { 
-            document.getElementById('app').innerHTML = `<div id="view-container" class="w-full h-full flex flex-col relative overflow-hidden bg-white/20"></div>`; 
+            document.getElementById('app').innerHTML = `<div id="view-container" class="w-full h-full flex flex-col relative overflow-hidden"></div>`; 
         };
 
         window.renderSetup = () => {
@@ -150,11 +168,17 @@
             container.innerHTML = `
                 <div class="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-y-auto">
                     <div class="glass-panel p-8 md:p-12 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] max-w-[95vw] text-center border-4 border-pink-200 relative overflow-hidden">
+                        
+                        <!-- 裝飾 -->
                         <div class="absolute top-4 left-4 text-4xl animate-bounce-slow">✨</div>
                         <div class="absolute bottom-4 right-4 text-4xl animate-bounce-slow" style="animation-delay: 1s;">🎓</div>
+
+                        <!-- 系統設定按鈕 -->
                         <button onclick="renderSetup()" class="absolute top-5 right-5 text-gray-400 hover:text-teal-600 transition-colors bg-white/50 p-2 rounded-full border border-gray-200 hover:bg-white" title="系統設定">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         </button>
+
+                        <!-- 學校 Logo 區 -->
                         <div class="flex justify-center items-center gap-6 mb-8">
                             <div class="w-20 h-20 bg-white rounded-full p-2 shadow-md border-2 border-red-200">
                                 <img src="school1.jpg" alt="雄中" class="w-full h-full object-contain rounded-full" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23fee2e2%22/><text x=%2250%22 y=%2255%22 font-family=%22sans-serif%22 font-size=%2224%22 text-anchor=%22middle%22 fill=%22%23b91c1c%22 font-weight=%22bold%22>雄中</text></svg>'">
@@ -164,7 +188,10 @@
                                 <img src="school2.jpg" alt="雄女" class="w-full h-full object-contain rounded-full" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23fee2e2%22/><text x=%2250%22 y=%2255%22 font-family=%22sans-serif%22 font-size=%2224%22 text-anchor=%22middle%22 fill=%22%23b91c1c%22 font-weight=%22bold%22>雄女</text></svg>'">
                             </div>
                         </div>
-                        <h1 class="text-3xl md:text-4xl font-black text-rose-500 mb-3 drop-shadow-sm tracking-wide">🎒 邁向5A10+</h1>
+
+                        <h1 class="text-3xl md:text-4xl font-black text-rose-500 mb-3 drop-shadow-sm tracking-wide">
+                            🎒 邁向5A10+
+                        </h1>
                         <h2 class="text-xl font-bold text-teal-600 mb-8 bg-teal-50 inline-block px-6 py-2 rounded-full border border-teal-100">國中會考讀書會 💯</h2>
                         
                         <div class="bg-white/60 p-6 rounded-3xl border border-pink-100 mb-6">
@@ -201,21 +228,21 @@
                         <h1 class="text-xl md:text-2xl font-black text-rose-500 tracking-wider">邁向5A10+ 讀書會 🏆</h1>
                     </div>
                     <div class="flex items-center gap-3 pr-2">
-                        <span class="font-bold text-teal-700 bg-teal-50 px-4 py-1.5 rounded-full border border-teal-200 shadow-sm text-sm hidden md:inline-block">
+                        <span class="font-bold text-teal-700 bg-teal-50 px-4 py-1.5 rounded-full border border-teal-200 shadow-sm text-sm">
                             ${isAdmin ? '👑 管理員' : '👦 參賽者'} : ${username}
                         </span>
                         <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-3 py-1.5 rounded-lg transition-colors text-sm border border-rose-200 bg-white shadow-sm">登出 👋</button>
                     </div>
                 </div>
 
-                <!-- 內容區: 三欄式設計 (左: 倒數/聊天, 中: 月曆儀表板, 右: 動態牆) -->
-                <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                <!-- 內容區: 側邊欄 + 橫向捲動日曆 -->
+                <div class="flex-1 flex overflow-hidden">
                     
                     <!-- 左側邊欄 (倒數 + 聊天室) -->
-                    <div class="w-full md:w-72 lg:w-80 flex flex-col bg-white/50 border-b-2 md:border-b-0 md:border-r-2 border-pink-100 z-10 shrink-0">
+                    <div class="w-80 flex flex-col bg-white/50 border-r-2 border-pink-100 z-10 shrink-0">
                         <div id="sidebar-countdowns" class="p-4 flex-1 overflow-y-auto custom-scrollbar border-b-2 border-pink-100"></div>
                         <div class="h-64 flex flex-col bg-white/60">
-                            <div class="bg-pink-100/50 p-2 text-center font-bold text-pink-600 border-b border-pink-100 text-sm shadow-sm">💬 加油打氣留言板</div>
+                            <div class="bg-pink-100/50 p-2 text-center font-bold text-pink-600 border-b border-pink-100 text-sm">💬 加油打氣留言板</div>
                             <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-sm"></div>
                             <div class="p-2 bg-white flex gap-2 border-t border-pink-100">
                                 <input type="text" id="chatInput" placeholder="說點什麼..." class="flex-1 px-3 py-2 rounded-lg border border-pink-200 focus:outline-none focus:border-pink-400 bg-gray-50" onkeypress="if(event.key === 'Enter') sendChat()">
@@ -224,51 +251,42 @@
                         </div>
                     </div>
 
-                    <!-- 中間區塊 (個人專屬月曆儀表板) -->
-                    <div class="flex-1 bg-white/30 p-4 flex flex-col relative z-0 border-b-2 md:border-b-0 md:border-r-2 border-pink-100">
-                        <!-- 切換月份控制列 -->
-                        <div class="flex justify-between items-center mb-4 bg-white/80 p-3 rounded-2xl border border-pink-100 shadow-sm shrink-0">
-                            <button onclick="changeMonth(-1)" class="px-4 py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm">◀ 上個月</button>
-                            <div class="flex flex-col items-center">
-                                <h2 id="calendar-header-text" class="text-2xl font-black text-rose-500 tracking-wide"></h2>
-                                <span class="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full mt-1">👦 ${username} 的專屬進度</span>
-                            </div>
-                            <button onclick="changeMonth(1)" class="px-4 py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm">下個月 ▶</button>
+                    <!-- 右側主要日曆區 -->
+                    <div class="flex-1 bg-white/30 p-4 overflow-auto custom-scrollbar relative" id="main-grid-container">
+                        <div id="calendar-wrapper" class="inline-block min-w-max pb-4">
+                            <!-- JS將填入網格 -->
                         </div>
-                        <!-- 網格容器 -->
-                        <div id="calendar-grid" class="flex-1 flex flex-col min-h-0"></div>
-                    </div>
-
-                    <!-- 右側區塊 (戰況動態牆) -->
-                    <div class="w-full md:w-72 lg:w-80 flex flex-col bg-white/60 z-10 shrink-0">
-                        <div class="bg-gradient-to-r from-rose-100 to-pink-100 p-3 text-center font-bold text-rose-600 border-b border-pink-200 shadow-sm">🌟 戰況動態牆</div>
-                        <div id="timeline-feed" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"></div>
                     </div>
                 </div>
 
                 <!-- 成績輸入 Modal -->
                 <div id="score-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-opacity duration-200 opacity-0">
                     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200" id="score-modal-content">
+                        <!-- 標頭 -->
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white">
-                            <h2 class="text-xl font-bold flex items-center gap-2">📝 紀錄模擬成績 <span id="modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
+                            <h2 class="text-xl font-bold flex items-center gap-2">📝 紀錄模擬成績 <span id="modal-date" class="bg-white/20 px-2 py-1 rounded text-sm"></span></h2>
                             <button onclick="closeModal()" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
+                        
+                        <!-- 內容 -->
                         <div class="p-6 space-y-5 bg-teal-50/30">
                             <div>
                                 <label class="block text-teal-800 font-bold mb-2">📚 選擇科目</label>
                                 <div class="grid grid-cols-5 gap-2" id="subject-selector">
-                                    ${SUBJECTS.map(s => `<button onclick="selectSubject('${s}')" id="btn-sub-${s}" class="py-2 rounded-lg border-2 border-teal-200 text-teal-700 font-bold hover:bg-teal-50 transition-colors bg-white shadow-sm">${s}</button>`).join('')}
+                                    ${SUBJECTS.map(s => `<button onclick="selectSubject('${s}')" id="btn-sub-${s}" class="py-2 rounded-lg border-2 border-teal-200 text-teal-700 font-bold hover:bg-teal-50 transition-colors bg-white">${s}</button>`).join('')}
                                 </div>
                             </div>
+
                             <div>
                                 <label class="block text-rose-800 font-bold mb-2">🎯 成績等級</label>
                                 <div class="grid grid-cols-4 gap-2" id="grade-selector">
-                                    ${GRADES.map(g => `<button onclick="selectGrade('${g}')" id="btn-grade-${g.replace('+','p').replace('+','p')}" class="py-2 rounded-lg border-2 border-rose-200 text-rose-700 font-bold hover:bg-rose-50 transition-colors bg-white shadow-sm">${g}</button>`).join('')}
+                                    ${GRADES.map(g => `<button onclick="selectGrade('${g}')" id="btn-grade-${g.replace('+','p').replace('+','p')}" class="py-2 rounded-lg border-2 border-rose-200 text-rose-700 font-bold hover:bg-rose-50 transition-colors bg-white">${g}</button>`).join('')}
                                 </div>
                             </div>
+
                             <div>
                                 <label class="block text-purple-800 font-bold mb-2">📸 拍下考卷/成績單 (選填)</label>
-                                <div class="border-2 border-dashed border-purple-200 rounded-xl p-4 text-center bg-white hover:bg-purple-50 transition-colors cursor-pointer relative shadow-inner" onclick="document.getElementById('photo-upload').click()">
+                                <div class="border-2 border-dashed border-purple-200 rounded-xl p-4 text-center bg-white hover:bg-purple-50 transition-colors cursor-pointer relative" onclick="document.getElementById('photo-upload').click()">
                                     <input type="file" id="photo-upload" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
                                     <div id="photo-preview-container" class="hidden flex-col items-center">
                                         <img id="photo-preview" class="h-32 object-contain rounded mb-2 shadow-sm border border-gray-200">
@@ -279,8 +297,11 @@
                                         <span class="text-sm font-bold">點擊上傳或拍照</span>
                                     </div>
                                 </div>
+                                <p class="text-[10px] text-gray-400 mt-1">*圖片將自動壓縮以節省空間</p>
                             </div>
                         </div>
+
+                        <!-- 底部 -->
                         <div class="p-4 bg-white border-t border-gray-100 flex justify-end gap-3">
                             <button onclick="deleteGradeRecord()" id="btn-delete-grade" class="hidden px-5 py-2.5 rounded-xl font-bold text-red-500 bg-red-50 border border-red-200 hover:bg-red-100">刪除紀錄</button>
                             <div class="flex-1"></div>
@@ -297,9 +318,6 @@
             }
         };
 
-        // ==========================================
-        //  UI 渲染函式 - 個別區塊
-        // ==========================================
         window.renderSidebar = () => {
             const container = document.getElementById('sidebar-countdowns');
             if(!container) return;
@@ -307,13 +325,13 @@
             const examDaysLeft = getDaysLeft(EXAM_DATE);
             
             let html = `
-                <div class="bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl p-5 text-center shadow-lg text-white mb-6 transform hover:scale-105 transition-transform border border-pink-300">
+                <div class="bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl p-5 text-center shadow-lg text-white mb-6 transform hover:scale-105 transition-transform">
                     <h3 class="text-sm font-bold text-pink-100 mb-1">會考大日子 (2027-05-22)</h3>
-                    <div class="text-5xl font-black drop-shadow-md mb-2">${examDaysLeft >= 0 ? examDaysLeft : 0} <span class="text-xl">天</span></div>
-                    <div class="text-xs bg-black/20 rounded-full inline-block px-3 py-1 font-bold">🎯 決戰時刻</div>
+                    <div class="text-5xl font-black drop-shadow-md mb-2">${examDaysLeft} <span class="text-xl">天</span></div>
+                    <div class="text-xs bg-black/20 rounded-full inline-block px-3 py-1">🎯 決戰時刻</div>
                 </div>
                 
-                <h4 class="font-bold text-teal-700 mb-3 flex items-center gap-2">🗓️ 重要考試里程碑</h4>
+                <h4 class="font-bold text-teal-700 mb-3 flex items-center gap-2">🗓️ 模擬考與重要日程</h4>
                 <div class="space-y-3 mb-6">
             `;
 
@@ -362,7 +380,7 @@
                 return `
                     <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
                         <span class="text-[10px] text-gray-400 mb-0.5 px-1">${msg.user}</span>
-                        <div class="${isMe ? 'chat-bubble-me border border-blue-100' : 'chat-bubble-other border border-pink-100'} px-3 py-2 text-gray-700 shadow-sm inline-block max-w-[90%] break-words">
+                        <div class="${isMe ? 'chat-bubble-me' : 'chat-bubble-other'} px-3 py-2 text-gray-700 shadow-sm inline-block max-w-[90%] break-words border border-gray-100">
                             ${msg.text}
                         </div>
                     </div>
@@ -371,146 +389,92 @@
             container.scrollTop = container.scrollHeight;
         };
 
-        window.changeMonth = (delta) => {
-            currentMonth += delta;
-            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-            if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-            window.renderMainContent();
-        };
+        window.renderMainContent = () => {
+            const wrapper = document.getElementById('calendar-wrapper');
+            if(!wrapper) return;
 
-        window.renderCalendar = () => {
-            const container = document.getElementById('calendar-grid');
-            const header = document.getElementById('calendar-header-text');
-            if(!container || !header) return;
-
-            header.innerText = `${currentYear} 年 ${currentMonth + 1} 月`;
-
-            // 計算月曆天數分佈
-            const firstDay = new Date(currentYear, currentMonth, 1).getDay(); // 0(Sun) - 6(Sat)
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            // 設定為星期一為每週第一天: 星期一=0, 星期日=6
-            const startPad = firstDay === 0 ? 6 : firstDay - 1;
-
-            let html = `<div class="grid grid-cols-7 gap-2 mb-2 shrink-0">`;
-            ['一', '二', '三', '四', '五', '六', '日'].forEach((d, idx) => {
-                const isWeekend = idx >= 5;
-                html += `<div class="text-center font-bold ${isWeekend ? 'text-rose-500 bg-rose-50' : 'text-teal-700 bg-teal-50'} py-2 rounded-xl shadow-sm border border-gray-100">${d}</div>`;
-            });
-            html += `</div><div class="grid grid-cols-7 gap-2 flex-1 auto-rows-[minmax(80px,1fr)]">`;
-
-            // 前方空白補位
-            for(let i=0; i<startPad; i++) {
-                html += `<div class="bg-white/30 rounded-2xl border border-transparent"></div>`;
-            }
-
-            // 日期格子
-            for(let d=1; d<=daysInMonth; d++) {
-                const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                const isToday = dateStr === formatDate(new Date());
-                const isImportant = importantDates.find(i => i.date === dateStr);
-                const myGrades = allGrades[username]?.[dateStr];
-
-                let cellContent = '';
-                if (myGrades && Object.keys(myGrades).length > 0) {
-                    cellContent = `<div class="flex flex-col gap-1 w-full mt-1">`;
-                    Object.entries(myGrades).forEach(([sub, info]) => {
-                        let isA = info.grade.includes('A');
-                        let color = isA ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-teal-50 text-teal-700 border-teal-200';
-                        let subName = sub.charAt(0);
-                        cellContent += `
-                            <div class="text-[11px] font-bold ${color} border px-1.5 py-0.5 rounded flex items-center justify-between shadow-sm">
-                                <span>${subName} <span class="font-black">${info.grade}</span></span>
-                                ${info.photo ? '<span class="text-[9px] text-purple-500">📸</span>' : ''}
-                            </div>
-                        `;
-                    });
-                    cellContent += `</div>`;
-                }
-
-                // Header 樣式區分
-                const headerClass = isToday 
-                    ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-white shadow-md' 
-                    : isImportant 
-                        ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md' 
-                        : 'bg-pink-50 text-pink-700';
-
+            const dateRange = generateDateRange();
+            
+            let html = `<div class="calendar-grid mb-2 sticky top-0 z-30">`;
+            html += `<div class="bg-rose-400 text-white font-bold p-3 rounded-xl shadow-md text-center border-2 border-white flex items-center justify-center sticky left-0 z-40">參賽者</div>`;
+            html += `<div class="bg-rose-400 text-white font-bold p-3 rounded-xl shadow-md text-center border-2 border-white flex items-center justify-center sticky left-[126px] z-40">A級距統計 (5科加總)</div>`;
+            
+            dateRange.forEach(d => {
+                const isToday = d === formatDate(new Date());
+                const [year, month, day] = d.split('-');
+                const isImportant = importantDates.find(i => i.date === d);
+                
                 html += `
-                    <div onclick="openScoreModal('${dateStr}')" class="bg-white border-2 border-pink-100 p-2 rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group">
-                        <div class="flex justify-between items-start shrink-0">
-                            <span class="w-7 h-7 flex items-center justify-center rounded-full text-sm font-bold ${headerClass}">${d}</span>
-                            ${isImportant ? `<span class="text-sm drop-shadow-sm group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
-                        </div>
-                        <div class="flex-1 overflow-y-auto custom-scrollbar mt-1">
-                            ${cellContent}
-                        </div>
+                    <div class="${isToday ? 'bg-teal-400' : isImportant ? 'bg-orange-400' : 'bg-pink-300'} text-white font-bold p-2 rounded-xl shadow-sm border-2 border-white flex flex-col items-center justify-center relative">
+                        <span class="text-[10px] opacity-80 leading-none">${month}月</span>
+                        <span class="text-lg leading-none mt-1">${day}</span>
+                        ${isImportant ? `<div class="absolute -top-2 -right-2 text-lg drop-shadow" title="${isImportant.title}">🔥</div>` : ''}
                     </div>
                 `;
-            }
+            });
             html += `</div>`;
-            container.innerHTML = html;
-        };
 
-        window.renderTimeline = () => {
-            const container = document.getElementById('timeline-feed');
-            if(!container) return;
-
-            // 扁平化整合所有人的成績紀錄
-            const feed = [];
-            Object.entries(allGrades).forEach(([u, dates]) => {
-                Object.entries(dates).forEach(([d, subjects]) => {
-                    Object.entries(subjects).forEach(([s, info]) => {
-                        feed.push({ user: u, date: d, subject: s, ...info });
+            globalUsers.forEach(user => {
+                const userGrades = allGrades[user] || {};
+                const isMe = user === username;
+                
+                let stats = { 'A++': 0, 'A+': 0, 'A': 0 };
+                Object.values(userGrades).forEach(dayGrades => {
+                    Object.values(dayGrades).forEach(item => {
+                        if (stats[item.grade] !== undefined) stats[item.grade]++;
                     });
                 });
-            });
 
-            // 依照更新時間排序 (若無 updatedAt 則依據日期)
-            feed.sort((a,b) => {
-                const timeA = a.updatedAt ? new Date(a.updatedAt) : new Date(a.date);
-                const timeB = b.updatedAt ? new Date(b.updatedAt) : new Date(b.date);
-                return timeB - timeA;
-            });
-
-            if (feed.length === 0) {
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-70">
-                        <div class="text-4xl mb-2">🍃</div>
-                        <div class="text-sm font-bold">尚無戰況紀錄，趕快搶頭香！</div>
-                    </div>`;
-                return;
-            }
-
-            let html = '';
-            feed.forEach(item => {
-                const isMe = item.user === username;
-                const isA = item.grade.includes('A');
-                const emoji = isA ? '🏆' : '💪';
-                const borderColor = isA ? 'border-rose-300' : 'border-teal-200';
-                const bgColor = isA ? 'bg-gradient-to-br from-white to-rose-50' : 'bg-gradient-to-br from-white to-teal-50';
-
+                html += `<div class="calendar-grid mb-2 group">`;
+                
                 html += `
-                    <div class="p-4 rounded-2xl border-2 ${borderColor} ${bgColor} shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" onclick="viewOthersScore('${item.user}', '${item.date}')">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="font-bold text-gray-700 bg-white px-2 py-0.5 rounded shadow-sm text-xs border border-gray-100">
-                                ${isMe ? '👦 我' : '🏃 ' + item.user}
-                            </span>
-                            <span class="text-[10px] text-gray-400 font-mono">${item.date}</span>
-                        </div>
-                        <div class="text-sm text-gray-600 mt-1">
-                            在 ${item.subject} 測驗斬獲了 <span class="font-black text-lg mx-1 ${isA ? 'text-rose-600' : 'text-teal-600'}">${item.grade}</span> ${emoji}
-                        </div>
-                        ${item.photo ? `<div class="absolute right-3 bottom-3 text-purple-400 text-lg opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
+                    <div class="${isMe ? 'bg-teal-50 border-teal-300 text-teal-800' : 'bg-white border-pink-200 text-gray-700'} font-black p-3 rounded-xl shadow-sm border-2 text-center flex items-center justify-center sticky left-0 z-20">
+                        ${isMe ? '👦 ' : ''}${user}
                     </div>
                 `;
+                
+                html += `
+                    <div class="bg-white border-2 border-pink-100 p-2 rounded-xl shadow-sm flex items-center justify-around sticky left-[126px] z-20 font-bold text-xs">
+                        <div class="flex flex-col items-center"><span class="text-rose-500">A++</span><span class="text-lg bg-rose-50 px-2 rounded">${stats['A++']}</span></div>
+                        <div class="flex flex-col items-center"><span class="text-orange-500">A+</span><span class="text-lg bg-orange-50 px-2 rounded">${stats['A+']}</span></div>
+                        <div class="flex flex-col items-center"><span class="text-teal-600">A</span><span class="text-lg bg-teal-50 px-2 rounded">${stats['A']}</span></div>
+                    </div>
+                `;
+                
+                dateRange.forEach(d => {
+                    const dayData = userGrades[d];
+                    const hasData = dayData && Object.keys(dayData).length > 0;
+                    
+                    let cellContent = '';
+                    if (hasData) {
+                        cellContent = `<div class="flex flex-wrap gap-1 justify-center w-full">`;
+                        Object.entries(dayData).forEach(([sub, info]) => {
+                            let color = info.grade.includes('A') ? 'bg-rose-100 text-rose-600 border-rose-200' : 'bg-teal-100 text-teal-700 border-teal-200';
+                            let subName = sub.charAt(0);
+                            cellContent += `<div class="text-[9px] font-bold ${color} border px-1 rounded flex items-center" title="${sub}: ${info.grade}">
+                                ${subName}<span class="ml-0.5 text-[8px]">${info.grade}</span>
+                                ${info.photo ? '<span class="ml-0.5 text-purple-500">📸</span>' : ''}
+                            </div>`;
+                        });
+                        cellContent += `</div>`;
+                    } else {
+                        cellContent = `<span class="opacity-0 group-hover:opacity-100 text-gray-300 text-xs transition-opacity">+</span>`;
+                    }
+
+                    const clickAction = isMe ? `onclick="openScoreModal('${d}')"` : `onclick="viewOthersScore('${user}', '${d}')"`;
+                    const cursorClass = isMe ? 'cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-0.5' : 'cursor-pointer hover:border-pink-300 hover:bg-pink-50';
+
+                    html += `
+                        <div ${clickAction} class="bg-white border-2 border-pink-100 p-1 rounded-xl shadow-sm flex flex-col items-center justify-center transition-all ${cursorClass} h-full min-h-[60px]">
+                            ${cellContent}
+                        </div>
+                    `;
+                });
+                html += `</div>`;
             });
-            container.innerHTML = html;
-        };
 
-        window.renderMainContent = () => {
-            if(window.renderCalendar) window.renderCalendar();
-            if(window.renderTimeline) window.renderTimeline();
+            wrapper.innerHTML = html;
         };
-
 
         // ==========================================
         //  Firebase 監聽與初始化
@@ -528,12 +492,14 @@
 
         const setupListeners = () => {
             if (!currentUser) return;
+            
             const errHandler = (err) => console.warn("Firestore Listener Error:", err);
 
             const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
             if(unsubUsers) unsubUsers();
             unsubUsers = onSnapshot(usersRef, (snap) => {
                 if(snap.exists()) globalUsers = snap.data().users || [];
+                if(username) window.renderMainContent(); 
             }, errHandler);
 
             const datesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates');
@@ -576,7 +542,10 @@
                 return;
             }
 
-            const fullConfig = { ...BASE_FIREBASE_CONFIG, apiKey: config.apiKey };
+            const fullConfig = {
+                ...BASE_FIREBASE_CONFIG,
+                apiKey: config.apiKey
+            };
 
             try {
                 if (!appInstance) {
@@ -633,7 +602,9 @@
             isAdmin = (username === '管理員' || username === 'Admin');
             localStorage.setItem('study_group_user', username);
             
-            if (!globalUsers.includes(username)) globalUsers.push(username);
+            if (!globalUsers.includes(username)) {
+                globalUsers.push(username);
+            }
 
             window.renderMain();
 
@@ -721,7 +692,7 @@
             
             let info = `${otherUser} 在 ${dateStr} 的成績：\n\n`;
             Object.entries(data).forEach(([sub, item]) => {
-                info += `📌 ${sub}: ${item.grade} ${item.photo ? '(附考卷圖，需私下求證 😉)' : ''}\n`;
+                info += `📌 ${sub}: ${item.grade} ${item.photo ? '(有附圖，為節省流量僅支援自行查看)' : ''}\n`;
             });
             alert(info);
         };
@@ -814,8 +785,7 @@
             
             updatedGrades[username][modalState.date][modalState.subject] = {
                 grade: modalState.grade,
-                photo: modalState.photoBase64 || null,
-                updatedAt: new Date().toISOString() // 紀錄更新時間供動態牆排序
+                photo: modalState.photoBase64 || null
             };
 
             try {
