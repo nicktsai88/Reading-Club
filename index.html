@@ -58,6 +58,9 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // ==========================================
+        //  系統設定與常數
+        // ==========================================
         const BASE_FIREBASE_CONFIG = {
             authDomain: "chinese-learning-47f4d.firebaseapp.com",
             projectId: "chinese-learning-47f4d",
@@ -67,199 +70,97 @@
         };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-group-app';
         
-        let app, auth, db;
+        const EXAM_DATE = new Date('2027-05-22T00:00:00');
+        const START_DATE = new Date('2026-06-14T00:00:00'); 
+        const SUBJECTS = ['國文', '英文', '數學', '自然', '社會'];
+        const GRADES = ['A++', 'A+', 'A', 'B++', 'B+', 'B', 'C'];
+
+        // 資料狀態
+        let appInstance, auth, db;
         let currentUser = null;
         let username = '';
         let isAdmin = false;
         
-        // 資料狀態
         let globalUsers = [];
         let importantDates = [];
-        let allGrades = {}; // { username: { dateString: { 國文: grade, ... } } }
+        let allGrades = {}; 
         let chatMessages = [];
+        let modalState = { date: '', subject: '', grade: '', photoBase64: '' };
         
-        // 系統常數
-        const EXAM_DATE = new Date('2027-05-22T00:00:00');
-        const START_DATE = new Date('2026-06-14T00:00:00'); // 預設起始日
-        const SUBJECTS = ['國文', '英文', '數學', '自然', '社會'];
-        const GRADES = ['A++', 'A+', 'A', 'B++', 'B+', 'B', 'C'];
-        
-        // Unsubscribe functions
         let unsubUsers, unsubDates, unsubGrades, unsubChat;
 
         // ==========================================
-        //  初始化 Firebase (外掛式設定)
+        //  輔助工具函式
         // ==========================================
+        const getDaysLeft = (targetDateStr) => {
+            const now = new Date();
+            now.setHours(0,0,0,0);
+            const target = new Date(targetDateStr);
+            target.setHours(0,0,0,0);
+            const diffTime = target - now;
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        };
+
+        const formatDate = (date) => {
+            const d = new Date(date);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        };
+
+        const generateDateRange = () => {
+            let dates = [];
+            let curr = new Date(START_DATE);
+            while (curr <= EXAM_DATE) {
+                dates.push(formatDate(curr));
+                curr.setDate(curr.getDate() + 1);
+            }
+            return dates;
+        };
+
         const getStoredConfig = () => {
             const stored = localStorage.getItem('study_group_firebase_config');
             if (stored) {
                 try { return JSON.parse(stored); } catch(e) {}
             }
-            // 如果環境變數有提供預設設定(例如平台內預覽)，則當作備案
             if (typeof __firebase_config !== 'undefined') {
                 try { return JSON.parse(__firebase_config); } catch(e) {}
             }
             return null;
         };
 
-        const initApp = async () => {
-            renderApp();
-            
-            const config = getStoredConfig();
-            if (!config || !config.apiKey) {
-                renderSetup();
-                return;
-            }
-
-            const fullConfig = {
-                ...BASE_FIREBASE_CONFIG,
-                apiKey: config.apiKey
-            };
-
-            try {
-                if (!app) {
-                    app = initializeApp(fullConfig);
-                    auth = getAuth(app);
-                    db = getFirestore(app);
-                }
-
-                const initAuth = async () => {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                };
-                await initAuth();
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        currentUser = user;
-                        const savedUser = localStorage.getItem('study_group_user');
-                        if (savedUser) {
-                            username = savedUser;
-                            isAdmin = (username === '管理員' || username === 'Admin');
-                            setupListeners();
-                            renderMain();
-                        } else {
-                            setupLoginListener();
-                            renderLogin();
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error("Firebase 連線失敗:", error);
-                alert("Firebase 連線失敗，請檢查系統設定參數是否正確！");
-                renderSetup();
-            }
-        };
-
         // ==========================================
-        //  資料庫監聽 (Firestore Rules Compliant)
+        //  UI 渲染函式
         // ==========================================
-        const setupLoginListener = () => {
-            if (!currentUser) return;
-            const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
-            unsubUsers = onSnapshot(usersRef, (snap) => {
-                if(snap.exists()) {
-                    globalUsers = snap.data().users || [];
-                    if(!username) renderLogin();
-                }
-            }, (err) => console.warn("登入監聽失敗:", err));
+        window.renderApp = () => { 
+            document.getElementById('app').innerHTML = `<div id="view-container" class="w-full h-full flex flex-col relative overflow-hidden"></div>`; 
         };
 
-        const setupListeners = () => {
-            if (!currentUser) return;
-            
-            const errHandler = (err) => console.warn("Firestore Listener Error:", err);
-
-            // 監聽使用者列表 (為了側邊欄與登入)
-            const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
-            if(unsubUsers) unsubUsers();
-            unsubUsers = onSnapshot(usersRef, (snap) => {
-                if(snap.exists()) globalUsers = snap.data().users || [];
-                if(username) renderMainContent(); 
-            }, errHandler);
-
-            // 監聽重要日期
-            const datesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates');
-            if(unsubDates) unsubDates();
-            unsubDates = onSnapshot(datesRef, (snap) => {
-                if(snap.exists()) {
-                    importantDates = snap.data().list || [];
-                } else {
-                    // 初始化預設日期
-                    importantDates = [
-                        { date: '2026-09-09', title: '第1次模擬考' },
-                        { date: '2026-10-13', title: '第1次段考' },
-                        { date: '2026-10-28', title: '第2次模擬考' }
-                    ];
-                    setDoc(datesRef, { list: importantDates }).catch(errHandler);
-                }
-                if(username) renderSidebar();
-            }, errHandler);
-
-            // 監聽聊天室
-            const chatRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat');
-            if(unsubChat) unsubChat();
-            unsubChat = onSnapshot(chatRef, (snap) => {
-                if(snap.exists()) chatMessages = snap.data().messages || [];
-                if(username) renderChat();
-            }, errHandler);
-
-            // 監聽所有使用者的成績
-            const gradesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'AllGrades');
-            if(unsubGrades) unsubGrades();
-            unsubGrades = onSnapshot(gradesRef, (snap) => {
-                if(snap.exists()) allGrades = snap.data().data || {};
-                if(username) renderMainContent();
-            }, errHandler);
-        };
-
-        // ==========================================
-        //  動作邏輯
-        // ==========================================
-        window.handleLogin = (name) => {
-            if(!name.trim()) return alert("請輸入名稱！");
-            username = name.trim();
-            isAdmin = (username === '管理員' || username === 'Admin');
-            localStorage.setItem('study_group_user', username);
-            
-            if (!globalUsers.includes(username)) {
-                globalUsers.push(username);
-            }
-
-            // 立刻切換主畫面，避免被 Firebase 未建立資料庫等連線狀況卡住
-            renderMain();
-
-            // 背景非同步處理資料庫寫入與監聽
-            if (currentUser && db) {
-                const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
-                getDoc(usersRef).then(snap => {
-                    let users = snap.exists() ? snap.data().users || [] : [];
-                    if (!users.includes(username)) {
-                        users.push(username);
-                        setDoc(usersRef, { users }, { merge: true });
-                    }
-                }).catch(e => console.warn("無法同步帳號至雲端", e));
-
-                setupListeners();
-            }
-        };
-
-        window.logout = () => {
-        };
-
-        window.saveFirebaseConfig = () => {
-            const apiKey = document.getElementById('cfg-apiKey').value.trim();
-            
-            if (!apiKey) {
-                return alert("API Key 為必填欄位！");
-            }
-
-            localStorage.setItem('study_group_firebase_config', JSON.stringify({ apiKey }));
-            alert("設定已儲存！系統將重新啟動。");
-            window.location.reload(); 
+        window.renderSetup = () => {
+            const container = document.getElementById('view-container');
+            const currentConfig = getStoredConfig() || {};
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-y-auto">
+                    <div class="glass-panel p-8 md:p-10 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] max-w-[95vw] border-4 border-teal-200 relative overflow-hidden">
+                        <h1 class="text-2xl md:text-3xl font-black text-teal-600 mb-2 drop-shadow-sm text-center">
+                            ⚙️ 系統資料庫設定
+                        </h1>
+                        <p class="text-sm text-gray-500 mb-6 text-center font-bold">請填入您的 Firebase API Key 以啟用雲端同步功能</p>
+                        
+                        <div class="space-y-3 bg-white/60 p-6 rounded-2xl border border-teal-100">
+                            <div>
+                                <label class="block text-xs font-bold text-teal-800 mb-1">API Key (必填) *</label>
+                                <input type="text" id="cfg-apiKey" value="${currentConfig.apiKey || ''}" placeholder="AIzaSy..." class="w-full px-3 py-2 rounded-lg border border-teal-200 focus:outline-none focus:border-teal-400 text-sm font-mono">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 flex gap-3 justify-center">
+                            ${currentConfig.apiKey ? `<button onclick="renderLogin()" class="px-5 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors">取消</button>` : ''}
+                            <button onclick="saveFirebaseConfig()" class="flex-1 bg-gradient-to-r from-teal-400 to-emerald-400 text-white font-bold py-2.5 px-6 rounded-xl shadow-md hover:shadow-lg transition-all">
+                                💾 儲存並啟動系統
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
         };
 
         window.renderLogin = () => {
@@ -314,9 +215,6 @@
             `;
         };
 
-        // ==========================================
-        //  UI 渲染 - 主畫面架構
-        // ==========================================
         window.renderMain = () => {
             const container = document.getElementById('view-container');
             container.innerHTML = `
@@ -342,10 +240,7 @@
                     
                     <!-- 左側邊欄 (倒數 + 聊天室) -->
                     <div class="w-80 flex flex-col bg-white/50 border-r-2 border-pink-100 z-10 shrink-0">
-                        <!-- 倒數計時區 -->
                         <div id="sidebar-countdowns" class="p-4 flex-1 overflow-y-auto custom-scrollbar border-b-2 border-pink-100"></div>
-                        
-                        <!-- 聊天室區 -->
                         <div class="h-64 flex flex-col bg-white/60">
                             <div class="bg-pink-100/50 p-2 text-center font-bold text-pink-600 border-b border-pink-100 text-sm">💬 加油打氣留言板</div>
                             <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-sm"></div>
@@ -415,18 +310,14 @@
                         </div>
                     </div>
                 </div>
-
             `;
             if (username) {
-                renderSidebar();
-                renderMainContent();
-                renderChat();
+                window.renderSidebar();
+                window.renderMainContent();
+                window.renderChat();
             }
         };
 
-        // ==========================================
-        //  UI 渲染 - 左側邊欄 (倒數計時)
-        // ==========================================
         window.renderSidebar = () => {
             const container = document.getElementById('sidebar-countdowns');
             if(!container) return;
@@ -444,7 +335,6 @@
                 <div class="space-y-3 mb-6">
             `;
 
-            // 排序日期
             const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
             
             sortedDates.forEach((item, index) => {
@@ -481,27 +371,6 @@
             container.innerHTML = html;
         };
 
-        window.addImportantDate = async () => {
-            const title = document.getElementById('newDateTitle').value;
-            const date = document.getElementById('newDateValue').value;
-            if(!title || !date) return alert("請填寫完整名稱與日期");
-            
-            const newDates = [...importantDates, { title, date }];
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
-            document.getElementById('newDateTitle').value = '';
-            document.getElementById('newDateValue').value = '';
-        };
-
-        window.deleteImportantDate = async (index) => {
-            if(!confirm("確定刪除此日程？")) return;
-            const newDates = [...importantDates];
-            newDates.splice(index, 1);
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
-        };
-
-        // ==========================================
-        //  UI 渲染 - 聊天室
-        // ==========================================
         window.renderChat = () => {
             const container = document.getElementById('chat-messages');
             if(!container) return;
@@ -520,30 +389,12 @@
             container.scrollTop = container.scrollHeight;
         };
 
-        window.sendChat = async () => {
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            if(!text) return;
-            
-            const newMsg = { user: username, text: text, timestamp: new Date().toISOString() };
-            const newChat = [...chatMessages, newMsg];
-            // 保留最後50筆
-            if(newChat.length > 50) newChat.shift();
-            
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), { messages: newChat });
-            input.value = '';
-        };
-
-        // ==========================================
-        //  UI 渲染 - 主日曆網格
-        // ==========================================
         window.renderMainContent = () => {
             const wrapper = document.getElementById('calendar-wrapper');
             if(!wrapper) return;
 
             const dateRange = generateDateRange();
             
-            // 標頭列
             let html = `<div class="calendar-grid mb-2 sticky top-0 z-30">`;
             html += `<div class="bg-rose-400 text-white font-bold p-3 rounded-xl shadow-md text-center border-2 border-white flex items-center justify-center sticky left-0 z-40">參賽者</div>`;
             html += `<div class="bg-rose-400 text-white font-bold p-3 rounded-xl shadow-md text-center border-2 border-white flex items-center justify-center sticky left-[126px] z-40">A級距統計 (5科加總)</div>`;
@@ -563,12 +414,10 @@
             });
             html += `</div>`;
 
-            // 資料列 (依據已登錄的使用者)
             globalUsers.forEach(user => {
                 const userGrades = allGrades[user] || {};
                 const isMe = user === username;
                 
-                // 計算統計數據
                 let stats = { 'A++': 0, 'A+': 0, 'A': 0 };
                 Object.values(userGrades).forEach(dayGrades => {
                     Object.values(dayGrades).forEach(item => {
@@ -578,14 +427,12 @@
 
                 html += `<div class="calendar-grid mb-2 group">`;
                 
-                // 姓名欄
                 html += `
                     <div class="${isMe ? 'bg-teal-50 border-teal-300 text-teal-800' : 'bg-white border-pink-200 text-gray-700'} font-black p-3 rounded-xl shadow-sm border-2 text-center flex items-center justify-center sticky left-0 z-20">
                         ${isMe ? '👦 ' : ''}${user}
                     </div>
                 `;
                 
-                // 統計欄
                 html += `
                     <div class="bg-white border-2 border-pink-100 p-2 rounded-xl shadow-sm flex items-center justify-around sticky left-[126px] z-20 font-bold text-xs">
                         <div class="flex flex-col items-center"><span class="text-rose-500">A++</span><span class="text-lg bg-rose-50 px-2 rounded">${stats['A++']}</span></div>
@@ -594,18 +441,16 @@
                     </div>
                 `;
                 
-                // 每日格子
                 dateRange.forEach(d => {
                     const dayData = userGrades[d];
                     const hasData = dayData && Object.keys(dayData).length > 0;
                     
                     let cellContent = '';
                     if (hasData) {
-                        // 產生小徽章
                         cellContent = `<div class="flex flex-wrap gap-1 justify-center w-full">`;
                         Object.entries(dayData).forEach(([sub, info]) => {
                             let color = info.grade.includes('A') ? 'bg-rose-100 text-rose-600 border-rose-200' : 'bg-teal-100 text-teal-700 border-teal-200';
-                            let subName = sub.charAt(0); // 縮寫
+                            let subName = sub.charAt(0);
                             cellContent += `<div class="text-[9px] font-bold ${color} border px-1 rounded flex items-center" title="${sub}: ${info.grade}">
                                 ${subName}<span class="ml-0.5 text-[8px]">${info.grade}</span>
                                 ${info.photo ? '<span class="ml-0.5 text-purple-500">📸</span>' : ''}
@@ -616,7 +461,6 @@
                         cellContent = `<span class="opacity-0 group-hover:opacity-100 text-gray-300 text-xs transition-opacity">+</span>`;
                     }
 
-                    // 只有自己的格子可以點擊
                     const clickAction = isMe ? `onclick="openScoreModal('${d}')"` : `onclick="viewOthersScore('${user}', '${d}')"`;
                     const cursorClass = isMe ? 'cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-0.5' : 'cursor-pointer hover:border-pink-300 hover:bg-pink-50';
 
@@ -633,19 +477,200 @@
         };
 
         // ==========================================
-        //  Modal 與 成績輸入邏輯
+        //  Firebase 監聽與初始化
         // ==========================================
-        let modalState = { date: '', subject: '', grade: '', photoBase64: '' };
+        const setupLoginListener = () => {
+            if (!currentUser) return;
+            const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
+            unsubUsers = onSnapshot(usersRef, (snap) => {
+                if(snap.exists()) {
+                    globalUsers = snap.data().users || [];
+                    if(!username) window.renderLogin();
+                }
+            }, (err) => console.warn("登入監聽失敗:", err));
+        };
+
+        const setupListeners = () => {
+            if (!currentUser) return;
+            
+            const errHandler = (err) => console.warn("Firestore Listener Error:", err);
+
+            const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
+            if(unsubUsers) unsubUsers();
+            unsubUsers = onSnapshot(usersRef, (snap) => {
+                if(snap.exists()) globalUsers = snap.data().users || [];
+                if(username) window.renderMainContent(); 
+            }, errHandler);
+
+            const datesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates');
+            if(unsubDates) unsubDates();
+            unsubDates = onSnapshot(datesRef, (snap) => {
+                if(snap.exists()) {
+                    importantDates = snap.data().list || [];
+                } else {
+                    importantDates = [
+                        { date: '2026-09-09', title: '第1次模擬考' },
+                        { date: '2026-10-13', title: '第1次段考' },
+                        { date: '2026-10-28', title: '第2次模擬考' }
+                    ];
+                    setDoc(datesRef, { list: importantDates }).catch(errHandler);
+                }
+                if(username) window.renderSidebar();
+            }, errHandler);
+
+            const chatRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat');
+            if(unsubChat) unsubChat();
+            unsubChat = onSnapshot(chatRef, (snap) => {
+                if(snap.exists()) chatMessages = snap.data().messages || [];
+                if(username) window.renderChat();
+            }, errHandler);
+
+            const gradesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'AllGrades');
+            if(unsubGrades) unsubGrades();
+            unsubGrades = onSnapshot(gradesRef, (snap) => {
+                if(snap.exists()) allGrades = snap.data().data || {};
+                if(username) window.renderMainContent();
+            }, errHandler);
+        };
+
+        const initApp = async () => {
+            window.renderApp();
+            
+            const config = getStoredConfig();
+            if (!config || !config.apiKey) {
+                window.renderSetup();
+                return;
+            }
+
+            const fullConfig = {
+                ...BASE_FIREBASE_CONFIG,
+                apiKey: config.apiKey
+            };
+
+            try {
+                if (!appInstance) {
+                    appInstance = initializeApp(fullConfig);
+                    auth = getAuth(appInstance);
+                    db = getFirestore(appInstance);
+                }
+
+                const initAuth = async () => {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                };
+                await initAuth();
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        const savedUser = localStorage.getItem('study_group_user');
+                        if (savedUser) {
+                            username = savedUser;
+                            isAdmin = (username === '管理員' || username === 'Admin');
+                            setupListeners();
+                            window.renderMain();
+                        } else {
+                            setupLoginListener();
+                            window.renderLogin();
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase 連線失敗:", error);
+                alert("Firebase 連線失敗，請檢查系統設定參數是否正確！");
+                window.renderSetup();
+            }
+        };
+
+        // ==========================================
+        //  動作邏輯
+        // ==========================================
+        window.saveFirebaseConfig = () => {
+            const apiKey = document.getElementById('cfg-apiKey').value.trim();
+            if (!apiKey) return alert("API Key 為必填欄位！");
+            localStorage.setItem('study_group_firebase_config', JSON.stringify({ apiKey }));
+            alert("設定已儲存！系統將重新啟動。");
+            window.location.reload(); 
+        };
+
+        window.handleLogin = (name) => {
+            if(!name.trim()) return alert("請輸入名稱！");
+            username = name.trim();
+            isAdmin = (username === '管理員' || username === 'Admin');
+            localStorage.setItem('study_group_user', username);
+            
+            if (!globalUsers.includes(username)) {
+                globalUsers.push(username);
+            }
+
+            window.renderMain();
+
+            if (currentUser && db) {
+                const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
+                getDoc(usersRef).then(snap => {
+                    let users = snap.exists() ? snap.data().users || [] : [];
+                    if (!users.includes(username)) {
+                        users.push(username);
+                        setDoc(usersRef, { users }, { merge: true });
+                    }
+                }).catch(e => console.warn("無法同步帳號至雲端", e));
+                setupListeners();
+            }
+        };
+
+        window.logout = () => {
+            username = '';
+            isAdmin = false;
+            localStorage.removeItem('study_group_user');
+            if(unsubDates) unsubDates();
+            if(unsubGrades) unsubGrades();
+            if(unsubChat) unsubChat();
+            if(unsubUsers) unsubUsers();
+            setupLoginListener();
+            window.renderLogin();
+        };
+
+        window.addImportantDate = async () => {
+            const title = document.getElementById('newDateTitle').value;
+            const date = document.getElementById('newDateValue').value;
+            if(!title || !date) return alert("請填寫完整名稱與日期");
+            
+            const newDates = [...importantDates, { title, date }];
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+            document.getElementById('newDateTitle').value = '';
+            document.getElementById('newDateValue').value = '';
+        };
+
+        window.deleteImportantDate = async (index) => {
+            if(!confirm("確定刪除此日程？")) return;
+            const newDates = [...importantDates];
+            newDates.splice(index, 1);
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+        };
+
+        window.sendChat = async () => {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            const newMsg = { user: username, text: text, timestamp: new Date().toISOString() };
+            const newChat = [...chatMessages, newMsg];
+            if(newChat.length > 50) newChat.shift();
+            
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), { messages: newChat });
+            input.value = '';
+        };
 
         window.openScoreModal = (dateStr) => {
             modalState = { date: dateStr, subject: '', grade: '', photoBase64: '' };
             document.getElementById('modal-date').innerText = dateStr;
             
-            // 重置選單狀態
             SUBJECTS.forEach(s => { document.getElementById(`btn-sub-${s}`).classList.remove('bg-teal-500', 'text-white'); });
             GRADES.forEach(g => { document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`).classList.remove('bg-rose-500', 'text-white'); });
             
-            // 照片重置
             document.getElementById('photo-upload').value = '';
             document.getElementById('photo-preview-container').classList.add('hidden');
             document.getElementById('photo-placeholder').classList.remove('hidden');
@@ -663,7 +688,7 @@
 
         window.viewOthersScore = (otherUser, dateStr) => {
             const data = allGrades[otherUser] && allGrades[otherUser][dateStr];
-            if(!data) return; // 無資料不顯示
+            if(!data) return; 
             
             let info = `${otherUser} 在 ${dateStr} 的成績：\n\n`;
             Object.entries(data).forEach(([sub, item]) => {
@@ -691,10 +716,9 @@
                 else el.classList.remove('bg-teal-500', 'text-white');
             });
             
-            // 載入該科目現有成績
             const existing = allGrades[username]?.[modalState.date]?.[sub];
             if (existing) {
-                selectGrade(existing.grade);
+                window.selectGrade(existing.grade);
                 if (existing.photo) setPhotoPreview(existing.photo);
                 document.getElementById('btn-delete-grade').classList.remove('hidden');
             } else {
@@ -716,7 +740,6 @@
             });
         };
 
-        // 圖片壓縮邏輯 (Canvas)
         window.handlePhotoUpload = (e) => {
             const file = e.target.files[0];
             if(!file) return;
@@ -726,7 +749,6 @@
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    // 壓縮至最大寬度 400px 以適應 Firestore 限制
                     const MAX_WIDTH = 400;
                     const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
                     canvas.width = img.width * scale;
@@ -735,7 +757,6 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     
-                    // 轉換為 JPEG，品質 0.6
                     const base64 = canvas.toDataURL('image/jpeg', 0.6);
                     setPhotoPreview(base64);
                 };
@@ -757,7 +778,6 @@
             if(!modalState.subject) return alert("請選擇科目！");
             if(!modalState.grade) return alert("請選擇成績等級！");
 
-            // 複製一份當前的 allGrades 來進行修改
             let updatedGrades = JSON.parse(JSON.stringify(allGrades));
             
             if(!updatedGrades[username]) updatedGrades[username] = {};
@@ -771,7 +791,7 @@
             try {
                 const gradesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'AllGrades');
                 await setDoc(gradesRef, { data: updatedGrades }, { merge: true });
-                closeModal();
+                window.closeModal();
             } catch(e) {
                 console.error(e);
                 alert("儲存失敗，請確認圖片是否過大！");
@@ -786,7 +806,6 @@
             if(updatedGrades[username]?.[modalState.date]?.[modalState.subject]) {
                 delete updatedGrades[username][modalState.date][modalState.subject];
                 
-                // 若當天空了，把當天節點也刪掉
                 if(Object.keys(updatedGrades[username][modalState.date]).length === 0) {
                     delete updatedGrades[username][modalState.date];
                 }
@@ -794,20 +813,21 @@
                 try {
                     const gradesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'AllGrades');
                     await setDoc(gradesRef, { data: updatedGrades }, { merge: true });
-                    closeModal();
+                    window.closeModal();
                 } catch(e) {
                     console.error(e);
                 }
             }
         };
 
-        // Modal 背景點擊關閉
         document.addEventListener('click', (e) => {
             const modal = document.getElementById('score-modal');
-            if (e.target === modal) closeModal();
+            if (e.target === modal) window.closeModal();
         });
 
-        // 啟動 App
+        // ==========================================
+        //  啟動 App
+        // ==========================================
         initApp();
 
     </script>
