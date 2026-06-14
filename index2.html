@@ -208,7 +208,7 @@
                     </div>
                 </div>
 
-                <!-- 內容區: 三欄式設計 (左: 倒數/聊天, 中: 月曆儀表板, 右: 動態與排行榜) -->
+                <!-- 內容區: 三欄式設計 (左: 倒數/聊天, 中: 月曆儀表板, 右: 動態牆) -->
                 <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
                     
                     <!-- 左側邊欄 (倒數 + 聊天室) -->
@@ -225,7 +225,7 @@
                     </div>
 
                     <!-- 中間區塊 (個人專屬月曆儀表板) -->
-                    <div class="flex-1 bg-white/30 p-4 flex flex-col relative z-0">
+                    <div class="flex-1 bg-white/30 p-4 flex flex-col relative z-0 border-b-2 md:border-b-0 md:border-r-2 border-pink-100">
                         <!-- 切換月份控制列 -->
                         <div class="flex justify-between items-center mb-4 bg-white/80 p-3 rounded-2xl border border-pink-100 shadow-sm shrink-0">
                             <button onclick="changeMonth(-1)" class="px-4 py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm">◀ 上個月</button>
@@ -239,18 +239,10 @@
                         <div id="calendar-grid" class="flex-1 flex flex-col min-h-0"></div>
                     </div>
 
-                    <!-- 右側區塊 (戰況動態牆 + 排行榜) -->
-                    <div class="w-full md:w-72 lg:w-80 flex flex-col bg-white/60 z-10 shrink-0 border-l-2 border-pink-100">
-                        <!-- 上半部: 戰況動態牆 -->
-                        <div class="flex-1 flex flex-col min-h-0 border-b-2 border-pink-100">
-                            <div class="bg-gradient-to-r from-rose-100 to-pink-100 p-2 text-center font-bold text-rose-600 shadow-sm shrink-0 text-sm">🌟 最新戰況動態</div>
-                            <div id="timeline-feed" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar"></div>
-                        </div>
-                        <!-- 下半部: 榮譽排行榜 -->
-                        <div class="flex-1 flex flex-col min-h-0">
-                            <div class="bg-gradient-to-r from-teal-100 to-emerald-100 p-2 text-center font-bold text-teal-700 shadow-sm shrink-0 text-sm">🏆 榮譽排行榜</div>
-                            <div id="leaderboard-feed" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-teal-50/30"></div>
-                        </div>
+                    <!-- 右側區塊 (戰況動態牆) -->
+                    <div class="w-full md:w-72 lg:w-80 flex flex-col bg-white/60 z-10 shrink-0">
+                        <div class="bg-gradient-to-r from-rose-100 to-pink-100 p-3 text-center font-bold text-rose-600 border-b border-pink-200 shadow-sm">🌟 戰況動態牆</div>
+                        <div id="timeline-feed" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"></div>
                     </div>
                 </div>
 
@@ -393,8 +385,10 @@
 
             header.innerText = `${currentYear} 年 ${currentMonth + 1} 月`;
 
-            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            // 計算月曆天數分佈
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay(); // 0(Sun) - 6(Sat)
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            // 設定為星期一為每週第一天: 星期一=0, 星期日=6
             const startPad = firstDay === 0 ? 6 : firstDay - 1;
 
             let html = `<div class="grid grid-cols-7 gap-2 mb-2 shrink-0">`;
@@ -402,14 +396,14 @@
                 const isWeekend = idx >= 5;
                 html += `<div class="text-center font-bold ${isWeekend ? 'text-rose-500 bg-rose-50' : 'text-teal-700 bg-teal-50'} py-2 rounded-xl shadow-sm border border-gray-100">${d}</div>`;
             });
-            
-            // 加入 auto-rows-[120px] 固定每個格子的高度，超過即產生內部滾動條
-            html += `</div><div class="grid grid-cols-7 gap-2 flex-1 auto-rows-[120px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
+            html += `</div><div class="grid grid-cols-7 gap-2 flex-1 auto-rows-[minmax(80px,1fr)]">`;
 
+            // 前方空白補位
             for(let i=0; i<startPad; i++) {
                 html += `<div class="bg-white/30 rounded-2xl border border-transparent"></div>`;
             }
 
+            // 日期格子
             for(let d=1; d<=daysInMonth; d++) {
                 const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const isToday = dateStr === formatDate(new Date());
@@ -418,7 +412,7 @@
 
                 let cellContent = '';
                 if (myGrades && Object.keys(myGrades).length > 0) {
-                    cellContent = `<div class="flex flex-col gap-1.5 w-full mt-1 pb-1">`;
+                    cellContent = `<div class="flex flex-col gap-1 w-full mt-1">`;
                     Object.entries(myGrades).forEach(([sub, info]) => {
                         let isA = info.grade.includes('A');
                         let color = isA ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-teal-50 text-teal-700 border-teal-200';
@@ -433,6 +427,7 @@
                     cellContent += `</div>`;
                 }
 
+                // Header 樣式區分
                 const headerClass = isToday 
                     ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-white shadow-md' 
                     : isImportant 
@@ -441,11 +436,11 @@
 
                 html += `
                     <div onclick="openScoreModal('${dateStr}')" class="bg-white border-2 border-pink-100 p-2 rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group">
-                        <div class="flex justify-between items-start shrink-0 mb-1">
+                        <div class="flex justify-between items-start shrink-0">
                             <span class="w-7 h-7 flex items-center justify-center rounded-full text-sm font-bold ${headerClass}">${d}</span>
                             ${isImportant ? `<span class="text-sm drop-shadow-sm group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
                         </div>
-                        <div class="flex-1 overflow-y-auto custom-scrollbar">
+                        <div class="flex-1 overflow-y-auto custom-scrollbar mt-1">
                             ${cellContent}
                         </div>
                     </div>
@@ -459,6 +454,7 @@
             const container = document.getElementById('timeline-feed');
             if(!container) return;
 
+            // 扁平化整合所有人的成績紀錄
             const feed = [];
             Object.entries(allGrades).forEach(([u, dates]) => {
                 Object.entries(dates).forEach(([d, subjects]) => {
@@ -468,6 +464,7 @@
                 });
             });
 
+            // 依照更新時間排序 (若無 updatedAt 則依據日期)
             feed.sort((a,b) => {
                 const timeA = a.updatedAt ? new Date(a.updatedAt) : new Date(a.date);
                 const timeB = b.updatedAt ? new Date(b.updatedAt) : new Date(b.date);
@@ -492,78 +489,17 @@
                 const bgColor = isA ? 'bg-gradient-to-br from-white to-rose-50' : 'bg-gradient-to-br from-white to-teal-50';
 
                 html += `
-                    <div class="p-3 rounded-2xl border-2 ${borderColor} ${bgColor} shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" onclick="viewOthersScore('${item.user}', '${item.date}')">
-                        <div class="flex justify-between items-center mb-1">
+                    <div class="p-4 rounded-2xl border-2 ${borderColor} ${bgColor} shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" onclick="viewOthersScore('${item.user}', '${item.date}')">
+                        <div class="flex justify-between items-center mb-2">
                             <span class="font-bold text-gray-700 bg-white px-2 py-0.5 rounded shadow-sm text-xs border border-gray-100">
                                 ${isMe ? '👦 我' : '🏃 ' + item.user}
                             </span>
                             <span class="text-[10px] text-gray-400 font-mono">${item.date}</span>
                         </div>
-                        <div class="text-sm text-gray-600">
+                        <div class="text-sm text-gray-600 mt-1">
                             在 ${item.subject} 測驗斬獲了 <span class="font-black text-lg mx-1 ${isA ? 'text-rose-600' : 'text-teal-600'}">${item.grade}</span> ${emoji}
                         </div>
-                        ${item.photo ? `<div class="absolute right-3 bottom-2 text-purple-400 text-lg opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        };
-
-        window.renderLeaderboard = () => {
-            const container = document.getElementById('leaderboard-feed');
-            if(!container) return;
-
-            let userStats = [];
-            
-            globalUsers.forEach(u => {
-                let stats = { user: u, aPlusPlus: 0, aPlus: 0, a: 0, totalEntries: 0 };
-                const uGrades = allGrades[u] || {};
-                Object.values(uGrades).forEach(dayGrades => {
-                    Object.values(dayGrades).forEach(item => {
-                        stats.totalEntries++;
-                        if (item.grade === 'A++') stats.aPlusPlus++;
-                        if (item.grade === 'A+') stats.aPlus++;
-                        if (item.grade === 'A') stats.a++;
-                    });
-                });
-                
-                // 簡單積分權重: A++得3分, A+得2分, A得1分 (作為排序依據)
-                stats.score = stats.aPlusPlus * 3 + stats.aPlus * 2 + stats.a * 1;
-                userStats.push(stats);
-            });
-
-            // 依據分數降序排列，同分則比刷題總數
-            userStats.sort((a, b) => b.score - a.score || b.totalEntries - a.totalEntries);
-
-            if (userStats.length === 0 || userStats[0].totalEntries === 0) {
-                container.innerHTML = `<div class="text-center text-gray-400 text-sm mt-4 font-bold">目前無人上榜</div>`;
-                return;
-            }
-
-            let html = '';
-            userStats.forEach((stat, index) => {
-                if (stat.totalEntries === 0) return; // 沒填過成績的不列入榜單
-                
-                let rankMedal = '';
-                if (index === 0) rankMedal = '🥇';
-                else if (index === 1) rankMedal = '🥈';
-                else if (index === 2) rankMedal = '🥉';
-                else rankMedal = `<span class="text-teal-700 bg-teal-100 rounded-full w-6 h-6 flex items-center justify-center text-xs font-black shadow-inner">${index + 1}</span>`;
-
-                html += `
-                    <div class="bg-white rounded-xl p-2.5 border border-teal-100 shadow-sm flex items-center gap-3 relative hover:scale-[1.02] transition-transform cursor-default">
-                        <div class="text-2xl w-8 flex justify-center drop-shadow-sm">${rankMedal}</div>
-                        <div class="flex-1">
-                            <div class="font-black text-gray-700 text-sm mb-0.5">${stat.user}</div>
-                            <div class="text-[10px] text-gray-500 flex gap-2">
-                                <span class="text-rose-500 font-bold bg-rose-50 px-1.5 rounded">A++ x ${stat.aPlusPlus}</span>
-                                <span class="text-orange-500 font-bold bg-orange-50 px-1.5 rounded">A+ x ${stat.aPlus}</span>
-                            </div>
-                        </div>
-                        <div class="text-center bg-gray-50 p-1.5 rounded-lg border border-gray-100">
-                            <div class="text-[10px] text-gray-400 font-bold">總刷題</div>
-                            <div class="font-black text-teal-600 text-base leading-none">${stat.totalEntries}</div>
-                        </div>
+                        ${item.photo ? `<div class="absolute right-3 bottom-3 text-purple-400 text-lg opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
                     </div>
                 `;
             });
@@ -573,7 +509,6 @@
         window.renderMainContent = () => {
             if(window.renderCalendar) window.renderCalendar();
             if(window.renderTimeline) window.renderTimeline();
-            if(window.renderLeaderboard) window.renderLeaderboard();
         };
 
 
