@@ -118,7 +118,7 @@
         let unsubUsers, unsubDates, unsubGrades, unsubChat;
 
         // ==========================================
-        //  輔助工具函式 (含專屬顏色設定)
+        //  輔助工具函式
         // ==========================================
         const getDaysLeft = (targetDateStr) => {
             const now = new Date();
@@ -132,38 +132,6 @@
         const formatDate = (date) => {
             const d = new Date(date);
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        };
-
-        // 依據名稱分配唯一的頭像顏色
-        const getUserColorClass = (name) => {
-            const colors = [
-                'bg-red-500 text-white', 'bg-blue-500 text-white', 'bg-emerald-500 text-white', 
-                'bg-amber-500 text-white', 'bg-purple-500 text-white', 'bg-pink-500 text-white', 
-                'bg-indigo-500 text-white', 'bg-teal-500 text-white', 'bg-orange-500 text-white',
-                'bg-cyan-500 text-white', 'bg-rose-500 text-white', 'bg-fuchsia-500 text-white'
-            ];
-            let hash = 0;
-            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-            return colors[Math.abs(hash) % colors.length];
-        };
-
-        // 每個科目與細項的專屬色彩設定
-        const SUB_COLORS = {
-            '國文': 'bg-red-50 text-red-800 border-red-200',
-            '英文': 'bg-blue-50 text-blue-800 border-blue-200',
-            '數學': 'bg-indigo-50 text-indigo-800 border-indigo-200',
-            '自然': 'bg-emerald-50 text-emerald-800 border-emerald-200',
-            '自然合科': 'bg-emerald-50 text-emerald-800 border-emerald-200',
-            '生物': 'bg-lime-50 text-lime-800 border-lime-200',
-            '理化': 'bg-cyan-50 text-cyan-800 border-cyan-200',
-            '地科': 'bg-teal-50 text-teal-800 border-teal-200',
-            '地球科學': 'bg-teal-50 text-teal-800 border-teal-200',
-            '社會': 'bg-orange-50 text-orange-800 border-orange-200',
-            '社會合科': 'bg-orange-50 text-orange-800 border-orange-200',
-            '歷史': 'bg-amber-50 text-amber-800 border-amber-200',
-            '地理': 'bg-yellow-50 text-yellow-800 border-yellow-200',
-            '公民': 'bg-purple-50 text-purple-800 border-purple-200',
-            'default': 'bg-gray-50 text-gray-800 border-gray-200'
         };
 
         const getStoredConfig = () => {
@@ -551,35 +519,12 @@
                 // 為了相容較舊的 iOS，避免使用 ?.
                 const userGrades = (allGrades[viewingUser] && allGrades[viewingUser][dateStr]) ? allGrades[viewingUser][dateStr] : null;
 
-                // --- 1. 產生當天有紀錄的所有人頭像圈圈 ---
-                let avatarHtml = '';
-                const activeUsersToday = [];
-                Object.keys(allGrades).forEach(u => {
-                    if (allGrades[u] && allGrades[u][dateStr] && Object.keys(allGrades[u][dateStr]).length > 0) {
-                        activeUsersToday.push(u);
-                    }
-                });
-
-                if (activeUsersToday.length > 0) {
-                    avatarHtml = `<div class="flex flex-wrap gap-1 md:gap-1.5 mb-1 md:mb-2 w-full shrink-0 border-b border-pink-50/50 pb-1 2xl:pb-2">`;
-                    activeUsersToday.forEach(u => {
-                        const firstChar = u.charAt(0);
-                        const uColor = getUserColorClass(u);
-                        // 點擊頭像時，觸發查看，並阻擋事件傳遞(避免觸發到下方的編輯modal)
-                        avatarHtml += `<div onclick="viewOthersScore('${u}', '${dateStr}'); event.stopPropagation();" 
-                            class="w-4 h-4 md:w-5 md:h-5 xl:w-6 xl:h-6 2xl:w-8 2xl:h-8 rounded-full flex items-center justify-center text-[8px] md:text-[10px] xl:text-xs 2xl:text-base font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform ${uColor} border border-white" title="查看 ${u} 的紀錄">
-                            ${firstChar}
-                        </div>`;
-                    });
-                    avatarHtml += `</div>`;
-                }
-
-                // --- 2. 產生目前查看者 (viewingUser) 的成績紀錄 ---
                 let cellContent = '';
                 if (userGrades && Object.keys(userGrades).length > 0) {
-                    cellContent = `<div class="flex flex-col gap-1 xl:gap-1.5 2xl:gap-2 w-full mt-1 2xl:mt-2 pb-1">`;
+                    cellContent = `<div class="flex flex-col gap-1 xl:gap-1.5 2xl:gap-2 w-full mt-1 2xl:mt-3 pb-1">`;
                     Object.entries(userGrades).forEach(([subKey, info]) => {
-                        let colorClass = SUB_COLORS[subKey] || SUB_COLORS['default'];
+                        let isA = info.grade.includes('A');
+                        let color = isA ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-teal-50 text-teal-700 border-teal-200';
                         
                         let shortName = subKey;
                         if(subKey === '自然合科') shortName = '自';
@@ -589,8 +534,8 @@
                         else shortName = subKey.charAt(0);
 
                         cellContent += `
-                            <div class="text-[9px] md:text-[11px] xl:text-[13px] 2xl:text-lg font-bold ${colorClass} border px-1 md:px-1.5 xl:px-2 2xl:px-3 py-0.5 md:py-1 2xl:py-1.5 rounded xl:rounded-md 2xl:rounded-lg flex items-center justify-between shadow-sm">
-                                <span>${shortName} <span class="font-black ml-1 text-rose-600">${info.grade}</span></span>
+                            <div class="text-[9px] md:text-[11px] xl:text-[13px] 2xl:text-lg font-bold ${color} border px-1 md:px-1.5 xl:px-2 2xl:px-3 py-0.5 md:py-1 2xl:py-1.5 rounded xl:rounded-md 2xl:rounded-lg flex items-center justify-between shadow-sm">
+                                <span>${shortName} <span class="font-black ml-1">${info.grade}</span></span>
                                 ${info.photo ? '<span class="text-[8px] md:text-[9px] xl:text-xs 2xl:text-base text-purple-500">📸</span>' : ''}
                             </div>
                         `;
@@ -615,8 +560,7 @@
                             <span class="w-5 h-5 md:w-7 md:h-7 xl:w-8 xl:h-8 2xl:w-12 2xl:h-12 flex items-center justify-center rounded-full text-xs md:text-sm xl:text-base 2xl:text-2xl font-bold ${headerClass}">${d}</span>
                             ${isImportant ? `<span class="text-xs md:text-sm xl:text-base 2xl:text-2xl drop-shadow-sm group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
                         </div>
-                        <div class="flex-1 flex flex-col overflow-y-auto custom-scrollbar min-h-0">
-                            ${avatarHtml}
+                        <div class="flex-1 overflow-y-auto custom-scrollbar">
                             ${cellContent}
                         </div>
                     </div>
@@ -659,27 +603,21 @@
                 const isMe = item.user === username;
                 const isA = item.grade.includes('A');
                 const emoji = isA ? '🏆' : '💪';
-                
-                // 套用各科目專屬顏色到卡片上
-                const subColorClass = SUB_COLORS[item.subject] || SUB_COLORS['default'];
-                const uColor = getUserColorClass(item.user);
-                const firstChar = item.user.charAt(0);
+                const borderColor = isA ? 'border-rose-300' : 'border-teal-200';
+                const bgColor = isA ? 'bg-gradient-to-br from-white to-rose-50' : 'bg-gradient-to-br from-white to-teal-50';
 
                 html += `
-                    <div class="p-3 xl:p-4 2xl:p-6 rounded-2xl 2xl:rounded-3xl shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all border ${subColorClass}" onclick="viewOthersScore('${item.user}', '${item.date}')">
+                    <div class="p-3 xl:p-4 2xl:p-6 rounded-2xl 2xl:rounded-3xl border-2 ${borderColor} ${bgColor} shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" onclick="viewOthersScore('${item.user}', '${item.date}')">
                         <div class="flex justify-between items-center mb-1 2xl:mb-3">
-                            <div class="flex items-center gap-2">
-                                <span class="w-5 h-5 xl:w-6 xl:h-6 2xl:w-8 2xl:h-8 rounded-full flex items-center justify-center text-[10px] xl:text-xs 2xl:text-sm font-bold shadow-sm ${uColor} border border-white">${firstChar}</span>
-                                <span class="font-bold text-gray-700 bg-white/80 px-2 xl:px-3 py-0.5 xl:py-1 2xl:px-4 2xl:py-1.5 rounded xl:rounded-md shadow-sm text-xs xl:text-sm 2xl:text-lg border border-gray-100">
-                                    ${isMe ? '👦 我' : item.user}
-                                </span>
-                            </div>
-                            <span class="text-[10px] xl:text-xs 2xl:text-base text-gray-400 font-mono bg-white/50 px-2 rounded-full">${item.date}</span>
+                            <span class="font-bold text-gray-700 bg-white px-2 xl:px-3 py-0.5 xl:py-1 2xl:px-4 2xl:py-1.5 rounded xl:rounded-md shadow-sm text-xs xl:text-sm 2xl:text-lg border border-gray-100">
+                                ${isMe ? '👦 我' : '🏃 ' + item.user}
+                            </span>
+                            <span class="text-[10px] xl:text-xs 2xl:text-base text-gray-400 font-mono">${item.date}</span>
                         </div>
-                        <div class="text-sm xl:text-base 2xl:text-xl font-bold mt-2">
-                            在 ${item.subject} 測驗斬獲了 <span class="font-black text-lg xl:text-xl 2xl:text-3xl mx-1 2xl:mx-2 text-rose-600">${item.grade}</span> ${emoji}
+                        <div class="text-sm xl:text-base 2xl:text-xl text-gray-600">
+                            在 ${item.subject} 測驗斬獲了 <span class="font-black text-lg xl:text-xl 2xl:text-3xl mx-1 2xl:mx-2 ${isA ? 'text-rose-600' : 'text-teal-600'}">${item.grade}</span> ${emoji}
                         </div>
-                        ${item.photo ? `<div class="absolute right-3 bottom-2 2xl:right-5 2xl:bottom-4 text-purple-500 text-lg xl:text-xl 2xl:text-3xl opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
+                        ${item.photo ? `<div class="absolute right-3 bottom-2 2xl:right-5 2xl:bottom-4 text-purple-400 text-lg xl:text-xl 2xl:text-3xl opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
                     </div>
                 `;
             });
@@ -972,25 +910,17 @@
             }
             
             document.getElementById('view-modal-date').innerText = dateStr;
-            const uColor = getUserColorClass(otherUser);
-            const firstChar = otherUser.charAt(0);
-
-            let contentHtml = `
-                <div class="flex items-center gap-3 mb-4 xl:mb-6 2xl:mb-8 border-b-2 border-teal-200 pb-2 2xl:pb-4">
-                    <div class="w-8 h-8 xl:w-10 xl:h-10 2xl:w-14 2xl:h-14 rounded-full flex items-center justify-center text-sm xl:text-base 2xl:text-2xl font-bold shadow-sm ${uColor} border-2 border-white">${firstChar}</div>
-                    <h3 class="font-black text-lg xl:text-xl 2xl:text-3xl text-teal-800"> ${otherUser} 的戰果</h3>
-                </div>`;
+            let contentHtml = `<h3 class="font-black text-lg xl:text-xl 2xl:text-3xl text-teal-800 mb-4 xl:mb-6 2xl:mb-8 border-b-2 border-teal-200 pb-2 2xl:pb-4">👦 ${otherUser} 的戰果</h3>`;
             
             Object.entries(data).forEach(([subKey, item]) => {
-                let colorClass = SUB_COLORS[subKey] || SUB_COLORS['default'];
                 let isA = item.grade.includes('A');
-                let gradeColor = isA ? 'text-rose-600' : 'text-gray-700';
+                let color = isA ? 'text-rose-600 bg-rose-50 border-rose-200' : 'text-teal-700 bg-teal-50 border-teal-200';
                 
                 contentHtml += `
-                    <div class="mb-5 xl:mb-6 2xl:mb-8 bg-white p-4 xl:p-6 2xl:p-8 rounded-2xl 2xl:rounded-3xl shadow-sm border ${colorClass}">
+                    <div class="mb-5 xl:mb-6 2xl:mb-8 bg-white p-4 xl:p-6 2xl:p-8 rounded-2xl 2xl:rounded-3xl shadow-sm border ${color}">
                         <div class="flex justify-between items-center mb-2 xl:mb-4 2xl:mb-6">
                             <span class="font-bold text-lg xl:text-xl 2xl:text-3xl">📌 ${subKey}</span>
-                            <span class="font-black text-xl xl:text-2xl 2xl:text-4xl ${gradeColor}">${item.grade}</span>
+                            <span class="font-black text-xl xl:text-2xl 2xl:text-4xl">${item.grade}</span>
                         </div>
                         ${item.photo ? `<div class="mt-3 xl:mt-4 2xl:mt-6"><img src="${item.photo}" class="w-full rounded-xl 2xl:rounded-2xl border border-gray-200 shadow-sm" alt="考卷照片"></div>` : `<div class="text-xs xl:text-sm 2xl:text-xl text-gray-400 text-center mt-2 xl:mt-3 2xl:mt-4">（無附照片）</div>`}
                     </div>
