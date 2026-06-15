@@ -7,6 +7,15 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
+        /* 確保所有瀏覽器(包含舊版iPad Safari)都能給予正確的滿版高度 */
+        html, body {
+            height: 100%; 
+            height: -webkit-fill-available;
+            height: 100dvh;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'Varela Round', 'Noto Sans TC', sans-serif;
             background-color: #fdfbfb;
@@ -60,7 +69,7 @@
         .chat-bubble-other { background: #fce7f3; border-radius: 1rem 1rem 1rem 0; }
     </style>
 </head>
-<body class="h-[100dvh] w-full flex flex-col overflow-hidden">
+<body class="w-full flex flex-col overflow-hidden">
 
     <div id="app" class="w-full h-full flex flex-col overflow-hidden"></div>
 
@@ -301,7 +310,7 @@
 
                 <!-- 成績輸入 Modal -->
                 <div id="score-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200 flex flex-col max-h-[95dvh]" id="score-modal-content">
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 95%; max-height: 95dvh;" id="score-modal-content">
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
                             <h2 class="text-xl font-bold flex items-center gap-2">📝 紀錄模擬成績 <span id="modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
                             <button onclick="closeModal()" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
@@ -351,7 +360,7 @@
 
                 <!-- 查看他人成績 Modal -->
                 <div id="view-score-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[60] p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col max-h-[90dvh]">
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 90%; max-height: 90dvh;">
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
                             <h2 class="text-xl font-bold flex items-center gap-2">👀 查看成績 <span id="view-modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
                             <button onclick="closeViewModal()" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
@@ -504,7 +513,9 @@
                 const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const isToday = dateStr === formatDate(new Date());
                 const isImportant = importantDates.find(i => i.date === dateStr);
-                const userGrades = allGrades[viewingUser]?.[dateStr];
+                
+                // 為了相容較舊的 iOS，避免使用 ?.
+                const userGrades = (allGrades[viewingUser] && allGrades[viewingUser][dateStr]) ? allGrades[viewingUser][dateStr] : null;
 
                 let cellContent = '';
                 if (userGrades && Object.keys(userGrades).length > 0) {
@@ -890,7 +901,7 @@
         };
 
         window.viewOthersScore = (otherUser, dateStr) => {
-            const data = allGrades[otherUser] && allGrades[otherUser][dateStr];
+            const data = (allGrades[otherUser] && allGrades[otherUser][dateStr]) ? allGrades[otherUser][dateStr] : null;
             if(!data || Object.keys(data).length === 0) {
                 alert(`${otherUser} 在 ${dateStr} 尚未登錄任何成績喔！`);
                 return; 
@@ -967,7 +978,7 @@
 
                 let subToSelect = SUB_SUBJECTS[sub][0];
                 for (let sItem of SUB_SUBJECTS[sub]) {
-                    if (allGrades[username]?.[modalState.date]?.[sItem]) {
+                    if (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][sItem]) {
                         subToSelect = sItem; break;
                     }
                 }
@@ -991,7 +1002,8 @@
                 });
             }
             
-            const existing = allGrades[username]?.[modalState.date]?.[subItem];
+            const existing = (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][subItem]) ? allGrades[username][modalState.date][subItem] : null;
+            
             if (existing) {
                 window.selectGrade(existing.grade);
                 if (existing.photo) setPhotoPreview(existing.photo);
@@ -1084,7 +1096,7 @@
             if(!confirm(`確定要刪除 ${modalState.date} 的 ${modalState.subSubject} 紀錄嗎？`)) return;
 
             let updatedGrades = JSON.parse(JSON.stringify(allGrades));
-            if(updatedGrades[username]?.[modalState.date]?.[modalState.subSubject]) {
+            if(updatedGrades[username] && updatedGrades[username][modalState.date] && updatedGrades[username][modalState.date][modalState.subSubject]) {
                 delete updatedGrades[username][modalState.date][modalState.subSubject];
                 
                 if(Object.keys(updatedGrades[username][modalState.date]).length === 0) {
