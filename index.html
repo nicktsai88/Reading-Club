@@ -1041,7 +1041,9 @@
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 400;
+                    
+                    // --- 高畫質處理 ---
+                    const MAX_WIDTH = 1200; // 提升為1200以獲得高畫質
                     const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
                     canvas.width = img.width * scale;
                     canvas.height = img.height * scale;
@@ -1049,7 +1051,8 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     
-                    const base64 = canvas.toDataURL('image/jpeg', 0.6);
+                    // 將品質提升至 0.85
+                    const base64 = canvas.toDataURL('image/jpeg', 0.85);
                     setPhotoPreview(base64);
                 };
                 img.src = event.target.result;
