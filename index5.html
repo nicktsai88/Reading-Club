@@ -33,28 +33,6 @@
 
         .animate-bounce-slow { animation: bounce 3s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(-5%); } 50% { transform: translateY(0); } }
-
-        /* 垂直跑馬燈效果設定 */
-        @keyframes marqueeVertical {
-            0% { transform: translateY(100%); }
-            100% { transform: translateY(-100%); }
-        }
-        .marquee-container {
-            overflow: hidden;
-            position: relative;
-            -webkit-mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
-            mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
-        }
-        .marquee-content {
-            position: absolute;
-            width: 100%;
-            /* 15秒循環一次，可依喜好調整 */
-            animation: marqueeVertical 15s linear infinite;
-        }
-        .marquee-container:hover .marquee-content, 
-        .marquee-container:active .marquee-content {
-            animation-play-state: paused;
-        }
         
         .chat-bubble-me { background: #e0f2fe; border-radius: 1rem 1rem 0 1rem; }
         .chat-bubble-other { background: #fce7f3; border-radius: 1rem 1rem 1rem 0; }
@@ -93,7 +71,7 @@
         let appInstance, auth, db;
         let currentUser = null;
         let username = '';
-        let viewingUser = ''; 
+        let viewingUser = ''; // 目前查看月曆的使用者
         let isAdmin = false;
         
         let globalUsers = [];
@@ -183,13 +161,13 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         </button>
                         
-                        <!-- 大幅加大的學校 Logo -->
-                        <div class="flex justify-center items-center gap-4 md:gap-6 mb-8 mt-2">
-                            <div class="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-1 shadow-lg border-4 border-red-200 overflow-hidden flex justify-center items-center hover:scale-105 transition-transform">
+                        <!-- 修改為直接載入實際圖片 -->
+                        <div class="flex justify-center items-center gap-6 mb-8">
+                            <div class="w-20 h-20 bg-white rounded-full p-1 shadow-md border-2 border-red-200 overflow-hidden flex justify-center items-center">
                                 <img src="school1.jpg" alt="雄中" class="w-full h-full object-contain rounded-full">
                             </div>
-                            <div class="text-4xl md:text-5xl font-black text-pink-400">X</div>
-                            <div class="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-1 shadow-lg border-4 border-red-200 overflow-hidden flex justify-center items-center hover:scale-105 transition-transform">
+                            <div class="text-3xl font-black text-pink-400">X</div>
+                            <div class="w-20 h-20 bg-white rounded-full p-1 shadow-md border-2 border-red-200 overflow-hidden flex justify-center items-center">
                                 <img src="school2.jpg" alt="雄女" class="w-full h-full object-contain rounded-full">
                             </div>
                         </div>
@@ -224,19 +202,18 @@
                 <!-- 頂部導航 -->
                 <div class="bg-white/80 backdrop-blur-md border-b-2 border-pink-200 p-3 flex justify-between items-center shadow-sm shrink-0 z-20 relative">
                     <div class="flex items-center gap-4 pl-2">
-                        <!-- 加大的頂部 Logo -->
-                        <div class="flex -space-x-4">
-                            <img src="school1.jpg" alt="雄中" class="w-14 h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-10 bg-rose-50">
-                            <img src="school2.jpg" alt="雄女" class="w-14 h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-0 bg-rose-50">
+                        <!-- 修改為直接載入實際圖片 -->
+                        <div class="flex -space-x-3">
+                            <img src="school1.jpg" alt="雄中" class="w-10 h-10 object-contain rounded-full border-2 border-white shadow-sm z-10 bg-rose-50">
+                            <img src="school2.jpg" alt="雄女" class="w-10 h-10 object-contain rounded-full border-2 border-white shadow-sm z-0 bg-rose-50">
                         </div>
-                        <h1 class="text-2xl md:text-3xl font-black text-rose-500 tracking-wider hidden sm:block">邁向5A10+ 讀書會 🏆</h1>
-                        <h1 class="text-xl font-black text-rose-500 tracking-wider block sm:hidden">邁向5A10+</h1>
+                        <h1 class="text-xl md:text-2xl font-black text-rose-500 tracking-wider">邁向5A10+ 讀書會 🏆</h1>
                     </div>
                     <div class="flex items-center gap-3 pr-2">
                         <span class="font-bold text-teal-700 bg-teal-50 px-4 py-1.5 rounded-full border border-teal-200 shadow-sm text-sm hidden md:inline-block">
                             ${isAdmin ? '👑 管理員' : '👦 參賽者'} : ${username}
                         </span>
-                        <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-3 py-1.5 rounded-lg transition-colors text-sm border border-rose-200 bg-white shadow-sm shrink-0">登出 👋</button>
+                        <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-3 py-1.5 rounded-lg transition-colors text-sm border border-rose-200 bg-white shadow-sm">登出 👋</button>
                     </div>
                 </div>
 
@@ -245,40 +222,34 @@
                     
                     <!-- 左側邊欄 (倒數 + 聊天室) -->
                     <div class="w-full md:w-72 lg:w-80 flex flex-col bg-white/50 border-b-2 md:border-b-0 md:border-r-2 border-pink-100 z-10 shrink-0 h-full min-h-0">
+                        <div id="sidebar-countdowns" class="p-4 overflow-y-auto custom-scrollbar border-b-2 border-pink-100 shrink-0 max-h-[35%]"></div>
                         
-                        <!-- 上方固定倒數區與跑馬燈 -->
-                        <div id="sidebar-countdowns" class="p-4 flex flex-col border-b-2 border-pink-100 shrink-0 h-[45%] min-h-[250px] relative overflow-hidden"></div>
-                        
-                        <!-- 下方留言板區 -->
                         <div class="flex-1 flex flex-col bg-white/60 overflow-hidden relative min-h-0">
                             <div class="bg-pink-100/50 p-2 text-center font-bold text-pink-600 border-b border-pink-100 text-sm shadow-sm shrink-0">💬 加油打氣留言板</div>
                             <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-sm relative min-h-0"></div>
                             
-                            <!-- 輸入區，優化 padding 與 min-w-0 確保按鈕不被遮住 -->
                             <div class="p-2 bg-white flex flex-col border-t border-pink-100 relative shrink-0">
                                 <div id="emoji-picker" class="hidden absolute bottom-full left-2 mb-2 bg-white border border-pink-200 p-2 rounded-xl shadow-lg grid grid-cols-5 gap-2 z-50">
                                     ${['😀','😂','🥰','😎','🥺','💪','🔥','💯','📚','🎓','✨','🎉','📝','🏆','💖'].map(e => `<button onclick="insertEmoji('${e}')" class="text-xl hover:scale-125 transition-transform">${e}</button>`).join('')}
                                 </div>
-                                <div class="flex gap-1.5 items-center w-full">
-                                    <button id="emoji-toggle-btn" onclick="toggleEmojiPicker(event)" class="text-2xl hover:bg-pink-50 px-1 rounded-lg transition-colors shrink-0">😀</button>
-                                    <div class="flex-1 min-w-0">
-                                        <input type="text" id="chatInput" placeholder="說點什麼..." class="w-full px-3 py-2 rounded-lg border border-pink-200 focus:outline-none focus:border-pink-400 bg-gray-50 text-sm" onkeypress="if(event.key === 'Enter') sendChat()">
-                                    </div>
-                                    <button onclick="sendChat()" class="bg-pink-400 text-white px-3 py-2 rounded-lg font-bold hover:bg-pink-500 transition-colors shrink-0 whitespace-nowrap text-sm">送出</button>
+                                <div class="flex gap-2 items-center">
+                                    <button id="emoji-toggle-btn" onclick="toggleEmojiPicker(event)" class="text-2xl hover:bg-pink-50 px-2 rounded-lg transition-colors">😀</button>
+                                    <input type="text" id="chatInput" placeholder="說點什麼..." class="flex-1 px-3 py-2 rounded-lg border border-pink-200 focus:outline-none focus:border-pink-400 bg-gray-50" onkeypress="if(event.key === 'Enter') sendChat()">
+                                    <button onclick="sendChat()" class="bg-pink-400 text-white px-3 py-2 rounded-lg font-bold hover:bg-pink-500 transition-colors shrink-0">送出</button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- 中間區塊 (個人/他人月曆儀表板) -->
-                    <div class="flex-1 bg-white/30 p-4 flex flex-col relative z-0 min-w-0">
+                    <div class="flex-1 bg-white/30 p-4 flex flex-col relative z-0">
                         <!-- 切換月份控制列 -->
                         <div class="flex justify-between items-center mb-4 bg-white/80 p-3 rounded-2xl border border-pink-100 shadow-sm shrink-0">
-                            <button onclick="changeMonth(-1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">◀ 上個月</button>
-                            <div class="flex flex-col items-center flex-1 mx-2 overflow-hidden" id="calendar-header-container">
+                            <button onclick="changeMonth(-1)" class="px-4 py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm">◀ 上個月</button>
+                            <div class="flex flex-col items-center" id="calendar-header-container">
                                 <!-- 內容由 renderCalendar 生成 -->
                             </div>
-                            <button onclick="changeMonth(1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">下個月 ▶</button>
+                            <button onclick="changeMonth(1)" class="px-4 py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm">下個月 ▶</button>
                         </div>
                         <!-- 網格容器 -->
                         <div id="calendar-grid" class="flex-1 flex flex-col min-h-0"></div>
@@ -301,12 +272,12 @@
 
                 <!-- 成績輸入 Modal -->
                 <div id="score-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200 flex flex-col max-h-[95dvh]" id="score-modal-content">
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200" id="score-modal-content">
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
                             <h2 class="text-xl font-bold flex items-center gap-2">📝 紀錄模擬成績 <span id="modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
                             <button onclick="closeModal()" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
-                        <div class="p-6 space-y-5 bg-teal-50/30 overflow-y-auto flex-1 custom-scrollbar">
+                        <div class="p-6 space-y-5 bg-teal-50/30 overflow-y-auto max-h-[70vh] custom-scrollbar">
                             <div>
                                 <label class="block text-teal-800 font-bold mb-2">📚 選擇科目</label>
                                 <div class="grid grid-cols-5 gap-2" id="subject-selector">
@@ -351,7 +322,7 @@
 
                 <!-- 查看他人成績 Modal -->
                 <div id="view-score-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[60] p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col max-h-[90dvh]">
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col max-h-[90vh]">
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
                             <h2 class="text-xl font-bold flex items-center gap-2">👀 查看成績 <span id="view-modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
                             <button onclick="closeViewModal()" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
@@ -379,17 +350,14 @@
             const examDaysLeft = getDaysLeft(EXAM_DATE);
             
             let html = `
-                <div class="bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl p-5 text-center shadow-lg text-white mb-4 transform hover:scale-[1.02] transition-transform border border-pink-300 shrink-0 z-10 relative">
+                <div class="bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl p-5 text-center shadow-lg text-white mb-6 transform hover:scale-105 transition-transform border border-pink-300 shrink-0">
                     <h3 class="text-sm font-bold text-pink-100 mb-1">會考大日子 (2027-05-22)</h3>
                     <div class="text-5xl font-black drop-shadow-md mb-2">${examDaysLeft >= 0 ? examDaysLeft : 0} <span class="text-xl">天</span></div>
                     <div class="text-xs bg-black/20 rounded-full inline-block px-3 py-1 font-bold">🎯 決戰時刻</div>
                 </div>
                 
-                <h4 class="font-bold text-teal-700 mb-2 flex items-center gap-2 shrink-0 z-10 relative">🗓️ 重要考試里程碑</h4>
-                
-                <!-- 垂直跑馬燈容器 -->
-                <div class="marquee-container flex-1 w-full relative z-0 pb-1">
-                    <div class="marquee-content space-y-3 pt-2">
+                <h4 class="font-bold text-teal-700 mb-3 flex items-center gap-2 shrink-0">🗓️ 重要考試里程碑</h4>
+                <div class="space-y-3 mb-6 shrink-0">
             `;
 
             const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -408,20 +376,20 @@
                                 <span class="text-xl font-black ${days <= 7 ? 'text-rose-500' : 'text-teal-500'}">${days}</span>
                                 <span class="text-xs text-gray-500">天</span>
                             </div>
-                            ${isAdmin ? `<button onclick="deleteImportantDate(${index})" class="absolute right-0 top-0 bg-red-100 text-red-500 w-6 h-6 rounded-bl-lg text-xs opacity-0 group-hover:opacity-100 transition-opacity z-20 cursor-pointer">✕</button>` : ''}
+                            ${isAdmin ? `<button onclick="deleteImportantDate(${index})" class="absolute right-0 top-0 bg-red-100 text-red-500 w-6 h-6 rounded-bl-lg text-xs opacity-0 group-hover:opacity-100 transition-opacity">✕</button>` : ''}
                         </div>
                     `;
                 }
             });
-            html += `</div></div>`;
+            html += `</div>`;
 
             if (isAdmin) {
                 html += `
-                    <div class="bg-teal-50 p-3 rounded-xl border border-teal-200 mt-2 shrink-0 z-10 relative">
-                        <h4 class="text-[11px] font-bold text-teal-700 mb-1.5">👑 管理員新增日程</h4>
-                        <input type="text" id="newDateTitle" placeholder="考試名稱" class="w-full text-xs p-1.5 rounded border border-teal-200 mb-1.5 focus:outline-none">
-                        <input type="date" id="newDateValue" class="w-full text-xs p-1.5 rounded border border-teal-200 mb-1.5 focus:outline-none text-gray-600">
-                        <button onclick="addImportantDate()" class="w-full bg-teal-400 text-white text-xs font-bold py-1.5 rounded shadow-sm hover:bg-teal-500">新增</button>
+                    <div class="bg-teal-50 p-4 rounded-xl border border-teal-200 mt-auto shrink-0">
+                        <h4 class="text-xs font-bold text-teal-700 mb-2">👑 管理員新增日程</h4>
+                        <input type="text" id="newDateTitle" placeholder="考試名稱" class="w-full text-sm p-2 rounded border border-teal-200 mb-2 focus:outline-none">
+                        <input type="date" id="newDateValue" class="w-full text-sm p-2 rounded border border-teal-200 mb-2 focus:outline-none text-gray-600">
+                        <button onclick="addImportantDate()" class="w-full bg-teal-400 text-white text-sm font-bold py-2 rounded shadow-sm hover:bg-teal-500">新增</button>
                     </div>
                 `;
             }
@@ -477,9 +445,9 @@
             if(!container || !headerContainer) return;
 
             headerContainer.innerHTML = `
-                <h2 class="text-xl md:text-2xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
-                <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-teal-700 bg-teal-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
-                    ${globalUsers.map(u => `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>👦 ${u} 的進度</option>`).join('')}
+                <h2 class="text-2xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
+                <select onchange="changeViewingUser(this.value)" class="text-sm font-bold text-teal-700 bg-teal-50 pl-4 pr-8 py-1.5 rounded-full mt-1 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm">
+                    ${globalUsers.map(u => `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>👦 ${u} 的專屬進度</option>`).join('')}
                 </select>
             `;
 
@@ -487,17 +455,17 @@
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
             const startPad = firstDay === 0 ? 6 : firstDay - 1;
 
-            let html = `<div class="grid grid-cols-7 gap-1 md:gap-2 mb-2 shrink-0">`;
+            let html = `<div class="grid grid-cols-7 gap-2 mb-2 shrink-0">`;
             ['一', '二', '三', '四', '五', '六', '日'].forEach((d, idx) => {
                 const isWeekend = idx >= 5;
-                html += `<div class="text-center font-bold ${isWeekend ? 'text-rose-500 bg-rose-50' : 'text-teal-700 bg-teal-50'} py-1 md:py-2 text-sm md:text-base rounded-lg md:rounded-xl shadow-sm border border-gray-100">${d}</div>`;
+                html += `<div class="text-center font-bold ${isWeekend ? 'text-rose-500 bg-rose-50' : 'text-teal-700 bg-teal-50'} py-2 rounded-xl shadow-sm border border-gray-100">${d}</div>`;
             });
             
             // 加入 auto-rows-[120px] 固定每個格子的高度，超過即產生內部滾動條
-            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[100px] md:auto-rows-[120px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
+            html += `</div><div class="grid grid-cols-7 gap-2 flex-1 auto-rows-[120px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
 
             for(let i=0; i<startPad; i++) {
-                html += `<div class="bg-white/30 rounded-xl md:rounded-2xl border border-transparent"></div>`;
+                html += `<div class="bg-white/30 rounded-2xl border border-transparent"></div>`;
             }
 
             for(let d=1; d<=daysInMonth; d++) {
@@ -508,7 +476,7 @@
 
                 let cellContent = '';
                 if (userGrades && Object.keys(userGrades).length > 0) {
-                    cellContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
+                    cellContent = `<div class="flex flex-col gap-1.5 w-full mt-1 pb-1">`;
                     Object.entries(userGrades).forEach(([subKey, info]) => {
                         let isA = info.grade.includes('A');
                         let color = isA ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-teal-50 text-teal-700 border-teal-200';
@@ -521,9 +489,9 @@
                         else shortName = subKey.charAt(0);
 
                         cellContent += `
-                            <div class="text-[9px] md:text-[11px] font-bold ${color} border px-1 py-0.5 rounded flex items-center justify-between shadow-sm">
+                            <div class="text-[11px] font-bold ${color} border px-1.5 py-0.5 rounded flex items-center justify-between shadow-sm">
                                 <span>${shortName} <span class="font-black">${info.grade}</span></span>
-                                ${info.photo ? '<span class="text-[8px] md:text-[9px] text-purple-500">📸</span>' : ''}
+                                ${info.photo ? '<span class="text-[9px] text-purple-500">📸</span>' : ''}
                             </div>
                         `;
                     });
@@ -542,10 +510,10 @@
                     : `viewOthersScore('${viewingUser}', '${dateStr}')`;
 
                 html += `
-                    <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-2 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group">
-                        <div class="flex justify-between items-start shrink-0 mb-0.5 md:mb-1">
-                            <span class="w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass}">${d}</span>
-                            ${isImportant ? `<span class="text-xs md:text-sm drop-shadow-sm group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
+                    <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-2 rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group">
+                        <div class="flex justify-between items-start shrink-0 mb-1">
+                            <span class="w-7 h-7 flex items-center justify-center rounded-full text-sm font-bold ${headerClass}">${d}</span>
+                            ${isImportant ? `<span class="text-sm drop-shadow-sm group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
                         </div>
                         <div class="flex-1 overflow-y-auto custom-scrollbar">
                             ${cellContent}
@@ -655,14 +623,14 @@
                 html += `
                     <div class="bg-white rounded-xl p-2.5 border border-teal-100 shadow-sm flex items-center gap-3 relative hover:scale-[1.02] transition-transform cursor-default">
                         <div class="text-2xl w-8 flex justify-center drop-shadow-sm">${rankMedal}</div>
-                        <div class="flex-1 min-w-0">
-                            <div class="font-black text-gray-700 text-sm mb-0.5 truncate">${stat.user}</div>
+                        <div class="flex-1">
+                            <div class="font-black text-gray-700 text-sm mb-0.5">${stat.user}</div>
                             <div class="text-[10px] text-gray-500 flex gap-2">
                                 <span class="text-rose-500 font-bold bg-rose-50 px-1.5 rounded">A++ x ${stat.aPlusPlus}</span>
                                 <span class="text-orange-500 font-bold bg-orange-50 px-1.5 rounded">A+ x ${stat.aPlus}</span>
                             </div>
                         </div>
-                        <div class="text-center bg-gray-50 p-1.5 rounded-lg border border-gray-100 shrink-0">
+                        <div class="text-center bg-gray-50 p-1.5 rounded-lg border border-gray-100">
                             <div class="text-[10px] text-gray-400 font-bold">總刷題</div>
                             <div class="font-black text-teal-600 text-base leading-none">${stat.totalEntries}</div>
                         </div>
