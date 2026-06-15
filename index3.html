@@ -67,7 +67,6 @@
         let appInstance, auth, db;
         let currentUser = null;
         let username = '';
-        let viewingUser = ''; // 目前查看月曆的使用者
         let isAdmin = false;
         
         let globalUsers = [];
@@ -217,33 +216,26 @@
                 <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
                     
                     <!-- 左側邊欄 (倒數 + 聊天室) -->
-                    <div class="w-full md:w-72 lg:w-80 flex flex-col bg-white/50 border-b-2 md:border-b-0 md:border-r-2 border-pink-100 z-10 shrink-0 h-full">
-                        <div id="sidebar-countdowns" class="p-4 h-[35%] min-h-[180px] overflow-y-auto custom-scrollbar border-b-2 border-pink-100 shrink-0"></div>
-                        
-                        <div class="flex-1 flex flex-col bg-white/60 overflow-hidden min-h-[300px] relative">
-                            <div class="bg-pink-100/50 p-2 text-center font-bold text-pink-600 border-b border-pink-100 text-sm shadow-sm shrink-0">💬 加油打氣留言板</div>
-                            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-sm relative"></div>
-                            
-                            <div class="p-2 bg-white flex flex-col border-t border-pink-100 relative shrink-0">
-                                <div id="emoji-picker" class="hidden absolute bottom-full left-2 mb-2 bg-white border border-pink-200 p-2 rounded-xl shadow-lg grid grid-cols-5 gap-2 z-50">
-                                    ${['😀','😂','🥰','😎','🥺','💪','🔥','💯','📚','🎓','✨','🎉','📝','🏆','💖'].map(e => `<button onclick="insertEmoji('${e}')" class="text-xl hover:scale-125 transition-transform">${e}</button>`).join('')}
-                                </div>
-                                <div class="flex gap-2 items-center">
-                                    <button id="emoji-toggle-btn" onclick="toggleEmojiPicker(event)" class="text-2xl hover:bg-pink-50 px-2 rounded-lg transition-colors">😀</button>
-                                    <input type="text" id="chatInput" placeholder="說點什麼..." class="flex-1 px-3 py-2 rounded-lg border border-pink-200 focus:outline-none focus:border-pink-400 bg-gray-50" onkeypress="if(event.key === 'Enter') sendChat()">
-                                    <button onclick="sendChat()" class="bg-pink-400 text-white px-3 py-2 rounded-lg font-bold hover:bg-pink-500 transition-colors shrink-0">送出</button>
-                                </div>
+                    <div class="w-full md:w-72 lg:w-80 flex flex-col bg-white/50 border-b-2 md:border-b-0 md:border-r-2 border-pink-100 z-10 shrink-0">
+                        <div id="sidebar-countdowns" class="p-4 flex-1 overflow-y-auto custom-scrollbar border-b-2 border-pink-100"></div>
+                        <div class="h-64 flex flex-col bg-white/60">
+                            <div class="bg-pink-100/50 p-2 text-center font-bold text-pink-600 border-b border-pink-100 text-sm shadow-sm">💬 加油打氣留言板</div>
+                            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-sm"></div>
+                            <div class="p-2 bg-white flex gap-2 border-t border-pink-100">
+                                <input type="text" id="chatInput" placeholder="說點什麼..." class="flex-1 px-3 py-2 rounded-lg border border-pink-200 focus:outline-none focus:border-pink-400 bg-gray-50" onkeypress="if(event.key === 'Enter') sendChat()">
+                                <button onclick="sendChat()" class="bg-pink-400 text-white px-3 py-2 rounded-lg font-bold hover:bg-pink-500 transition-colors">送出</button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 中間區塊 (個人/他人月曆儀表板) -->
+                    <!-- 中間區塊 (個人專屬月曆儀表板) -->
                     <div class="flex-1 bg-white/30 p-4 flex flex-col relative z-0">
                         <!-- 切換月份控制列 -->
                         <div class="flex justify-between items-center mb-4 bg-white/80 p-3 rounded-2xl border border-pink-100 shadow-sm shrink-0">
                             <button onclick="changeMonth(-1)" class="px-4 py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm">◀ 上個月</button>
-                            <div class="flex flex-col items-center" id="calendar-header-container">
-                                <!-- 內容由 renderCalendar 生成 -->
+                            <div class="flex flex-col items-center">
+                                <h2 id="calendar-header-text" class="text-2xl font-black text-rose-500 tracking-wide"></h2>
+                                <span class="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full mt-1">👦 ${username} 的專屬進度</span>
                             </div>
                             <button onclick="changeMonth(1)" class="px-4 py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm">下個月 ▶</button>
                         </div>
@@ -309,19 +301,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- 查看他人成績 Modal -->
-                <div id="view-score-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[60] p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col max-h-[90vh]">
-                        <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
-                            <h2 class="text-xl font-bold flex items-center gap-2">👀 查看成績 <span id="view-modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
-                            <button onclick="closeViewModal()" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
-                        </div>
-                        <div class="p-6 bg-teal-50/30 overflow-y-auto custom-scrollbar flex-1" id="view-score-content">
-                            <!-- 動態內容生成 -->
-                        </div>
-                    </div>
-                </div>
             `;
             if (username) {
                 window.renderSidebar();
@@ -340,14 +319,14 @@
             const examDaysLeft = getDaysLeft(EXAM_DATE);
             
             let html = `
-                <div class="bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl p-5 text-center shadow-lg text-white mb-6 transform hover:scale-105 transition-transform border border-pink-300 shrink-0">
+                <div class="bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl p-5 text-center shadow-lg text-white mb-6 transform hover:scale-105 transition-transform border border-pink-300">
                     <h3 class="text-sm font-bold text-pink-100 mb-1">會考大日子 (2027-05-22)</h3>
                     <div class="text-5xl font-black drop-shadow-md mb-2">${examDaysLeft >= 0 ? examDaysLeft : 0} <span class="text-xl">天</span></div>
                     <div class="text-xs bg-black/20 rounded-full inline-block px-3 py-1 font-bold">🎯 決戰時刻</div>
                 </div>
                 
-                <h4 class="font-bold text-teal-700 mb-3 flex items-center gap-2 shrink-0">🗓️ 重要考試里程碑</h4>
-                <div class="space-y-3 mb-6 shrink-0">
+                <h4 class="font-bold text-teal-700 mb-3 flex items-center gap-2">🗓️ 重要考試里程碑</h4>
+                <div class="space-y-3 mb-6">
             `;
 
             const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -375,7 +354,7 @@
 
             if (isAdmin) {
                 html += `
-                    <div class="bg-teal-50 p-4 rounded-xl border border-teal-200 mt-auto shrink-0">
+                    <div class="bg-teal-50 p-4 rounded-xl border border-teal-200 mt-auto">
                         <h4 class="text-xs font-bold text-teal-700 mb-2">👑 管理員新增日程</h4>
                         <input type="text" id="newDateTitle" placeholder="考試名稱" class="w-full text-sm p-2 rounded border border-teal-200 mb-2 focus:outline-none">
                         <input type="date" id="newDateValue" class="w-full text-sm p-2 rounded border border-teal-200 mb-2 focus:outline-none text-gray-600">
@@ -404,19 +383,6 @@
             container.scrollTop = container.scrollHeight;
         };
 
-        window.toggleEmojiPicker = (e) => {
-            if(e) e.stopPropagation();
-            const picker = document.getElementById('emoji-picker');
-            picker.classList.toggle('hidden');
-        };
-
-        window.insertEmoji = (emoji) => {
-            const input = document.getElementById('chatInput');
-            input.value += emoji;
-            input.focus();
-            document.getElementById('emoji-picker').classList.add('hidden');
-        };
-
         window.changeMonth = (delta) => {
             currentMonth += delta;
             if (currentMonth > 11) { currentMonth = 0; currentYear++; }
@@ -424,22 +390,12 @@
             window.renderMainContent();
         };
 
-        window.changeViewingUser = (user) => {
-            viewingUser = user;
-            window.renderCalendar();
-        };
-
         window.renderCalendar = () => {
             const container = document.getElementById('calendar-grid');
-            const headerContainer = document.getElementById('calendar-header-container');
-            if(!container || !headerContainer) return;
+            const header = document.getElementById('calendar-header-text');
+            if(!container || !header) return;
 
-            headerContainer.innerHTML = `
-                <h2 class="text-2xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
-                <select onchange="changeViewingUser(this.value)" class="text-sm font-bold text-teal-700 bg-teal-50 pl-4 pr-8 py-1.5 rounded-full mt-1 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm">
-                    ${globalUsers.map(u => `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>👦 ${u} 的專屬進度</option>`).join('')}
-                </select>
-            `;
+            header.innerText = `${currentYear} 年 ${currentMonth + 1} 月`;
 
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -462,12 +418,12 @@
                 const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const isToday = dateStr === formatDate(new Date());
                 const isImportant = importantDates.find(i => i.date === dateStr);
-                const userGrades = allGrades[viewingUser]?.[dateStr];
+                const myGrades = allGrades[username]?.[dateStr];
 
                 let cellContent = '';
-                if (userGrades && Object.keys(userGrades).length > 0) {
+                if (myGrades && Object.keys(myGrades).length > 0) {
                     cellContent = `<div class="flex flex-col gap-1.5 w-full mt-1 pb-1">`;
-                    Object.entries(userGrades).forEach(([sub, info]) => {
+                    Object.entries(myGrades).forEach(([sub, info]) => {
                         let isA = info.grade.includes('A');
                         let color = isA ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-teal-50 text-teal-700 border-teal-200';
                         let subName = sub.charAt(0);
@@ -487,13 +443,8 @@
                         ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md' 
                         : 'bg-pink-50 text-pink-700';
 
-                // 點擊事件：若為自己，開啟編輯模式；若為他人，開啟展示模式
-                const clickAction = viewingUser === username 
-                    ? `openScoreModal('${dateStr}')` 
-                    : `viewOthersScore('${viewingUser}', '${dateStr}')`;
-
                 html += `
-                    <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-2 rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group">
+                    <div onclick="openScoreModal('${dateStr}')" class="bg-white border-2 border-pink-100 p-2 rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group">
                         <div class="flex justify-between items-start shrink-0 mb-1">
                             <span class="w-7 h-7 flex items-center justify-center rounded-full text-sm font-bold ${headerClass}">${d}</span>
                             ${isImportant ? `<span class="text-sm drop-shadow-sm group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
@@ -651,10 +602,7 @@
             const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
             if(unsubUsers) unsubUsers();
             unsubUsers = onSnapshot(usersRef, (snap) => {
-                if(snap.exists()) {
-                    globalUsers = snap.data().users || [];
-                    if(username && window.renderCalendar) window.renderCalendar();
-                }
+                if(snap.exists()) globalUsers = snap.data().users || [];
             }, errHandler);
 
             const datesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates');
@@ -721,7 +669,6 @@
                         const savedUser = localStorage.getItem('study_group_user');
                         if (savedUser) {
                             username = savedUser;
-                            viewingUser = username; // 預設查看自己
                             isAdmin = (username === '管理員' || username === 'Admin');
                             setupListeners();
                             window.renderMain();
@@ -752,7 +699,6 @@
         window.handleLogin = (name) => {
             if(!name.trim()) return alert("請輸入名稱！");
             username = name.trim();
-            viewingUser = username; // 登入時將月曆視角切換為自己
             isAdmin = (username === '管理員' || username === 'Admin');
             localStorage.setItem('study_group_user', username);
             
@@ -775,7 +721,6 @@
 
         window.logout = () => {
             username = '';
-            viewingUser = '';
             isAdmin = false;
             localStorage.removeItem('study_group_user');
             if(unsubDates) unsubDates();
@@ -841,50 +786,13 @@
 
         window.viewOthersScore = (otherUser, dateStr) => {
             const data = allGrades[otherUser] && allGrades[otherUser][dateStr];
-            if(!data || Object.keys(data).length === 0) {
-                alert(`${otherUser} 在 ${dateStr} 尚未登錄任何成績喔！`);
-                return; 
-            }
+            if(!data) return; 
             
-            document.getElementById('view-modal-date').innerText = dateStr;
-            let contentHtml = `<h3 class="font-black text-lg text-teal-800 mb-4 border-b-2 border-teal-200 pb-2">👦 ${otherUser} 的戰果</h3>`;
-            
+            let info = `${otherUser} 在 ${dateStr} 的成績：\n\n`;
             Object.entries(data).forEach(([sub, item]) => {
-                let isA = item.grade.includes('A');
-                let color = isA ? 'text-rose-600 bg-rose-50 border-rose-200' : 'text-teal-700 bg-teal-50 border-teal-200';
-                
-                contentHtml += `
-                    <div class="mb-5 bg-white p-4 rounded-2xl shadow-sm border ${color}">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="font-bold text-lg">📌 ${sub}</span>
-                            <span class="font-black text-xl">${item.grade}</span>
-                        </div>
-                        ${item.photo ? `<div class="mt-3"><img src="${item.photo}" class="w-full rounded-xl border border-gray-200 shadow-sm" alt="考卷照片"></div>` : '<div class="text-xs text-gray-400 text-center mt-2">（無附照片）</div>'}
-                    </div>
-                `;
+                info += `📌 ${sub}: ${item.grade} ${item.photo ? '(附考卷圖，需私下求證 😉)' : ''}\n`;
             });
-            
-            document.getElementById('view-score-content').innerHTML = contentHtml;
-            
-            const modal = document.getElementById('view-score-modal');
-            const content = modal.querySelector('div');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                content.classList.remove('scale-95');
-            }, 10);
-        };
-
-        window.closeViewModal = () => {
-            const modal = document.getElementById('view-score-modal');
-            const content = modal.querySelector('div');
-            modal.classList.add('opacity-0');
-            content.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }, 200);
+            alert(info);
         };
 
         window.closeModal = () => {
@@ -1012,20 +920,8 @@
         };
 
         document.addEventListener('click', (e) => {
-            const scoreModal = document.getElementById('score-modal');
-            if (e.target === scoreModal) window.closeModal();
-            
-            const viewModal = document.getElementById('view-score-modal');
-            if (e.target === viewModal) window.closeViewModal();
-            
-            // 點擊外部關閉 Emoji 選單
-            const emojiPicker = document.getElementById('emoji-picker');
-            const toggleBtn = document.getElementById('emoji-toggle-btn');
-            if (emojiPicker && !emojiPicker.classList.contains('hidden')) {
-                if (!emojiPicker.contains(e.target) && e.target !== toggleBtn) {
-                    emojiPicker.classList.add('hidden');
-                }
-            }
+            const modal = document.getElementById('score-modal');
+            if (e.target === modal) window.closeModal();
         });
 
         // ==========================================
