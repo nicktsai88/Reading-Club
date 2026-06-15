@@ -157,22 +157,22 @@
             const currentConfig = getStoredConfig() || {};
             container.innerHTML = `
                 <div class="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-y-auto">
-                    <div class="glass-panel p-8 md:p-10 xl:p-14 2xl:p-16 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] xl:w-[48rem] 2xl:w-[56rem] max-w-[95vw] border-4 border-teal-200 relative overflow-hidden">
-                        <h1 class="text-2xl md:text-3xl xl:text-4xl 2xl:text-5xl font-black text-teal-600 mb-2 md:mb-4 drop-shadow-sm text-center">
+                    <div class="glass-panel p-8 md:p-10 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] max-w-[95vw] border-4 border-teal-200 relative overflow-hidden">
+                        <h1 class="text-2xl md:text-3xl font-black text-teal-600 mb-2 drop-shadow-sm text-center">
                             ⚙️ 系統資料庫設定
                         </h1>
-                        <p class="text-sm md:text-base xl:text-xl 2xl:text-2xl text-gray-500 mb-6 xl:mb-8 text-center font-bold">請填入您的 Firebase API Key 以啟用雲端同步功能</p>
+                        <p class="text-sm text-gray-500 mb-6 text-center font-bold">請填入您的 Firebase API Key 以啟用雲端同步功能</p>
                         
-                        <div class="space-y-3 bg-white/60 p-6 xl:p-8 2xl:p-10 rounded-2xl border border-teal-100">
+                        <div class="space-y-3 bg-white/60 p-6 rounded-2xl border border-teal-100">
                             <div>
-                                <label class="block text-xs md:text-sm xl:text-base 2xl:text-xl font-bold text-teal-800 mb-1 xl:mb-2">API Key (必填) *</label>
-                                <input type="text" id="cfg-apiKey" value="${currentConfig.apiKey || ''}" placeholder="AIzaSy..." class="w-full px-3 py-2 md:py-3 xl:px-4 xl:py-4 2xl:text-xl rounded-lg border border-teal-200 focus:outline-none focus:border-teal-400 text-sm xl:text-lg font-mono">
+                                <label class="block text-xs font-bold text-teal-800 mb-1">API Key (必填) *</label>
+                                <input type="text" id="cfg-apiKey" value="${currentConfig.apiKey || ''}" placeholder="AIzaSy..." class="w-full px-3 py-2 rounded-lg border border-teal-200 focus:outline-none focus:border-teal-400 text-sm font-mono">
                             </div>
                         </div>
                         
-                        <div class="mt-6 xl:mt-8 flex gap-3 xl:gap-5 justify-center">
-                            ${currentConfig.apiKey ? `<button onclick="renderLogin()" class="px-5 py-2.5 xl:px-6 xl:py-3 2xl:text-xl rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors">取消</button>` : ''}
-                            <button onclick="saveFirebaseConfig()" class="flex-1 bg-gradient-to-r from-teal-400 to-emerald-400 text-white font-bold py-2.5 px-6 xl:py-3 xl:text-xl 2xl:text-2xl rounded-xl shadow-md hover:shadow-lg transition-all">
+                        <div class="mt-6 flex gap-3 justify-center">
+                            ${currentConfig.apiKey ? `<button onclick="renderLogin()" class="px-5 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors">取消</button>` : ''}
+                            <button onclick="saveFirebaseConfig()" class="flex-1 bg-gradient-to-r from-teal-400 to-emerald-400 text-white font-bold py-2.5 px-6 rounded-xl shadow-md hover:shadow-lg transition-all">
                                 💾 儲存並啟動系統
                             </button>
                         </div>
@@ -185,40 +185,40 @@
             const container = document.getElementById('view-container');
             container.innerHTML = `
                 <div class="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-y-auto">
-                    <div class="glass-panel p-8 md:p-12 xl:p-16 2xl:p-20 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] xl:w-[48rem] 2xl:w-[56rem] max-w-[95vw] text-center border-4 border-pink-200 relative overflow-hidden">
-                        <div class="absolute top-4 left-4 xl:top-6 xl:left-6 text-4xl xl:text-5xl 2xl:text-6xl animate-bounce-slow">✨</div>
-                        <div class="absolute bottom-4 right-4 xl:bottom-6 xl:right-6 text-4xl xl:text-5xl 2xl:text-6xl animate-bounce-slow" style="animation-delay: 1s;">🎓</div>
-                        <button onclick="renderSetup()" class="absolute top-5 right-5 xl:top-8 xl:right-8 text-gray-400 hover:text-teal-600 transition-colors bg-white/50 p-2 xl:p-3 2xl:p-4 rounded-full border border-gray-200 hover:bg-white" title="系統設定">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 xl:h-8 xl:w-8 2xl:h-10 2xl:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <div class="glass-panel p-8 md:p-12 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] max-w-[95vw] text-center border-4 border-pink-200 relative overflow-hidden">
+                        <div class="absolute top-4 left-4 text-4xl animate-bounce-slow">✨</div>
+                        <div class="absolute bottom-4 right-4 text-4xl animate-bounce-slow" style="animation-delay: 1s;">🎓</div>
+                        <button onclick="renderSetup()" class="absolute top-5 right-5 text-gray-400 hover:text-teal-600 transition-colors bg-white/50 p-2 rounded-full border border-gray-200 hover:bg-white" title="系統設定">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         </button>
                         
                         <!-- 大幅加大的學校 Logo -->
-                        <div class="flex justify-center items-center gap-4 md:gap-6 xl:gap-8 2xl:gap-10 mb-8 mt-2">
-                            <div class="w-28 h-28 md:w-32 md:h-32 xl:w-40 xl:h-40 2xl:w-48 2xl:h-48 bg-white rounded-full p-1 shadow-lg border-4 border-red-200 overflow-hidden flex justify-center items-center hover:scale-105 transition-transform">
+                        <div class="flex justify-center items-center gap-4 md:gap-6 mb-8 mt-2">
+                            <div class="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-1 shadow-lg border-4 border-red-200 overflow-hidden flex justify-center items-center hover:scale-105 transition-transform">
                                 <img src="school1.jpg" alt="雄中" class="w-full h-full object-contain rounded-full">
                             </div>
-                            <div class="text-4xl md:text-5xl xl:text-6xl 2xl:text-7xl font-black text-pink-400">X</div>
-                            <div class="w-28 h-28 md:w-32 md:h-32 xl:w-40 xl:h-40 2xl:w-48 2xl:h-48 bg-white rounded-full p-1 shadow-lg border-4 border-red-200 overflow-hidden flex justify-center items-center hover:scale-105 transition-transform">
+                            <div class="text-4xl md:text-5xl font-black text-pink-400">X</div>
+                            <div class="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-1 shadow-lg border-4 border-red-200 overflow-hidden flex justify-center items-center hover:scale-105 transition-transform">
                                 <img src="school2.jpg" alt="雄女" class="w-full h-full object-contain rounded-full">
                             </div>
                         </div>
 
-                        <h1 class="text-3xl md:text-4xl xl:text-5xl 2xl:text-6xl font-black text-rose-500 mb-3 xl:mb-5 drop-shadow-sm tracking-wide">🎒 邁向5A10+</h1>
-                        <h2 class="text-xl md:text-2xl xl:text-3xl 2xl:text-4xl font-bold text-teal-600 mb-8 xl:mb-10 bg-teal-50 inline-block px-6 py-2 xl:px-8 xl:py-3 rounded-full border border-teal-100">國中會考讀書會 💯</h2>
+                        <h1 class="text-3xl md:text-4xl font-black text-rose-500 mb-3 drop-shadow-sm tracking-wide">🎒 邁向5A10+</h1>
+                        <h2 class="text-xl font-bold text-teal-600 mb-8 bg-teal-50 inline-block px-6 py-2 rounded-full border border-teal-100">國中會考讀書會 💯</h2>
                         
-                        <div class="bg-white/60 p-6 xl:p-8 2xl:p-10 rounded-3xl border border-pink-100 mb-6 xl:mb-8">
-                            <p class="text-sm md:text-base xl:text-lg 2xl:text-2xl text-rose-400 font-bold mb-3 xl:mb-5">👇 點擊你的名字快速登入 👇</p>
-                            <div class="flex flex-wrap justify-center gap-3 xl:gap-4">
+                        <div class="bg-white/60 p-6 rounded-3xl border border-pink-100 mb-6">
+                            <p class="text-sm text-rose-400 font-bold mb-3">👇 點擊你的名字快速登入 👇</p>
+                            <div class="flex flex-wrap justify-center gap-3">
                                 ${globalUsers.length > 0 ? 
-                                    globalUsers.map(u => `<button onclick="handleLogin('${u}')" class="text-md md:text-lg xl:text-xl 2xl:text-2xl font-bold bg-white border-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:scale-105 px-5 py-2.5 xl:px-6 xl:py-3 rounded-xl shadow-sm transition-all">👦 ${u}</button>`).join('') 
-                                    : `<span class="text-sm md:text-base xl:text-xl text-gray-400">尚無參賽者，請於下方建立</span>`
+                                    globalUsers.map(u => `<button onclick="handleLogin('${u}')" class="text-md font-bold bg-white border-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:scale-105 px-5 py-2.5 rounded-xl shadow-sm transition-all">👦 ${u}</button>`).join('') 
+                                    : `<span class="text-sm text-gray-400">尚無參賽者，請於下方建立</span>`
                                 }
                             </div>
                         </div>
                         
-                        <div class="flex gap-2 xl:gap-4">
-                            <input type="text" id="usernameInput" placeholder="✏️ 輸入新參賽者名稱" class="flex-1 px-5 py-3 xl:px-6 xl:py-4 text-lg xl:text-xl 2xl:text-2xl rounded-xl border-2 border-teal-200 focus:outline-none focus:border-teal-400 text-center font-bold text-gray-700 placeholder-teal-300 shadow-inner" onkeypress="if(event.key === 'Enter') handleLogin(this.value)">
-                            <button onclick="handleLogin(document.getElementById('usernameInput').value)" class="bg-gradient-to-r from-teal-400 to-emerald-400 text-white font-bold py-3 px-6 xl:py-4 xl:px-8 text-lg xl:text-xl 2xl:text-2xl rounded-xl shadow-md hover:shadow-lg transition-all transform hover:scale-105 shrink-0">
+                        <div class="flex gap-2">
+                            <input type="text" id="usernameInput" placeholder="✏️ 輸入新參賽者名稱" class="flex-1 px-5 py-3 text-lg rounded-xl border-2 border-teal-200 focus:outline-none focus:border-teal-400 text-center font-bold text-gray-700 placeholder-teal-300 shadow-inner" onkeypress="if(event.key === 'Enter') handleLogin(this.value)">
+                            <button onclick="handleLogin(document.getElementById('usernameInput').value)" class="bg-gradient-to-r from-teal-400 to-emerald-400 text-white font-bold py-3 px-6 text-lg rounded-xl shadow-md hover:shadow-lg transition-all transform hover:scale-105">
                                 加入 🔥
                             </button>
                         </div>
@@ -231,21 +231,21 @@
             const container = document.getElementById('view-container');
             container.innerHTML = `
                 <!-- 頂部導航 -->
-                <div class="bg-white/80 backdrop-blur-md border-b-2 border-pink-200 p-3 xl:p-4 2xl:p-5 flex justify-between items-center shadow-sm shrink-0 z-20 relative">
-                    <div class="flex items-center gap-4 xl:gap-6 pl-2 xl:pl-4">
+                <div class="bg-white/80 backdrop-blur-md border-b-2 border-pink-200 p-3 flex justify-between items-center shadow-sm shrink-0 z-20 relative">
+                    <div class="flex items-center gap-4 pl-2">
                         <!-- 加大的頂部 Logo -->
-                        <div class="flex -space-x-4 xl:-space-x-6">
-                            <img src="school1.jpg" alt="雄中" class="w-14 h-14 md:w-16 md:h-16 xl:w-20 xl:h-20 2xl:w-24 2xl:h-24 object-contain rounded-full border-2 border-white shadow-sm z-10 bg-rose-50">
-                            <img src="school2.jpg" alt="雄女" class="w-14 h-14 md:w-16 md:h-16 xl:w-20 xl:h-20 2xl:w-24 2xl:h-24 object-contain rounded-full border-2 border-white shadow-sm z-0 bg-rose-50">
+                        <div class="flex -space-x-4">
+                            <img src="school1.jpg" alt="雄中" class="w-14 h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-10 bg-rose-50">
+                            <img src="school2.jpg" alt="雄女" class="w-14 h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-0 bg-rose-50">
                         </div>
-                        <h1 class="text-2xl md:text-3xl xl:text-4xl 2xl:text-5xl font-black text-rose-500 tracking-wider hidden sm:block">邁向5A10+ 讀書會 🏆</h1>
+                        <h1 class="text-2xl md:text-3xl font-black text-rose-500 tracking-wider hidden sm:block">邁向5A10+ 讀書會 🏆</h1>
                         <h1 class="text-xl font-black text-rose-500 tracking-wider block sm:hidden">邁向5A10+</h1>
                     </div>
-                    <div class="flex items-center gap-3 xl:gap-5 pr-2 xl:pr-4">
-                        <span class="font-bold text-teal-700 bg-teal-50 px-4 py-1.5 xl:px-6 xl:py-2.5 rounded-full border border-teal-200 shadow-sm text-sm xl:text-lg 2xl:text-2xl hidden md:inline-block">
+                    <div class="flex items-center gap-3 pr-2">
+                        <span class="font-bold text-teal-700 bg-teal-50 px-4 py-1.5 rounded-full border border-teal-200 shadow-sm text-sm hidden md:inline-block">
                             ${isAdmin ? '👑 管理員' : '👦 參賽者'} : ${username}
                         </span>
-                        <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-3 py-1.5 xl:px-5 xl:py-2.5 rounded-lg transition-colors text-sm xl:text-lg 2xl:text-2xl border border-rose-200 bg-white shadow-sm shrink-0">登出 👋</button>
+                        <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-3 py-1.5 rounded-lg transition-colors text-sm border border-rose-200 bg-white shadow-sm shrink-0">登出 👋</button>
                     </div>
                 </div>
 
@@ -253,121 +253,119 @@
                 <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
                     
                     <!-- 左側邊欄 (倒數 + 聊天室) -->
-                    <!-- FHD & 4K 適應：加寬側邊欄 xl:w-96 2xl:w-[28rem] min-[2500px]:w-[34rem] -->
-                    <div class="w-full md:w-72 lg:w-80 xl:w-96 2xl:w-[28rem] min-[2500px]:w-[34rem] flex flex-col bg-white/50 border-b-2 md:border-b-0 md:border-r-2 border-pink-100 z-10 shrink-0 h-full min-h-0">
+                    <div class="w-full md:w-72 lg:w-80 flex flex-col bg-white/50 border-b-2 md:border-b-0 md:border-r-2 border-pink-100 z-10 shrink-0 h-full min-h-0">
                         
                         <!-- 上方固定倒數區與跑馬燈 -->
-                        <div id="sidebar-countdowns" class="p-4 xl:p-6 2xl:p-8 flex flex-col border-b-2 border-pink-100 shrink-0 h-[45%] min-h-[250px] 2xl:min-h-[350px] relative overflow-hidden"></div>
+                        <div id="sidebar-countdowns" class="p-4 flex flex-col border-b-2 border-pink-100 shrink-0 h-[45%] min-h-[250px] relative overflow-hidden"></div>
                         
                         <!-- 下方留言板區 -->
                         <div class="flex-1 flex flex-col bg-white/60 overflow-hidden relative min-h-0">
-                            <div class="bg-pink-100/50 p-2 xl:p-3 2xl:p-4 text-center font-bold text-pink-600 border-b border-pink-100 text-sm xl:text-base 2xl:text-xl shadow-sm shrink-0">💬 加油打氣留言板</div>
-                            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 xl:p-4 2xl:p-6 space-y-3 xl:space-y-4 2xl:space-y-6 custom-scrollbar text-sm xl:text-base 2xl:text-xl relative min-h-0"></div>
+                            <div class="bg-pink-100/50 p-2 text-center font-bold text-pink-600 border-b border-pink-100 text-sm shadow-sm shrink-0">💬 加油打氣留言板</div>
+                            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-sm relative min-h-0"></div>
                             
                             <!-- 輸入區，優化 padding 與 min-w-0 確保按鈕不被遮住 -->
-                            <div class="p-2 xl:p-3 2xl:p-4 bg-white flex flex-col border-t border-pink-100 relative shrink-0">
-                                <div id="emoji-picker" class="hidden absolute bottom-full left-2 mb-2 bg-white border border-pink-200 p-2 xl:p-3 2xl:p-4 rounded-xl shadow-lg grid grid-cols-5 gap-2 xl:gap-3 z-50">
-                                    ${['😀','😂','🥰','😎','🥺','💪','🔥','💯','📚','🎓','✨','🎉','📝','🏆','💖'].map(e => `<button onclick="insertEmoji('${e}')" class="text-xl xl:text-2xl 2xl:text-4xl hover:scale-125 transition-transform">${e}</button>`).join('')}
+                            <div class="p-2 bg-white flex flex-col border-t border-pink-100 relative shrink-0">
+                                <div id="emoji-picker" class="hidden absolute bottom-full left-2 mb-2 bg-white border border-pink-200 p-2 rounded-xl shadow-lg grid grid-cols-5 gap-2 z-50">
+                                    ${['😀','😂','🥰','😎','🥺','💪','🔥','💯','📚','🎓','✨','🎉','📝','🏆','💖'].map(e => `<button onclick="insertEmoji('${e}')" class="text-xl hover:scale-125 transition-transform">${e}</button>`).join('')}
                                 </div>
-                                <div class="flex gap-1.5 xl:gap-2 2xl:gap-3 items-center w-full">
-                                    <button id="emoji-toggle-btn" onclick="toggleEmojiPicker(event)" class="text-2xl xl:text-3xl 2xl:text-4xl hover:bg-pink-50 px-1 xl:px-2 rounded-lg transition-colors shrink-0">😀</button>
+                                <div class="flex gap-1.5 items-center w-full">
+                                    <button id="emoji-toggle-btn" onclick="toggleEmojiPicker(event)" class="text-2xl hover:bg-pink-50 px-1 rounded-lg transition-colors shrink-0">😀</button>
                                     <div class="flex-1 min-w-0">
-                                        <input type="text" id="chatInput" placeholder="說點什麼..." class="w-full px-3 py-2 xl:px-4 xl:py-3 2xl:px-5 2xl:py-4 rounded-lg border border-pink-200 focus:outline-none focus:border-pink-400 bg-gray-50 text-sm xl:text-base 2xl:text-xl" onkeypress="if(event.key === 'Enter') sendChat()">
+                                        <input type="text" id="chatInput" placeholder="說點什麼..." class="w-full px-3 py-2 rounded-lg border border-pink-200 focus:outline-none focus:border-pink-400 bg-gray-50 text-sm" onkeypress="if(event.key === 'Enter') sendChat()">
                                     </div>
-                                    <button onclick="sendChat()" class="bg-pink-400 text-white px-3 py-2 xl:px-4 xl:py-3 2xl:px-6 2xl:py-4 rounded-lg font-bold hover:bg-pink-500 transition-colors shrink-0 whitespace-nowrap text-sm xl:text-base 2xl:text-xl">送出</button>
+                                    <button onclick="sendChat()" class="bg-pink-400 text-white px-3 py-2 rounded-lg font-bold hover:bg-pink-500 transition-colors shrink-0 whitespace-nowrap text-sm">送出</button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- 中間區塊 (個人/他人月曆儀表板) -->
-                    <div class="flex-1 bg-white/30 p-4 xl:p-6 2xl:p-8 flex flex-col relative z-0 min-w-0">
+                    <div class="flex-1 bg-white/30 p-4 flex flex-col relative z-0 min-w-0">
                         <!-- 切換月份控制列 -->
-                        <div class="flex justify-between items-center mb-4 xl:mb-6 2xl:mb-8 bg-white/80 p-3 xl:p-4 2xl:p-6 rounded-2xl border border-pink-100 shadow-sm shrink-0">
-                            <button onclick="changeMonth(-1)" class="px-3 py-1.5 md:px-4 md:py-2 xl:px-5 xl:py-2.5 2xl:px-6 2xl:py-3 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base xl:text-lg 2xl:text-2xl whitespace-nowrap">◀ 上個月</button>
+                        <div class="flex justify-between items-center mb-4 bg-white/80 p-3 rounded-2xl border border-pink-100 shadow-sm shrink-0">
+                            <button onclick="changeMonth(-1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">◀ 上個月</button>
                             <div class="flex flex-col items-center flex-1 mx-2 overflow-hidden" id="calendar-header-container">
                                 <!-- 內容由 renderCalendar 生成 -->
                             </div>
-                            <button onclick="changeMonth(1)" class="px-3 py-1.5 md:px-4 md:py-2 xl:px-5 xl:py-2.5 2xl:px-6 2xl:py-3 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base xl:text-lg 2xl:text-2xl whitespace-nowrap">下個月 ▶</button>
+                            <button onclick="changeMonth(1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">下個月 ▶</button>
                         </div>
                         <!-- 網格容器 -->
                         <div id="calendar-grid" class="flex-1 flex flex-col min-h-0"></div>
                     </div>
 
                     <!-- 右側區塊 (戰況動態牆 + 排行榜) -->
-                    <!-- FHD & 4K 適應：加寬側邊欄 -->
-                    <div class="w-full md:w-72 lg:w-80 xl:w-96 2xl:w-[28rem] min-[2500px]:w-[34rem] flex flex-col bg-white/60 z-10 shrink-0 border-l-2 border-pink-100 min-h-0 h-full">
+                    <div class="w-full md:w-72 lg:w-80 flex flex-col bg-white/60 z-10 shrink-0 border-l-2 border-pink-100 min-h-0 h-full">
                         <!-- 上半部: 戰況動態牆 -->
                         <div class="flex-1 flex flex-col min-h-0 border-b-2 border-pink-100">
-                            <div class="bg-gradient-to-r from-rose-100 to-pink-100 p-2 xl:p-3 2xl:p-4 text-center font-bold text-rose-600 shadow-sm shrink-0 text-sm xl:text-base 2xl:text-xl">🌟 最新戰況動態</div>
-                            <div id="timeline-feed" class="flex-1 overflow-y-auto p-3 xl:p-4 2xl:p-6 space-y-3 xl:space-y-4 2xl:space-y-6 custom-scrollbar"></div>
+                            <div class="bg-gradient-to-r from-rose-100 to-pink-100 p-2 text-center font-bold text-rose-600 shadow-sm shrink-0 text-sm">🌟 最新戰況動態</div>
+                            <div id="timeline-feed" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar"></div>
                         </div>
                         <!-- 下半部: 榮譽排行榜 -->
                         <div class="flex-1 flex flex-col min-h-0">
-                            <div class="bg-gradient-to-r from-teal-100 to-emerald-100 p-2 xl:p-3 2xl:p-4 text-center font-bold text-teal-700 shadow-sm shrink-0 text-sm xl:text-base 2xl:text-xl">🏆 榮譽排行榜</div>
-                            <div id="leaderboard-feed" class="flex-1 overflow-y-auto p-3 xl:p-4 2xl:p-6 space-y-2 xl:space-y-3 2xl:space-y-4 custom-scrollbar bg-teal-50/30"></div>
+                            <div class="bg-gradient-to-r from-teal-100 to-emerald-100 p-2 text-center font-bold text-teal-700 shadow-sm shrink-0 text-sm">🏆 榮譽排行榜</div>
+                            <div id="leaderboard-feed" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-teal-50/30"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- 成績輸入 Modal -->
                 <div id="score-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md xl:max-w-lg 2xl:max-w-2xl overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 95%; max-height: 95dvh;" id="score-modal-content">
-                        <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 xl:p-5 2xl:p-6 flex justify-between items-center text-white shrink-0">
-                            <h2 class="text-xl xl:text-2xl 2xl:text-3xl font-bold flex items-center gap-2">📝 紀錄模擬成績 <span id="modal-date" class="bg-white/20 px-2 py-1 rounded text-sm xl:text-base 2xl:text-xl font-mono"></span></h2>
-                            <button onclick="closeModal()" class="hover:bg-white/20 rounded-full w-8 h-8 xl:w-10 xl:h-10 2xl:w-12 2xl:h-12 flex items-center justify-center font-bold 2xl:text-xl">✕</button>
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 95%; max-height: 95dvh;" id="score-modal-content">
+                        <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
+                            <h2 class="text-xl font-bold flex items-center gap-2">📝 紀錄模擬成績 <span id="modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
+                            <button onclick="closeModal()" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
-                        <div class="p-6 xl:p-8 2xl:p-10 space-y-5 xl:space-y-6 2xl:space-y-8 bg-teal-50/30 overflow-y-auto flex-1 custom-scrollbar">
+                        <div class="p-6 space-y-5 bg-teal-50/30 overflow-y-auto flex-1 custom-scrollbar">
                             <div>
-                                <label class="block text-teal-800 font-bold mb-2 xl:mb-3 text-base xl:text-lg 2xl:text-2xl">📚 選擇科目</label>
-                                <div class="grid grid-cols-5 gap-2 xl:gap-3 2xl:gap-4" id="subject-selector">
-                                    ${SUBJECTS.map(s => `<button onclick="selectSubject('${s}')" id="btn-sub-${s}" class="py-2 xl:py-3 2xl:py-4 rounded-lg border-2 border-teal-200 text-teal-700 font-bold hover:bg-teal-50 transition-colors bg-white shadow-sm text-sm xl:text-base 2xl:text-xl">${s}</button>`).join('')}
+                                <label class="block text-teal-800 font-bold mb-2">📚 選擇科目</label>
+                                <div class="grid grid-cols-5 gap-2" id="subject-selector">
+                                    ${SUBJECTS.map(s => `<button onclick="selectSubject('${s}')" id="btn-sub-${s}" class="py-2 rounded-lg border-2 border-teal-200 text-teal-700 font-bold hover:bg-teal-50 transition-colors bg-white shadow-sm">${s}</button>`).join('')}
                                 </div>
                             </div>
                             <!-- 次級科目區域 -->
                             <div id="sub-subject-container" class="hidden">
-                                <label class="block text-blue-800 font-bold mb-2 xl:mb-3 text-sm xl:text-base 2xl:text-xl">🔖 選擇細項</label>
-                                <div class="grid grid-cols-4 gap-2 xl:gap-3 2xl:gap-4" id="sub-subject-selector"></div>
+                                <label class="block text-blue-800 font-bold mb-2 text-sm">🔖 選擇細項</label>
+                                <div class="grid grid-cols-4 gap-2" id="sub-subject-selector"></div>
                             </div>
 
                             <div>
-                                <label class="block text-rose-800 font-bold mb-2 xl:mb-3 text-base xl:text-lg 2xl:text-2xl">🎯 成績等級</label>
-                                <div class="grid grid-cols-4 gap-2 xl:gap-3 2xl:gap-4" id="grade-selector">
-                                    ${GRADES.map(g => `<button onclick="selectGrade('${g}')" id="btn-grade-${g.replace('+','p').replace('+','p')}" class="py-2 xl:py-3 2xl:py-4 rounded-lg border-2 border-rose-200 text-rose-700 font-bold hover:bg-rose-50 transition-colors bg-white shadow-sm text-sm xl:text-base 2xl:text-xl">${g}</button>`).join('')}
+                                <label class="block text-rose-800 font-bold mb-2">🎯 成績等級</label>
+                                <div class="grid grid-cols-4 gap-2" id="grade-selector">
+                                    ${GRADES.map(g => `<button onclick="selectGrade('${g}')" id="btn-grade-${g.replace('+','p').replace('+','p')}" class="py-2 rounded-lg border-2 border-rose-200 text-rose-700 font-bold hover:bg-rose-50 transition-colors bg-white shadow-sm">${g}</button>`).join('')}
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-purple-800 font-bold mb-2 xl:mb-3 text-base xl:text-lg 2xl:text-2xl">📸 拍下考卷/成績單 (選填)</label>
-                                <div class="border-2 border-dashed border-purple-200 rounded-xl p-4 xl:p-6 2xl:p-8 text-center bg-white hover:bg-purple-50 transition-colors cursor-pointer relative shadow-inner" onclick="document.getElementById('photo-upload').click()">
+                                <label class="block text-purple-800 font-bold mb-2">📸 拍下考卷/成績單 (選填)</label>
+                                <div class="border-2 border-dashed border-purple-200 rounded-xl p-4 text-center bg-white hover:bg-purple-50 transition-colors cursor-pointer relative shadow-inner" onclick="document.getElementById('photo-upload').click()">
                                     <input type="file" id="photo-upload" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
                                     <div id="photo-preview-container" class="hidden flex-col items-center">
-                                        <img id="photo-preview" class="h-32 xl:h-48 2xl:h-64 object-contain rounded mb-2 shadow-sm border border-gray-200">
-                                        <span class="text-xs xl:text-sm 2xl:text-lg text-purple-500 font-bold bg-purple-100 px-2 py-1 2xl:px-4 2xl:py-2 rounded">更換照片</span>
+                                        <img id="photo-preview" class="h-32 object-contain rounded mb-2 shadow-sm border border-gray-200">
+                                        <span class="text-xs text-purple-500 font-bold bg-purple-100 px-2 py-1 rounded">更換照片</span>
                                     </div>
                                     <div id="photo-placeholder" class="text-purple-400">
-                                        <div class="text-3xl xl:text-4xl 2xl:text-6xl mb-1 xl:mb-3">📷</div>
-                                        <span class="text-sm xl:text-base 2xl:text-xl font-bold">點擊上傳或拍照</span>
+                                        <div class="text-3xl mb-1">📷</div>
+                                        <span class="text-sm font-bold">點擊上傳或拍照</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="p-4 xl:p-5 2xl:p-6 bg-white border-t border-gray-100 flex justify-end gap-3 xl:gap-4 shrink-0">
-                            <button onclick="deleteGradeRecord()" id="btn-delete-grade" class="hidden px-5 py-2.5 xl:px-6 xl:py-3 2xl:px-8 2xl:py-4 rounded-xl font-bold text-red-500 bg-red-50 border border-red-200 hover:bg-red-100 text-sm xl:text-base 2xl:text-xl">刪除紀錄</button>
+                        <div class="p-4 bg-white border-t border-gray-100 flex justify-end gap-3 shrink-0">
+                            <button onclick="deleteGradeRecord()" id="btn-delete-grade" class="hidden px-5 py-2.5 rounded-xl font-bold text-red-500 bg-red-50 border border-red-200 hover:bg-red-100">刪除紀錄</button>
                             <div class="flex-1"></div>
-                            <button onclick="closeModal()" class="px-5 py-2.5 xl:px-6 xl:py-3 2xl:px-8 2xl:py-4 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100 text-sm xl:text-base 2xl:text-xl">取消</button>
-                            <button onclick="saveGrade()" class="px-6 py-2.5 xl:px-8 xl:py-3 2xl:px-10 2xl:py-4 rounded-xl font-bold text-white bg-rose-400 hover:bg-rose-500 shadow-md text-sm xl:text-base 2xl:text-xl">儲存 💾</button>
+                            <button onclick="closeModal()" class="px-5 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100">取消</button>
+                            <button onclick="saveGrade()" class="px-6 py-2.5 rounded-xl font-bold text-white bg-rose-400 hover:bg-rose-500 shadow-md">儲存 💾</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- 查看他人成績 Modal -->
                 <div id="view-score-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[60] p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md xl:max-w-lg 2xl:max-w-2xl overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 90%; max-height: 90dvh;">
-                        <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 xl:p-5 2xl:p-6 flex justify-between items-center text-white shrink-0">
-                            <h2 class="text-xl xl:text-2xl 2xl:text-3xl font-bold flex items-center gap-2">👀 查看成績 <span id="view-modal-date" class="bg-white/20 px-2 py-1 rounded text-sm xl:text-base 2xl:text-xl font-mono"></span></h2>
-                            <button onclick="closeViewModal()" class="hover:bg-white/20 rounded-full w-8 h-8 xl:w-10 xl:h-10 2xl:w-12 2xl:h-12 flex items-center justify-center font-bold 2xl:text-xl">✕</button>
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 90%; max-height: 90dvh;">
+                        <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
+                            <h2 class="text-xl font-bold flex items-center gap-2">👀 查看成績 <span id="view-modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
+                            <button onclick="closeViewModal()" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
-                        <div class="p-6 xl:p-8 2xl:p-10 bg-teal-50/30 overflow-y-auto custom-scrollbar flex-1" id="view-score-content">
+                        <div class="p-6 bg-teal-50/30 overflow-y-auto custom-scrollbar flex-1" id="view-score-content">
                             <!-- 動態內容生成 -->
                         </div>
                     </div>
@@ -390,17 +388,17 @@
             const examDaysLeft = getDaysLeft(EXAM_DATE);
             
             let html = `
-                <div class="bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl p-5 xl:p-6 2xl:p-8 text-center shadow-lg text-white mb-4 xl:mb-6 2xl:mb-8 transform hover:scale-[1.02] transition-transform border border-pink-300 shrink-0 z-10 relative">
-                    <h3 class="text-sm xl:text-base 2xl:text-2xl font-bold text-pink-100 mb-1 xl:mb-2 2xl:mb-3">會考大日子 (2027-05-22)</h3>
-                    <div class="text-5xl xl:text-6xl 2xl:text-8xl font-black drop-shadow-md mb-2 xl:mb-4 2xl:mb-6">${examDaysLeft >= 0 ? examDaysLeft : 0} <span class="text-xl xl:text-2xl 2xl:text-4xl">天</span></div>
-                    <div class="text-xs xl:text-sm 2xl:text-xl bg-black/20 rounded-full inline-block px-3 py-1 xl:px-4 xl:py-2 2xl:px-6 2xl:py-3 font-bold">🎯 決戰時刻</div>
+                <div class="bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl p-5 text-center shadow-lg text-white mb-4 transform hover:scale-[1.02] transition-transform border border-pink-300 shrink-0 z-10 relative">
+                    <h3 class="text-sm font-bold text-pink-100 mb-1">會考大日子 (2027-05-22)</h3>
+                    <div class="text-5xl font-black drop-shadow-md mb-2">${examDaysLeft >= 0 ? examDaysLeft : 0} <span class="text-xl">天</span></div>
+                    <div class="text-xs bg-black/20 rounded-full inline-block px-3 py-1 font-bold">🎯 決戰時刻</div>
                 </div>
                 
-                <h4 class="font-bold text-teal-700 mb-2 xl:mb-4 2xl:mb-6 text-base xl:text-lg 2xl:text-2xl flex items-center gap-2 shrink-0 z-10 relative">🗓️ 重要考試里程碑</h4>
+                <h4 class="font-bold text-teal-700 mb-2 flex items-center gap-2 shrink-0 z-10 relative">🗓️ 重要考試里程碑</h4>
                 
                 <!-- 垂直跑馬燈容器 -->
                 <div class="marquee-container flex-1 w-full relative z-0 pb-1">
-                    <div class="marquee-content space-y-3 xl:space-y-4 2xl:space-y-6 pt-2">
+                    <div class="marquee-content space-y-3 pt-2">
             `;
 
             const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -409,17 +407,17 @@
                 const days = getDaysLeft(item.date);
                 if (days >= 0) {
                     html += `
-                        <div class="bg-white p-3 xl:p-4 2xl:p-6 rounded-xl 2xl:rounded-2xl border border-teal-100 shadow-sm flex justify-between items-center relative overflow-hidden group">
-                            <div class="absolute left-0 top-0 bottom-0 w-1.5 2xl:w-2 bg-teal-300"></div>
-                            <div class="pl-2 2xl:pl-4">
-                                <div class="text-sm xl:text-base 2xl:text-2xl font-bold text-gray-700 mb-0.5 2xl:mb-2">${item.title}</div>
-                                <div class="text-xs xl:text-sm 2xl:text-lg text-gray-400">${item.date}</div>
+                        <div class="bg-white p-3 rounded-xl border border-teal-100 shadow-sm flex justify-between items-center relative overflow-hidden group">
+                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-teal-300"></div>
+                            <div class="pl-2">
+                                <div class="text-sm font-bold text-gray-700">${item.title}</div>
+                                <div class="text-xs text-gray-400">${item.date}</div>
                             </div>
                             <div class="text-right">
-                                <span class="text-xl xl:text-2xl 2xl:text-4xl font-black ${days <= 7 ? 'text-rose-500' : 'text-teal-500'}">${days}</span>
-                                <span class="text-xs xl:text-sm 2xl:text-xl text-gray-500 ml-0.5">天</span>
+                                <span class="text-xl font-black ${days <= 7 ? 'text-rose-500' : 'text-teal-500'}">${days}</span>
+                                <span class="text-xs text-gray-500">天</span>
                             </div>
-                            ${isAdmin ? `<button onclick="deleteImportantDate(${index})" class="absolute right-0 top-0 bg-red-100 text-red-500 w-6 h-6 xl:w-8 xl:h-8 2xl:w-10 2xl:h-10 rounded-bl-lg text-xs xl:text-sm 2xl:text-lg opacity-0 group-hover:opacity-100 transition-opacity z-20 cursor-pointer flex items-center justify-center">✕</button>` : ''}
+                            ${isAdmin ? `<button onclick="deleteImportantDate(${index})" class="absolute right-0 top-0 bg-red-100 text-red-500 w-6 h-6 rounded-bl-lg text-xs opacity-0 group-hover:opacity-100 transition-opacity z-20 cursor-pointer">✕</button>` : ''}
                         </div>
                     `;
                 }
@@ -428,11 +426,11 @@
 
             if (isAdmin) {
                 html += `
-                    <div class="bg-teal-50 p-3 xl:p-4 2xl:p-6 rounded-xl 2xl:rounded-2xl border border-teal-200 mt-2 shrink-0 z-10 relative">
-                        <h4 class="text-[11px] xl:text-sm 2xl:text-lg font-bold text-teal-700 mb-1.5 xl:mb-2 2xl:mb-4">👑 管理員新增日程</h4>
-                        <input type="text" id="newDateTitle" placeholder="考試名稱" class="w-full text-xs xl:text-sm 2xl:text-lg p-1.5 xl:p-2 2xl:p-3 rounded border border-teal-200 mb-1.5 xl:mb-2 2xl:mb-4 focus:outline-none">
-                        <input type="date" id="newDateValue" class="w-full text-xs xl:text-sm 2xl:text-lg p-1.5 xl:p-2 2xl:p-3 rounded border border-teal-200 mb-1.5 xl:mb-2 2xl:mb-4 focus:outline-none text-gray-600">
-                        <button onclick="addImportantDate()" class="w-full bg-teal-400 text-white text-xs xl:text-sm 2xl:text-lg font-bold py-1.5 xl:py-2 2xl:py-3 rounded shadow-sm hover:bg-teal-500">新增</button>
+                    <div class="bg-teal-50 p-3 rounded-xl border border-teal-200 mt-2 shrink-0 z-10 relative">
+                        <h4 class="text-[11px] font-bold text-teal-700 mb-1.5">👑 管理員新增日程</h4>
+                        <input type="text" id="newDateTitle" placeholder="考試名稱" class="w-full text-xs p-1.5 rounded border border-teal-200 mb-1.5 focus:outline-none">
+                        <input type="date" id="newDateValue" class="w-full text-xs p-1.5 rounded border border-teal-200 mb-1.5 focus:outline-none text-gray-600">
+                        <button onclick="addImportantDate()" class="w-full bg-teal-400 text-white text-xs font-bold py-1.5 rounded shadow-sm hover:bg-teal-500">新增</button>
                     </div>
                 `;
             }
@@ -447,8 +445,8 @@
                 const isMe = msg.user === username;
                 return `
                     <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                        <span class="text-[10px] xl:text-xs 2xl:text-base text-gray-400 mb-0.5 xl:mb-1 2xl:mb-2 px-1">${msg.user}</span>
-                        <div class="${isMe ? 'chat-bubble-me border border-blue-100' : 'chat-bubble-other border border-pink-100'} px-3 py-2 xl:px-4 xl:py-3 2xl:px-6 2xl:py-4 text-gray-700 shadow-sm inline-block max-w-[90%] break-words">
+                        <span class="text-[10px] text-gray-400 mb-0.5 px-1">${msg.user}</span>
+                        <div class="${isMe ? 'chat-bubble-me border border-blue-100' : 'chat-bubble-other border border-pink-100'} px-3 py-2 text-gray-700 shadow-sm inline-block max-w-[90%] break-words">
                             ${msg.text}
                         </div>
                     </div>
@@ -488,8 +486,8 @@
             if(!container || !headerContainer) return;
 
             headerContainer.innerHTML = `
-                <h2 class="text-xl md:text-2xl xl:text-3xl 2xl:text-5xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
-                <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm xl:text-lg 2xl:text-2xl font-bold text-teal-700 bg-teal-50 pl-3 pr-7 py-1 md:py-1.5 2xl:pl-6 2xl:pr-12 2xl:py-3 rounded-full mt-1 2xl:mt-3 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
+                <h2 class="text-xl md:text-2xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
+                <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-teal-700 bg-teal-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
                     ${globalUsers.map(u => `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>👦 ${u} 的進度</option>`).join('')}
                 </select>
             `;
@@ -498,17 +496,17 @@
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
             const startPad = firstDay === 0 ? 6 : firstDay - 1;
 
-            let html = `<div class="grid grid-cols-7 gap-1 md:gap-2 xl:gap-3 2xl:gap-5 mb-2 xl:mb-4 shrink-0">`;
+            let html = `<div class="grid grid-cols-7 gap-1 md:gap-2 mb-2 shrink-0">`;
             ['一', '二', '三', '四', '五', '六', '日'].forEach((d, idx) => {
                 const isWeekend = idx >= 5;
-                html += `<div class="text-center font-bold ${isWeekend ? 'text-rose-500 bg-rose-50' : 'text-teal-700 bg-teal-50'} py-1 md:py-2 xl:py-3 2xl:py-5 text-sm md:text-base xl:text-xl 2xl:text-3xl rounded-lg md:rounded-xl 2xl:rounded-2xl shadow-sm border border-gray-100">${d}</div>`;
+                html += `<div class="text-center font-bold ${isWeekend ? 'text-rose-500 bg-rose-50' : 'text-teal-700 bg-teal-50'} py-1 md:py-2 text-sm md:text-base rounded-lg md:rounded-xl shadow-sm border border-gray-100">${d}</div>`;
             });
             
-            // 完美適應所有大螢幕的 auto-rows 設定！
-            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 xl:gap-3 2xl:gap-5 flex-1 auto-rows-[minmax(100px,1fr)] md:auto-rows-[minmax(120px,1fr)] xl:auto-rows-[minmax(160px,1fr)] 2xl:auto-rows-[minmax(220px,1fr)] min-[2500px]:auto-rows-[minmax(320px,1fr)] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
+            // 加入 auto-rows-[120px] 固定每個格子的高度，超過即產生內部滾動條
+            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[100px] md:auto-rows-[120px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
 
             for(let i=0; i<startPad; i++) {
-                html += `<div class="bg-white/30 rounded-xl md:rounded-2xl 2xl:rounded-3xl border border-transparent"></div>`;
+                html += `<div class="bg-white/30 rounded-xl md:rounded-2xl border border-transparent"></div>`;
             }
 
             for(let d=1; d<=daysInMonth; d++) {
@@ -521,7 +519,7 @@
 
                 let cellContent = '';
                 if (userGrades && Object.keys(userGrades).length > 0) {
-                    cellContent = `<div class="flex flex-col gap-1 xl:gap-1.5 2xl:gap-2 w-full mt-1 2xl:mt-3 pb-1">`;
+                    cellContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
                     Object.entries(userGrades).forEach(([subKey, info]) => {
                         let isA = info.grade.includes('A');
                         let color = isA ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-teal-50 text-teal-700 border-teal-200';
@@ -534,9 +532,9 @@
                         else shortName = subKey.charAt(0);
 
                         cellContent += `
-                            <div class="text-[9px] md:text-[11px] xl:text-[13px] 2xl:text-lg font-bold ${color} border px-1 md:px-1.5 xl:px-2 2xl:px-3 py-0.5 md:py-1 2xl:py-1.5 rounded xl:rounded-md 2xl:rounded-lg flex items-center justify-between shadow-sm">
-                                <span>${shortName} <span class="font-black ml-1">${info.grade}</span></span>
-                                ${info.photo ? '<span class="text-[8px] md:text-[9px] xl:text-xs 2xl:text-base text-purple-500">📸</span>' : ''}
+                            <div class="text-[9px] md:text-[11px] font-bold ${color} border px-1 py-0.5 rounded flex items-center justify-between shadow-sm">
+                                <span>${shortName} <span class="font-black">${info.grade}</span></span>
+                                ${info.photo ? '<span class="text-[8px] md:text-[9px] text-purple-500">📸</span>' : ''}
                             </div>
                         `;
                     });
@@ -555,10 +553,10 @@
                     : `viewOthersScore('${viewingUser}', '${dateStr}')`;
 
                 html += `
-                    <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-2 xl:p-3 2xl:p-5 rounded-xl md:rounded-2xl 2xl:rounded-3xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group">
-                        <div class="flex justify-between items-start shrink-0 mb-0.5 md:mb-1 2xl:mb-3">
-                            <span class="w-5 h-5 md:w-7 md:h-7 xl:w-8 xl:h-8 2xl:w-12 2xl:h-12 flex items-center justify-center rounded-full text-xs md:text-sm xl:text-base 2xl:text-2xl font-bold ${headerClass}">${d}</span>
-                            ${isImportant ? `<span class="text-xs md:text-sm xl:text-base 2xl:text-2xl drop-shadow-sm group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
+                    <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-2 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group">
+                        <div class="flex justify-between items-start shrink-0 mb-0.5 md:mb-1">
+                            <span class="w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass}">${d}</span>
+                            ${isImportant ? `<span class="text-xs md:text-sm drop-shadow-sm group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
                         </div>
                         <div class="flex-1 overflow-y-auto custom-scrollbar">
                             ${cellContent}
@@ -592,8 +590,8 @@
             if (feed.length === 0) {
                 container.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-70">
-                        <div class="text-4xl 2xl:text-6xl mb-2 2xl:mb-4">🍃</div>
-                        <div class="text-sm xl:text-base 2xl:text-xl font-bold">尚無戰況紀錄，趕快搶頭香！</div>
+                        <div class="text-4xl mb-2">🍃</div>
+                        <div class="text-sm font-bold">尚無戰況紀錄，趕快搶頭香！</div>
                     </div>`;
                 return;
             }
@@ -607,17 +605,17 @@
                 const bgColor = isA ? 'bg-gradient-to-br from-white to-rose-50' : 'bg-gradient-to-br from-white to-teal-50';
 
                 html += `
-                    <div class="p-3 xl:p-4 2xl:p-6 rounded-2xl 2xl:rounded-3xl border-2 ${borderColor} ${bgColor} shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" onclick="viewOthersScore('${item.user}', '${item.date}')">
-                        <div class="flex justify-between items-center mb-1 2xl:mb-3">
-                            <span class="font-bold text-gray-700 bg-white px-2 xl:px-3 py-0.5 xl:py-1 2xl:px-4 2xl:py-1.5 rounded xl:rounded-md shadow-sm text-xs xl:text-sm 2xl:text-lg border border-gray-100">
+                    <div class="p-3 rounded-2xl border-2 ${borderColor} ${bgColor} shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" onclick="viewOthersScore('${item.user}', '${item.date}')">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-gray-700 bg-white px-2 py-0.5 rounded shadow-sm text-xs border border-gray-100">
                                 ${isMe ? '👦 我' : '🏃 ' + item.user}
                             </span>
-                            <span class="text-[10px] xl:text-xs 2xl:text-base text-gray-400 font-mono">${item.date}</span>
+                            <span class="text-[10px] text-gray-400 font-mono">${item.date}</span>
                         </div>
-                        <div class="text-sm xl:text-base 2xl:text-xl text-gray-600">
-                            在 ${item.subject} 測驗斬獲了 <span class="font-black text-lg xl:text-xl 2xl:text-3xl mx-1 2xl:mx-2 ${isA ? 'text-rose-600' : 'text-teal-600'}">${item.grade}</span> ${emoji}
+                        <div class="text-sm text-gray-600">
+                            在 ${item.subject} 測驗斬獲了 <span class="font-black text-lg mx-1 ${isA ? 'text-rose-600' : 'text-teal-600'}">${item.grade}</span> ${emoji}
                         </div>
-                        ${item.photo ? `<div class="absolute right-3 bottom-2 2xl:right-5 2xl:bottom-4 text-purple-400 text-lg xl:text-xl 2xl:text-3xl opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
+                        ${item.photo ? `<div class="absolute right-3 bottom-2 text-purple-400 text-lg opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
                     </div>
                 `;
             });
@@ -651,7 +649,7 @@
             userStats.sort((a, b) => b.score - a.score || b.totalEntries - a.totalEntries);
 
             if (userStats.length === 0 || userStats[0].totalEntries === 0) {
-                container.innerHTML = `<div class="text-center text-gray-400 text-sm xl:text-base 2xl:text-xl mt-4 2xl:mt-8 font-bold">目前無人上榜</div>`;
+                container.innerHTML = `<div class="text-center text-gray-400 text-sm mt-4 font-bold">目前無人上榜</div>`;
                 return;
             }
 
@@ -663,21 +661,21 @@
                 if (index === 0) rankMedal = '🥇';
                 else if (index === 1) rankMedal = '🥈';
                 else if (index === 2) rankMedal = '🥉';
-                else rankMedal = `<span class="text-teal-700 bg-teal-100 rounded-full w-6 h-6 xl:w-8 xl:h-8 2xl:w-12 2xl:h-12 flex items-center justify-center text-xs xl:text-sm 2xl:text-xl font-black shadow-inner">${index + 1}</span>`;
+                else rankMedal = `<span class="text-teal-700 bg-teal-100 rounded-full w-6 h-6 flex items-center justify-center text-xs font-black shadow-inner">${index + 1}</span>`;
 
                 html += `
-                    <div class="bg-white rounded-xl 2xl:rounded-2xl p-2.5 xl:p-3 2xl:p-5 border border-teal-100 shadow-sm flex items-center gap-3 xl:gap-4 2xl:gap-6 relative hover:scale-[1.02] transition-transform cursor-default">
-                        <div class="text-2xl xl:text-3xl 2xl:text-5xl w-8 xl:w-10 2xl:w-14 flex justify-center drop-shadow-sm shrink-0">${rankMedal}</div>
+                    <div class="bg-white rounded-xl p-2.5 border border-teal-100 shadow-sm flex items-center gap-3 relative hover:scale-[1.02] transition-transform cursor-default">
+                        <div class="text-2xl w-8 flex justify-center drop-shadow-sm">${rankMedal}</div>
                         <div class="flex-1 min-w-0">
-                            <div class="font-black text-gray-700 text-sm xl:text-base 2xl:text-2xl mb-0.5 2xl:mb-2 truncate">${stat.user}</div>
-                            <div class="text-[10px] xl:text-xs 2xl:text-base text-gray-500 flex gap-2 xl:gap-3">
-                                <span class="text-rose-500 font-bold bg-rose-50 px-1.5 xl:px-2 2xl:px-3 py-0.5 2xl:py-1 rounded 2xl:rounded-md">A++ x ${stat.aPlusPlus}</span>
-                                <span class="text-orange-500 font-bold bg-orange-50 px-1.5 xl:px-2 2xl:px-3 py-0.5 2xl:py-1 rounded 2xl:rounded-md">A+ x ${stat.aPlus}</span>
+                            <div class="font-black text-gray-700 text-sm mb-0.5 truncate">${stat.user}</div>
+                            <div class="text-[10px] text-gray-500 flex gap-2">
+                                <span class="text-rose-500 font-bold bg-rose-50 px-1.5 rounded">A++ x ${stat.aPlusPlus}</span>
+                                <span class="text-orange-500 font-bold bg-orange-50 px-1.5 rounded">A+ x ${stat.aPlus}</span>
                             </div>
                         </div>
-                        <div class="text-center bg-gray-50 p-1.5 xl:p-2 2xl:p-3 rounded-lg 2xl:rounded-xl border border-gray-100 shrink-0">
-                            <div class="text-[10px] xl:text-xs 2xl:text-base text-gray-400 font-bold mb-0.5 2xl:mb-1">總刷題</div>
-                            <div class="font-black text-teal-600 text-base xl:text-xl 2xl:text-3xl leading-none">${stat.totalEntries}</div>
+                        <div class="text-center bg-gray-50 p-1.5 rounded-lg border border-gray-100 shrink-0">
+                            <div class="text-[10px] text-gray-400 font-bold">總刷題</div>
+                            <div class="font-black text-teal-600 text-base leading-none">${stat.totalEntries}</div>
                         </div>
                     </div>
                 `;
@@ -910,19 +908,19 @@
             }
             
             document.getElementById('view-modal-date').innerText = dateStr;
-            let contentHtml = `<h3 class="font-black text-lg xl:text-xl 2xl:text-3xl text-teal-800 mb-4 xl:mb-6 2xl:mb-8 border-b-2 border-teal-200 pb-2 2xl:pb-4">👦 ${otherUser} 的戰果</h3>`;
+            let contentHtml = `<h3 class="font-black text-lg text-teal-800 mb-4 border-b-2 border-teal-200 pb-2">👦 ${otherUser} 的戰果</h3>`;
             
             Object.entries(data).forEach(([subKey, item]) => {
                 let isA = item.grade.includes('A');
                 let color = isA ? 'text-rose-600 bg-rose-50 border-rose-200' : 'text-teal-700 bg-teal-50 border-teal-200';
                 
                 contentHtml += `
-                    <div class="mb-5 xl:mb-6 2xl:mb-8 bg-white p-4 xl:p-6 2xl:p-8 rounded-2xl 2xl:rounded-3xl shadow-sm border ${color}">
-                        <div class="flex justify-between items-center mb-2 xl:mb-4 2xl:mb-6">
-                            <span class="font-bold text-lg xl:text-xl 2xl:text-3xl">📌 ${subKey}</span>
-                            <span class="font-black text-xl xl:text-2xl 2xl:text-4xl">${item.grade}</span>
+                    <div class="mb-5 bg-white p-4 rounded-2xl shadow-sm border ${color}">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold text-lg">📌 ${subKey}</span>
+                            <span class="font-black text-xl">${item.grade}</span>
                         </div>
-                        ${item.photo ? `<div class="mt-3 xl:mt-4 2xl:mt-6"><img src="${item.photo}" class="w-full rounded-xl 2xl:rounded-2xl border border-gray-200 shadow-sm" alt="考卷照片"></div>` : `<div class="text-xs xl:text-sm 2xl:text-xl text-gray-400 text-center mt-2 xl:mt-3 2xl:mt-4">（無附照片）</div>`}
+                        ${item.photo ? `<div class="mt-3"><img src="${item.photo}" class="w-full rounded-xl border border-gray-200 shadow-sm" alt="考卷照片"></div>` : '<div class="text-xs text-gray-400 text-center mt-2">（無附照片）</div>'}
                     </div>
                 `;
             });
@@ -975,7 +973,7 @@
             if (SUB_SUBJECTS[sub]) {
                 subContainer.classList.remove('hidden');
                 subSelector.innerHTML = SUB_SUBJECTS[sub].map(sItem => 
-                    `<button onclick="selectSubSubject('${sItem}')" id="btn-subitem-${sItem}" class="py-1.5 xl:py-2 2xl:py-3 rounded-lg border-2 border-blue-200 text-blue-700 font-bold hover:bg-blue-50 transition-colors bg-white shadow-sm text-sm xl:text-base 2xl:text-xl">${sItem}</button>`
+                    `<button onclick="selectSubSubject('${sItem}')" id="btn-subitem-${sItem}" class="py-1.5 rounded-lg border-2 border-blue-200 text-blue-700 font-bold hover:bg-blue-50 transition-colors bg-white shadow-sm text-sm">${sItem}</button>`
                 ).join('');
 
                 let subToSelect = SUB_SUBJECTS[sub][0];
