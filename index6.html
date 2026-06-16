@@ -76,7 +76,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ==========================================
         //  系統設定與常數
@@ -294,7 +294,7 @@
                 </div>
 
                 <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-                    <div class="w-full md:w-60 lg:w-72 flex flex-col bg-white/50 border-b-2 md:border-b-0 md:border-r-2 border-pink-100 z-10 shrink-0 h-full min-h-0">
+                    <div class="w-full md:w-72 lg:w-80 flex flex-col bg-white/50 border-b-2 md:border-b-0 md:border-r-2 border-pink-100 z-10 shrink-0 h-full min-h-0">
                         <div id="sidebar-countdowns" class="p-4 flex flex-col border-b-2 border-pink-100 shrink-0 h-[45%] min-h-[250px] relative overflow-hidden"></div>
                         <div class="flex-1 flex flex-col bg-white/60 overflow-hidden relative min-h-0">
                             <div class="bg-pink-100/50 p-2 text-center font-bold text-pink-600 border-b border-pink-100 text-sm shadow-sm shrink-0">💬 加油打氣留言板</div>
@@ -324,7 +324,7 @@
                         <div id="calendar-grid" class="flex-1 flex flex-col min-h-0"></div>
                     </div>
 
-                    <div class="w-full md:w-60 lg:w-72 flex flex-col bg-white/60 z-10 shrink-0 border-l-2 border-pink-100 min-h-0 h-full">
+                    <div class="w-full md:w-72 lg:w-80 flex flex-col bg-white/60 z-10 shrink-0 border-l-2 border-pink-100 min-h-0 h-full">
                         <div class="flex-1 flex flex-col min-h-0 border-b-2 border-pink-100">
                             <div class="bg-gradient-to-r from-rose-100 to-pink-100 p-2 text-center font-bold text-rose-600 shadow-sm shrink-0 text-sm">🌟 最新戰況動態</div>
                             <div id="timeline-feed" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar"></div>
@@ -982,7 +982,7 @@
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'AllGrades'), { data: newGrades });
                 }
 
-                alert(`已成功移除使用者 ${userToDelete} ${transferTarget ? '，成績已轉移至 ' + transferTarget : '，成績已連帶刪除'}。`);
+                alert(`已成功移除使用者 ${userToDelete} ${transferTarget ? `，成績已轉移至 ${transferTarget}` : '，成績已連帶刪除'}。`);
                 renderAdminUsers();
             } catch(e) {
                 console.error(e);
@@ -1324,7 +1324,7 @@
                         ${getAvatarChar(otherUser)}
                     </div>
                     <h3 class="font-black text-xl text-teal-800">${usersProfile[otherUser]?.nickname || otherUser} 的戰果</h3>
-                    </div>
+                </div>
             `;
             
             Object.entries(data).forEach(([subKey, item]) => {
@@ -1421,13 +1421,13 @@
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 600; 
+                    const MAX_WIDTH = 1200; 
                     const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
                     canvas.width = img.width * scale;
                     canvas.height = img.height * scale;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const base64 = canvas.toDataURL('image/jpeg', 0.6);
+                    const base64 = canvas.toDataURL('image/jpeg', 0.85);
                     setPhotoPreview(base64);
                 };
                 img.src = event.target.result;
@@ -1448,21 +1448,19 @@
             if(!modalState.subSubject) return alert("請選擇科目！");
             if(!modalState.grade) return alert("請選擇成績等級！");
 
+            let updatedGrades = JSON.parse(JSON.stringify(allGrades));
+            if(!updatedGrades[username]) updatedGrades[username] = {};
+            if(!updatedGrades[username][modalState.date]) updatedGrades[username][modalState.date] = {};
+            
+            updatedGrades[username][modalState.date][modalState.subSubject] = {
+                grade: modalState.grade,
+                photo: modalState.photoBase64 || null,
+                updatedAt: new Date().toISOString() 
+            };
+
             try {
-                // 將成績獨立儲存為一個 Document，ID 命名規則為: 帳號_日期_科目
-                const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
-                const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
-                
-                await setDoc(gradeRef, {
-                    user: username,
-                    date: modalState.date,
-                    mainSubject: modalState.mainSubject,
-                    subSubject: modalState.subSubject,
-                    grade: modalState.grade,
-                    photo: modalState.photoBase64 || null,
-                    updatedAt: new Date().toISOString() 
-                });
-                
+                const gradesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'AllGrades');
+                await setDoc(gradesRef, { data: updatedGrades }, { merge: true });
                 closeGlobalModal('score-modal');
             } catch(e) {
                 console.error(e);
@@ -1474,76 +1472,22 @@
             if(!modalState.subSubject) return;
             if(!confirm(`確定要刪除 ${modalState.date} 的 ${modalState.subSubject} 紀錄嗎？`)) return;
 
-            try {
-                const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
-                const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
-                await deleteDoc(gradeRef);
-                closeGlobalModal('score-modal');
-            } catch(e) { console.error(e); }
+            let updatedGrades = JSON.parse(JSON.stringify(allGrades));
+            if(updatedGrades[username] && updatedGrades[username][modalState.date] && updatedGrades[username][modalState.date][modalState.subSubject]) {
+                delete updatedGrades[username][modalState.date][modalState.subSubject];
+                if(Object.keys(updatedGrades[username][modalState.date]).length === 0) {
+                    delete updatedGrades[username][modalState.date];
+                }
+                try {
+                    const gradesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'AllGrades');
+                    await setDoc(gradesRef, { data: updatedGrades }, { merge: true });
+                    closeGlobalModal('score-modal');
+                } catch(e) { console.error(e); }
+            }
         };
 
         // ==========================================
         //  Firebase 監聽與初始化 (包含幽靈帳號檢查)
-        window.adminDeleteUser = async (userToDelete) => {
-            if(!confirm(`⚠️ 警告！確定要刪除帳號 [${userToDelete}] 嗎？此操作不可逆！`)) return;
-            
-            let transferTarget = null;
-            const others = globalUsers.filter(u => u !== userToDelete);
-            if (others.length > 0) {
-                const ans = prompt(`是否轉移其成績給其他人？\n(若不轉移請留空按確定，將連帶刪除所有成績)\n可選對象: ${others.join(', ')}`);
-                if (ans && others.includes(ans.trim())) {
-                    transferTarget = ans.trim();
-                } else if (ans) {
-                    return alert("輸入的名稱無效，已取消刪除操作。");
-                }
-            }
-
-            try {
-                const newUsers = globalUsers.filter(u => u !== userToDelete);
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers });
-
-                let newProfiles = JSON.parse(JSON.stringify(usersProfile));
-                delete newProfiles[userToDelete];
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: newProfiles });
-
-                // 更新 Grades 獨立集合中的文件
-                if (allGrades[userToDelete]) {
-                    const dates = Object.keys(allGrades[userToDelete]);
-                    for (let i = 0; i < dates.length; i++) {
-                        const dateStr = dates[i];
-                        const subs = Object.keys(allGrades[userToDelete][dateStr]);
-                        for (let j = 0; j < subs.length; j++) {
-                            const sub = subs[j];
-                            const oldDocId = `${userToDelete}_${dateStr}_${sub}`;
-                            const oldRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', oldDocId);
-                            
-                            if (transferTarget) {
-                                const newDocId = `${transferTarget}_${dateStr}_${sub}`;
-                                const newRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', newDocId);
-                                const gradeData = allGrades[userToDelete][dateStr][sub];
-                                await setDoc(newRef, {
-                                    user: transferTarget,
-                                    date: dateStr,
-                                    mainSubject: gradeData.mainSubject || gradeData.subSubject || sub,
-                                    subSubject: sub,
-                                    grade: gradeData.grade,
-                                    photo: gradeData.photo || null,
-                                    updatedAt: gradeData.updatedAt || new Date().toISOString()
-                                });
-                            }
-                            await deleteDoc(oldRef);
-                        }
-                    }
-                }
-
-                alert(`已成功移除使用者 ${userToDelete} ${transferTarget ? '，成績已轉移至 ' + transferTarget : '，成績已連帶刪除'}。`);
-                renderAdminUsers();
-            } catch(e) {
-                console.error(e);
-                alert("移除操作失敗！");
-            }
-        };
-
         // ==========================================
         const setupLoginListener = () => {
             if (!currentUser) return;
@@ -1621,25 +1565,10 @@
                 if(username) window.renderChat();
             }, errHandler);
 
-            const gradesCol = collection(db, 'artifacts', appId, 'public', 'data', 'Grades');
+            const gradesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'AllGrades');
             if(unsubGrades) unsubGrades();
-            unsubGrades = onSnapshot(gradesCol, (snap) => {
-                let newAllGrades = {};
-                snap.forEach(docSnap => {
-                    const data = docSnap.data();
-                    if(!data.user || !data.date || !data.subSubject) return; // 防呆
-                    
-                    if(!newAllGrades[data.user]) newAllGrades[data.user] = {};
-                    if(!newAllGrades[data.user][data.date]) newAllGrades[data.user][data.date] = {};
-                    
-                    newAllGrades[data.user][data.date][data.subSubject] = {
-                        mainSubject: data.mainSubject || '',
-                        grade: data.grade,
-                        photo: data.photo || null,
-                        updatedAt: data.updatedAt || ''
-                    };
-                });
-                allGrades = newAllGrades;
+            unsubGrades = onSnapshot(gradesRef, (snap) => {
+                if(snap.exists()) allGrades = snap.data().data || {};
                 if(username) window.renderMainContent();
             }, errHandler);
         };
