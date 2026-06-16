@@ -615,6 +615,11 @@
             if(unsubUsers) unsubUsers();
             if(unsubProfile) unsubProfile();
             
+            // 清空本地快取，避免登入其他人時閃爍舊資料
+            allGrades = {};
+            chatMessages = [];
+            importantDates = [];
+            
             setupLoginListener();
             window.renderLogin();
         };
@@ -809,6 +814,7 @@
             viewingUser = username;
             isAdmin = (username === 'Nick'); 
             localStorage.setItem('study_group_user', username);
+            setupListeners(); // 修復：重新登入時重新掛載所有監聽器
             window.renderMain();
         };
 
@@ -969,17 +975,34 @@
                 delete newProfiles[userToDelete];
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: newProfiles });
 
-                let newGrades = JSON.parse(JSON.stringify(allGrades));
-                if (newGrades[userToDelete]) {
-                    if (transferTarget) {
-                        if (!newGrades[transferTarget]) newGrades[transferTarget] = {};
-                        Object.keys(newGrades[userToDelete]).forEach(dateStr => {
-                            if (!newGrades[transferTarget][dateStr]) newGrades[transferTarget][dateStr] = {};
-                            Object.assign(newGrades[transferTarget][dateStr], newGrades[userToDelete][dateStr]);
-                        });
+                // 更新 Grades 獨立集合中的文件
+                if (allGrades[userToDelete]) {
+                    const dates = Object.keys(allGrades[userToDelete]);
+                    for (let i = 0; i < dates.length; i++) {
+                        const dateStr = dates[i];
+                        const subs = Object.keys(allGrades[userToDelete][dateStr]);
+                        for (let j = 0; j < subs.length; j++) {
+                            const sub = subs[j];
+                            const oldDocId = `${userToDelete}_${dateStr}_${sub}`;
+                            const oldRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', oldDocId);
+                            
+                            if (transferTarget) {
+                                const newDocId = `${transferTarget}_${dateStr}_${sub}`;
+                                const newRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', newDocId);
+                                const gradeData = allGrades[userToDelete][dateStr][sub];
+                                await setDoc(newRef, {
+                                    user: transferTarget,
+                                    date: dateStr,
+                                    mainSubject: gradeData.mainSubject || gradeData.subSubject || sub,
+                                    subSubject: sub,
+                                    grade: gradeData.grade,
+                                    photo: gradeData.photo || null,
+                                    updatedAt: gradeData.updatedAt || new Date().toISOString()
+                                });
+                            }
+                            await deleteDoc(oldRef);
+                        }
                     }
-                    delete newGrades[userToDelete];
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'AllGrades'), { data: newGrades });
                 }
 
                 alert(`已成功移除使用者 ${userToDelete} ${transferTarget ? '，成績已轉移至 ' + transferTarget : '，成績已連帶刪除'}。`);
@@ -1484,66 +1507,6 @@
 
         // ==========================================
         //  Firebase 監聽與初始化 (包含幽靈帳號檢查)
-        window.adminDeleteUser = async (userToDelete) => {
-            if(!confirm(`⚠️ 警告！確定要刪除帳號 [${userToDelete}] 嗎？此操作不可逆！`)) return;
-            
-            let transferTarget = null;
-            const others = globalUsers.filter(u => u !== userToDelete);
-            if (others.length > 0) {
-                const ans = prompt(`是否轉移其成績給其他人？\n(若不轉移請留空按確定，將連帶刪除所有成績)\n可選對象: ${others.join(', ')}`);
-                if (ans && others.includes(ans.trim())) {
-                    transferTarget = ans.trim();
-                } else if (ans) {
-                    return alert("輸入的名稱無效，已取消刪除操作。");
-                }
-            }
-
-            try {
-                const newUsers = globalUsers.filter(u => u !== userToDelete);
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers });
-
-                let newProfiles = JSON.parse(JSON.stringify(usersProfile));
-                delete newProfiles[userToDelete];
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: newProfiles });
-
-                // 更新 Grades 獨立集合中的文件
-                if (allGrades[userToDelete]) {
-                    const dates = Object.keys(allGrades[userToDelete]);
-                    for (let i = 0; i < dates.length; i++) {
-                        const dateStr = dates[i];
-                        const subs = Object.keys(allGrades[userToDelete][dateStr]);
-                        for (let j = 0; j < subs.length; j++) {
-                            const sub = subs[j];
-                            const oldDocId = `${userToDelete}_${dateStr}_${sub}`;
-                            const oldRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', oldDocId);
-                            
-                            if (transferTarget) {
-                                const newDocId = `${transferTarget}_${dateStr}_${sub}`;
-                                const newRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', newDocId);
-                                const gradeData = allGrades[userToDelete][dateStr][sub];
-                                await setDoc(newRef, {
-                                    user: transferTarget,
-                                    date: dateStr,
-                                    mainSubject: gradeData.mainSubject || gradeData.subSubject || sub,
-                                    subSubject: sub,
-                                    grade: gradeData.grade,
-                                    photo: gradeData.photo || null,
-                                    updatedAt: gradeData.updatedAt || new Date().toISOString()
-                                });
-                            }
-                            await deleteDoc(oldRef);
-                        }
-                    }
-                }
-
-                alert(`已成功移除使用者 ${userToDelete} ${transferTarget ? '，成績已轉移至 ' + transferTarget : '，成績已連帶刪除'}。`);
-                renderAdminUsers();
-            } catch(e) {
-                console.error(e);
-                alert("移除操作失敗！");
-            }
-        };
-
         // ==========================================
         const setupLoginListener = () => {
             if (!currentUser) return;
@@ -1674,11 +1637,7 @@
                         currentUser = user;
                         const savedUser = localStorage.getItem('study_group_user');
                         if (savedUser) {
-                            username = savedUser;
-                            viewingUser = username; 
-                            isAdmin = (username === 'Nick');
-                            setupListeners();
-                            window.renderMain();
+                            doCompleteLogin(savedUser); // 統一呼叫，確保監聽器被正確掛載
                         } else {
                             setupLoginListener();
                             window.renderLogin();
