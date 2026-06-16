@@ -427,14 +427,14 @@
 
                 <!-- 學科成績分析 Modal -->
                 <div id="analysis-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('analysis-modal')">
-                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl overflow-hidden border-4 border-indigo-200 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
+                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border-4 border-indigo-200 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
                         <div class="bg-gradient-to-r from-indigo-400 to-blue-500 p-4 flex justify-between items-center text-white shrink-0">
                             <h2 class="text-xl font-bold flex items-center gap-2">📊 學科能力雷達圖</h2>
                             <button onclick="closeGlobalModal('analysis-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
                         <div class="p-6 bg-indigo-50/30 overflow-y-auto flex-1 custom-scrollbar flex flex-col items-center">
                             <h3 class="text-lg font-black text-indigo-800 mb-4 bg-white px-4 py-1.5 rounded-full shadow-sm border border-indigo-100" id="analysis-user-name"></h3>
-                            <div class="w-full relative h-80 sm:h-96 md:h-[450px] lg:h-[550px] flex justify-center items-center">
+                            <div class="w-full relative h-72 md:h-80 flex justify-center items-center">
                                 <canvas id="radarChart"></canvas>
                             </div>
                             <p class="text-xs text-gray-500 mt-6 font-bold text-center bg-white/60 p-2 rounded-lg">* 系統將自動彙整各科目<span class="text-indigo-500">所有歷史</span>成績計算平均值 (A++=5, A+=4, A=3, B++=2, B+=1, B/C=0)</p>
@@ -701,7 +701,7 @@
                                 angleLines: { color: 'rgba(0,0,0,0.1)' },
                                 grid: { color: 'rgba(0,0,0,0.1)' },
                                 pointLabels: {
-                                    font: { family: 'Noto Sans TC', size: 15, weight: 'bold' },
+                                    font: { family: 'Noto Sans TC', size: 13, weight: 'bold' },
                                     color: '#4338ca' // text-indigo-700
                                 },
                                 ticks: {
