@@ -373,9 +373,15 @@
                                 <label class="block text-rose-800 font-bold mb-1 text-sm">真實姓名 (登入帳號) <span class="text-red-500">*</span></label>
                                 <input type="text" id="prof-name" placeholder="請輸入真實姓名" class="w-full px-3 py-2 rounded-lg border-2 border-rose-200 bg-white focus:outline-none focus:border-rose-400 font-bold text-gray-700">
                             </div>
-                            <div>
-                                <label class="block text-rose-800 font-bold mb-1 text-sm">設定密碼 (必填) <span class="text-xs font-normal text-red-400" id="pwd-hint"></span> <span class="text-red-500">*</span></label>
-                                <input type="password" id="prof-pwd" placeholder="請設定登入密碼" class="w-full px-3 py-2 rounded-lg border-2 border-rose-200 bg-white focus:outline-none focus:border-rose-400">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-rose-800 font-bold mb-1 text-sm">設定密碼 (必填) <span class="text-xs font-normal text-red-400" id="pwd-hint"></span> <span class="text-red-500">*</span></label>
+                                    <input type="text" id="prof-pwd" placeholder="請設定登入密碼" class="w-full px-3 py-2 rounded-lg border-2 border-rose-200 bg-white focus:outline-none focus:border-rose-400">
+                                </div>
+                                <div>
+                                    <label class="block text-rose-800 font-bold mb-1 text-sm">確認密碼 (必填) <span class="text-red-500">*</span></label>
+                                    <input type="text" id="prof-pwd-confirm" placeholder="請再次輸入密碼" class="w-full px-3 py-2 rounded-lg border-2 border-rose-200 bg-white focus:outline-none focus:border-rose-400">
+                                </div>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
@@ -688,12 +694,17 @@
             }
             
             const isNick = (name === 'Nick');
-            document.getElementById('prof-pwd').value = usersProfile[name]?.password || (isNick ? '2iligloi' : '');
+            const currentPwd = usersProfile[name]?.password || (isNick ? '2iligloi' : '');
+            document.getElementById('prof-pwd').value = currentPwd;
+            document.getElementById('prof-pwd-confirm').value = currentPwd;
+
             if (isNick && isRegister) {
                 document.getElementById('prof-pwd').disabled = true;
+                document.getElementById('prof-pwd-confirm').disabled = true;
                 document.getElementById('pwd-hint').innerText = "(管理員預設密碼不可修改)";
             } else {
                 document.getElementById('prof-pwd').disabled = false;
+                document.getElementById('prof-pwd-confirm').disabled = false;
                 document.getElementById('pwd-hint').innerText = "";
             }
 
@@ -750,10 +761,12 @@
             const nameInput = document.getElementById('prof-name');
             const name = nameInput.value.trim();
             const pwd = document.getElementById('prof-pwd').value.trim();
+            const pwdConfirm = document.getElementById('prof-pwd-confirm').value.trim();
             const nickname = document.getElementById('prof-nickname').value.trim();
             
             if(!name) return alert("請輸入真實姓名作為登入帳號！");
             if(!pwd) return alert("請務必設定登入密碼！");
+            if(pwd !== pwdConfirm) return alert("兩次輸入的密碼不一致，請重新檢查！");
             if(!nickname) return alert("請輸入顯示暱稱！");
 
             if (!nameInput.disabled && globalUsers.includes(name)) {
