@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🎒 邁向5A10+ 國中會考讀書會 ✨</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 載入 Chart.js 用於繪製雷達圖 -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         /* 確保所有瀏覽器都能給予正確的滿版高度 */
@@ -155,8 +153,6 @@
         let currentMonth = new Date().getMonth(); // 0-11
         
         let unsubUsers, unsubDates, unsubGrades, unsubChat, unsubProfile;
-        
-        let radarChartInstance = null; // 全域變數供 Chart.js 使用
 
         // ==========================================
         //  輔助工具函式
@@ -287,18 +283,13 @@
                         <h1 class="text-xl font-black text-rose-500 tracking-wider block sm:hidden">邁向5A10+</h1>
                     </div>
                     <div class="flex items-center gap-2 md:gap-3 pr-2">
-                        ${isAdmin ? `<button onclick="openAdminPanel()" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-transform text-sm shrink-0 hidden lg:block">👑 管理員面板</button>` : ''}
+                        ${isAdmin ? `<button onclick="openAdminPanel()" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-transform text-sm shrink-0">👑 管理員面板</button>` : ''}
                         
-                        <button onclick="openAnalysisModal()" class="font-bold text-indigo-700 bg-indigo-50 px-2 md:px-3 py-1.5 rounded-lg border border-indigo-200 shadow-sm hover:bg-indigo-100 transition-colors text-sm flex items-center gap-1 shrink-0">
-                            📊 <span class="hidden md:inline">學科分析</span>
-                        </button>
-                        
-                        <button onclick="openProfileEditModal('${username}')" class="font-bold text-teal-700 bg-teal-50 px-2 md:px-3 py-1.5 rounded-lg border border-teal-200 shadow-sm hover:bg-teal-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                        <button onclick="openProfileEditModal('${username}')" class="font-bold text-teal-700 bg-teal-50 px-3 py-1.5 rounded-lg border border-teal-200 shadow-sm hover:bg-teal-100 transition-colors text-sm flex items-center gap-1 shrink-0">
                             <div class="${getUserColor(username)} w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white">${getAvatarChar(username)}</div>
                             <span class="hidden md:inline">我的資料卡</span>
                         </button>
-                        
-                        <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-2 md:px-3 py-1.5 rounded-lg transition-colors text-sm border border-rose-200 bg-white shadow-sm shrink-0">登出 👋</button>
+                        <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-3 py-1.5 rounded-lg transition-colors text-sm border border-rose-200 bg-white shadow-sm shrink-0">登出 👋</button>
                     </div>
                 </div>
 
@@ -421,23 +412,6 @@
                         </div>
                         <div class="p-4 bg-white border-t border-rose-100 flex justify-end shrink-0">
                             <button onclick="saveProfile()" class="px-6 py-2.5 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 shadow-md w-full md:w-auto">儲存並進入 🚀</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 學科成績分析 Modal -->
-                <div id="analysis-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('analysis-modal')">
-                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border-4 border-indigo-200 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
-                        <div class="bg-gradient-to-r from-indigo-400 to-blue-500 p-4 flex justify-between items-center text-white shrink-0">
-                            <h2 class="text-xl font-bold flex items-center gap-2">📊 學科能力雷達圖</h2>
-                            <button onclick="closeGlobalModal('analysis-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
-                        </div>
-                        <div class="p-6 bg-indigo-50/30 overflow-y-auto flex-1 custom-scrollbar flex flex-col items-center">
-                            <h3 class="text-lg font-black text-indigo-800 mb-4 bg-white px-4 py-1.5 rounded-full shadow-sm border border-indigo-100" id="analysis-user-name"></h3>
-                            <div class="w-full relative h-72 md:h-80 flex justify-center items-center">
-                                <canvas id="radarChart"></canvas>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-6 font-bold text-center bg-white/60 p-2 rounded-lg">* 系統將自動抓取各科目<span class="text-indigo-500">最新登錄</span>的成績進行綜合能力分析</p>
                         </div>
                     </div>
                 </div>
@@ -616,108 +590,6 @@
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
             }, 200);
-        };
-
-        // ==========================================
-        //  學科分析雷達圖邏輯
-        // ==========================================
-        window.openAnalysisModal = () => {
-            const targetUser = viewingUser || username;
-            if (!targetUser) return;
-
-            const dispName = usersProfile[targetUser]?.nickname || targetUser;
-            document.getElementById('analysis-user-name').innerText = `👤 ${dispName} 的戰力分析`;
-            
-            // 要求的九大科目
-            const analysisSubjects = ['國文', '英文', '數學', '生物', '理化', '地科', '歷史', '地理', '公民'];
-            
-            // 將成績轉為數值 (A++=7 ~ C=1)
-            const numToGrade = { 7:'A++', 6:'A+', 5:'A', 4:'B++', 3:'B+', 2:'B', 1:'C', 0:'無' };
-            const gradeToNum = (g) => {
-                const map = { 'A++':7, 'A+':6, 'A':5, 'B++':4, 'B+':3, 'B':2, 'C':1 };
-                return map[g] || 0;
-            };
-
-            const uGrades = allGrades[targetUser] || {};
-            let latestGrades = {};
-            let latestDates = {};
-
-            // 抓取各科目「最新」的成績資料
-            Object.keys(uGrades).forEach(dateStr => {
-                Object.keys(uGrades[dateStr]).forEach(sub => {
-                    if (analysisSubjects.includes(sub)) {
-                        if (!latestDates[sub] || new Date(dateStr) >= new Date(latestDates[sub])) {
-                            latestDates[sub] = dateStr;
-                            latestGrades[sub] = gradeToNum(uGrades[dateStr][sub].grade);
-                        }
-                    }
-                });
-            });
-
-            // 準備 Chart.js 所需的資料陣列
-            const dataPoints = analysisSubjects.map(sub => latestGrades[sub] || 0);
-
-            // 打開 Modal
-            openGlobalModal('analysis-modal');
-
-            // 延遲繪製以確保 Canvas 元素已顯示在畫面上並取得正確尺寸
-            setTimeout(() => {
-                const ctx = document.getElementById('radarChart').getContext('2d');
-                
-                // 如果已經有舊的圖表實例，需先銷毀以免重疊繪製
-                if (radarChartInstance) {
-                    radarChartInstance.destroy();
-                }
-                
-                radarChartInstance = new Chart(ctx, {
-                    type: 'radar',
-                    data: {
-                        labels: analysisSubjects,
-                        datasets: [{
-                            label: '能力等級',
-                            data: dataPoints,
-                            backgroundColor: 'rgba(99, 102, 241, 0.2)', // indigo 顏色
-                            borderColor: 'rgba(99, 102, 241, 1)',
-                            pointBackgroundColor: 'rgba(99, 102, 241, 1)',
-                            pointBorderColor: '#fff',
-                            pointHoverBackgroundColor: '#fff',
-                            pointHoverBorderColor: 'rgba(99, 102, 241, 1)',
-                            borderWidth: 2,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            r: {
-                                angleLines: { color: 'rgba(0,0,0,0.1)' },
-                                grid: { color: 'rgba(0,0,0,0.1)' },
-                                pointLabels: {
-                                    font: { family: 'Noto Sans TC', size: 13, weight: 'bold' },
-                                    color: '#4338ca' // text-indigo-700
-                                },
-                                ticks: {
-                                    min: 0,
-                                    max: 7,
-                                    stepSize: 1,
-                                    display: false // 隱藏內部的數字刻度 (1~7) 讓畫面更乾淨
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    // 讓提示框顯示 "A++" 而不是 "7"
-                                    label: function(context) {
-                                        return ' 目前實力: ' + numToGrade[context.raw];
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }, 100);
         };
 
         // ==========================================
