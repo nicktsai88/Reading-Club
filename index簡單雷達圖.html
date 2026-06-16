@@ -437,7 +437,7 @@
                             <div class="w-full relative h-72 md:h-80 flex justify-center items-center">
                                 <canvas id="radarChart"></canvas>
                             </div>
-                            <p class="text-xs text-gray-500 mt-6 font-bold text-center bg-white/60 p-2 rounded-lg">* 系統將自動彙整各科目<span class="text-indigo-500">所有歷史</span>成績計算平均值 (A++=5, A+=4, A=3, B++=2, B+=1, B/C=0)</p>
+                            <p class="text-xs text-gray-500 mt-6 font-bold text-center bg-white/60 p-2 rounded-lg">* 系統將自動抓取各科目<span class="text-indigo-500">最新登錄</span>的成績進行綜合能力分析</p>
                         </div>
                     </div>
                 </div>
@@ -631,39 +631,31 @@
             // 要求的九大科目
             const analysisSubjects = ['國文', '英文', '數學', '生物', '理化', '地科', '歷史', '地理', '公民'];
             
-            // 將成績轉為數值 (A++=5 ~ B/C=0)
+            // 將成績轉為數值 (A++=7 ~ C=1)
+            const numToGrade = { 7:'A++', 6:'A+', 5:'A', 4:'B++', 3:'B+', 2:'B', 1:'C', 0:'無' };
             const gradeToNum = (g) => {
-                const map = { 'A++': 5, 'A+': 4, 'A': 3, 'B++': 2, 'B+': 1, 'B': 0, 'C': 0 };
-                return map[g] !== undefined ? map[g] : null;
+                const map = { 'A++':7, 'A+':6, 'A':5, 'B++':4, 'B+':3, 'B':2, 'C':1 };
+                return map[g] || 0;
             };
 
             const uGrades = allGrades[targetUser] || {};
-            let subjectTotals = {};
-            let subjectCounts = {};
+            let latestGrades = {};
+            let latestDates = {};
 
-            analysisSubjects.forEach(sub => {
-                subjectTotals[sub] = 0;
-                subjectCounts[sub] = 0;
-            });
-
-            // 抓取各科目「所有」的成績資料並加總
+            // 抓取各科目「最新」的成績資料
             Object.keys(uGrades).forEach(dateStr => {
                 Object.keys(uGrades[dateStr]).forEach(sub => {
                     if (analysisSubjects.includes(sub)) {
-                        const num = gradeToNum(uGrades[dateStr][sub].grade);
-                        if (num !== null) {
-                            subjectTotals[sub] += num;
-                            subjectCounts[sub] += 1;
+                        if (!latestDates[sub] || new Date(dateStr) >= new Date(latestDates[sub])) {
+                            latestDates[sub] = dateStr;
+                            latestGrades[sub] = gradeToNum(uGrades[dateStr][sub].grade);
                         }
                     }
                 });
             });
 
-            // 計算平均分數
-            const dataPoints = analysisSubjects.map(sub => {
-                if (subjectCounts[sub] === 0) return 0;
-                return parseFloat((subjectTotals[sub] / subjectCounts[sub]).toFixed(2));
-            });
+            // 準備 Chart.js 所需的資料陣列
+            const dataPoints = analysisSubjects.map(sub => latestGrades[sub] || 0);
 
             // 打開 Modal
             openGlobalModal('analysis-modal');
@@ -682,7 +674,7 @@
                     data: {
                         labels: analysisSubjects,
                         datasets: [{
-                            label: '平均能力 (滿分 5)',
+                            label: '能力等級',
                             data: dataPoints,
                             backgroundColor: 'rgba(99, 102, 241, 0.2)', // indigo 顏色
                             borderColor: 'rgba(99, 102, 241, 1)',
@@ -706,9 +698,9 @@
                                 },
                                 ticks: {
                                     min: 0,
-                                    max: 5,
+                                    max: 7,
                                     stepSize: 1,
-                                    display: false // 隱藏內部的數字刻度 讓畫面更乾淨
+                                    display: false // 隱藏內部的數字刻度 (1~7) 讓畫面更乾淨
                                 }
                             }
                         },
@@ -716,9 +708,9 @@
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    // 顯示平均分
+                                    // 讓提示框顯示 "A++" 而不是 "7"
                                     label: function(context) {
-                                        return ' 平均實力: ' + context.raw + ' 分';
+                                        return ' 目前實力: ' + numToGrade[context.raw];
                                     }
                                 }
                             }
