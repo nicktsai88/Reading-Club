@@ -141,7 +141,7 @@
         let appInstance, auth, db;
         let currentUser = null;
         let username = '';
-        let viewingUser = 'ALL'; 
+        let viewingUser = ''; 
         let isAdmin = false;
         
         let globalUsers = [];
@@ -280,8 +280,8 @@
                 <div class="bg-white/80 backdrop-blur-md border-b-2 border-pink-200 p-3 flex justify-between items-center shadow-sm shrink-0 z-20 relative">
                     <div class="flex items-center gap-4 pl-2">
                         <div class="flex gap-2">
-                            <img src="school1.jpg" alt="雄中" class="w-full h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-10 bg-rose-50" onerror="this.style.display='none'">
-                            <img src="school2.jpg" alt="雄女" class="w-full h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-0 bg-rose-50" onerror="this.style.display='none'">
+                            <img src="school1.jpg" alt="雄中" class="w-14 h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-10 bg-rose-50" onerror="this.style.display='none'">
+                            <img src="school2.jpg" alt="雄女" class="w-14 h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-0 bg-rose-50" onerror="this.style.display='none'">
                         </div>
                         <h1 class="text-2xl md:text-3xl font-black text-rose-500 tracking-wider hidden sm:block">邁向5A10+ 讀書會 🏆</h1>
                         <h1 class="text-xl font-black text-rose-500 tracking-wider block sm:hidden">邁向5A10+</h1>
@@ -622,7 +622,7 @@
         //  學科分析雷達圖邏輯
         // ==========================================
         window.openAnalysisModal = () => {
-            const targetUser = viewingUser === 'ALL' ? username : viewingUser;
+            const targetUser = viewingUser || username;
             if (!targetUser) return;
 
             const dispName = usersProfile[targetUser]?.nickname || targetUser;
@@ -947,7 +947,7 @@
 
         const doCompleteLogin = (name) => {
             username = name;
-            viewingUser = 'ALL'; 
+            viewingUser = username;
             isAdmin = (username === 'Nick'); 
             localStorage.setItem('study_group_user', username);
             setupListeners(); // 修復：重新登入時重新掛載所有監聽器
@@ -1240,8 +1240,7 @@
             headerContainer.innerHTML = `
                 <h2 class="text-xl md:text-2xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
                 <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-teal-700 bg-teal-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
-                    <option value="ALL" ${viewingUser === 'ALL' ? 'selected' : ''}>🌍 全部進度</option>
-                    ${globalUsers.map(u => `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>👦 ${usersProfile[u]?.nickname || u} 的個人進度</option>`).join('')}
+                    ${globalUsers.map(u => `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>👦 ${usersProfile[u]?.nickname || u} 的進度</option>`).join('')}
                 </select>
             `;
 
@@ -1268,54 +1267,32 @@
                 let usersWithDataToday = [];
                 Object.entries(allGrades).forEach(([u, dates]) => {
                     if (dates[dateStr] && Object.keys(dates[dateStr]).length > 0) {
-                        if (viewingUser === 'ALL' || u === viewingUser) {
-                            usersWithDataToday.push(u);
-                        }
+                        usersWithDataToday.push(u);
                     }
                 });
                 
+                const userGrades = (allGrades[viewingUser] && allGrades[viewingUser][dateStr]) ? allGrades[viewingUser][dateStr] : null;
+
                 let cellContent = '';
-                const buildBadge = (subKey, info, prefix = '') => {
-                    let subColor = getSubjectColor(subKey);
-                    let shortName = subKey;
-                    if(subKey === '自然合科') shortName = '自';
-                    else if(subKey === '社會合科') shortName = '社';
-                    else if(subKey === '地科' || subKey === '地球科學') shortName = '地科';
-                    else if(subKey === '地理') shortName = '地理';
-                    else shortName = subKey.charAt(0);
+                if (userGrades && Object.keys(userGrades).length > 0) {
+                    cellContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
+                    Object.entries(userGrades).forEach(([subKey, info]) => {
+                        let subColor = getSubjectColor(subKey);
+                        let shortName = subKey;
+                        if(subKey === '自然合科') shortName = '自';
+                        else if(subKey === '社會合科') shortName = '社';
+                        else if(subKey === '地科' || subKey === '地球科學') shortName = '地科';
+                        else if(subKey === '地理') shortName = '地理';
+                        else shortName = subKey.charAt(0);
 
-                    return `
-                        <div class="text-[9px] md:text-[11px] font-bold ${subColor.bg} ${subColor.text} ${subColor.border} border px-1 py-0.5 rounded flex items-center justify-between shadow-sm">
-                            <span class="truncate">${prefix}${shortName} <span class="font-black">${info.grade}</span></span>
-                            ${info.photo ? '<span class="text-[8px] md:text-[9px] text-purple-500">📸</span>' : ''}
-                        </div>
-                    `;
-                };
-
-                if (viewingUser === 'ALL') {
-                    let hasAny = false;
-                    let tempContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
-                    Object.entries(allGrades).forEach(([u, dates]) => {
-                        if (dates[dateStr] && Object.keys(dates[dateStr]).length > 0) {
-                            hasAny = true;
-                            const uChar = getAvatarChar(u);
-                            const prefix = `<span class="opacity-60 mr-1 text-[8px]">${uChar}</span>`;
-                            Object.entries(dates[dateStr]).forEach(([subKey, info]) => {
-                                tempContent += buildBadge(subKey, info, prefix);
-                            });
-                        }
+                        cellContent += `
+                            <div class="text-[9px] md:text-[11px] font-bold ${subColor.bg} ${subColor.text} ${subColor.border} border px-1 py-0.5 rounded flex items-center justify-between shadow-sm">
+                                <span>${shortName} <span class="font-black">${info.grade}</span></span>
+                                ${info.photo ? '<span class="text-[8px] md:text-[9px] text-purple-500">📸</span>' : ''}
+                            </div>
+                        `;
                     });
-                    tempContent += `</div>`;
-                    if (hasAny) cellContent = tempContent;
-                } else {
-                    const userGrades = (allGrades[viewingUser] && allGrades[viewingUser][dateStr]) ? allGrades[viewingUser][dateStr] : null;
-                    if (userGrades && Object.keys(userGrades).length > 0) {
-                        cellContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
-                        Object.entries(userGrades).forEach(([subKey, info]) => {
-                            cellContent += buildBadge(subKey, info);
-                        });
-                        cellContent += `</div>`;
-                    }
+                    cellContent += `</div>`;
                 }
 
                 const headerClass = isToday 
@@ -1324,7 +1301,7 @@
                         ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md' 
                         : 'bg-pink-50 text-pink-700';
 
-                const clickAction = (viewingUser === username || viewingUser === 'ALL') 
+                const clickAction = viewingUser === username 
                     ? `openScoreModal('${dateStr}')` 
                     : `viewOthersScore(event, '${viewingUser}', '${dateStr}')`;
 
