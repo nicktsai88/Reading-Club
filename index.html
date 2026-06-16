@@ -248,19 +248,21 @@
                         <h2 class="text-xl font-bold text-teal-600 mb-8 bg-teal-50 inline-block px-6 py-2 rounded-full border border-teal-100">國中會考讀書會 💯</h2>
                         
                         <div class="bg-white/60 p-6 rounded-3xl border border-pink-100 mb-6">
-                            <p class="text-sm text-rose-400 font-bold mb-3">👇 點擊你的名字登入 👇</p>
+                            <p class="text-sm text-rose-400 font-bold mb-3">👇 點擊你的暱稱登入 👇</p>
                             <div class="flex flex-wrap justify-center gap-3">
                                 ${globalUsers.length > 0 ? 
-                                    globalUsers.map(u => `<button onclick="initiateLogin('${u}')" class="text-md font-bold bg-white border-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:scale-105 px-5 py-2.5 rounded-xl shadow-sm transition-all">👦 ${u}</button>`).join('') 
-                                    : `<span class="text-sm text-gray-400">尚無參賽者，請於下方註冊</span>`
+                                    globalUsers.map(u => {
+                                        const dispName = usersProfile[u]?.nickname || u;
+                                        return `<button onclick="initiateLogin('${u}')" class="text-md font-bold bg-white border-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:scale-105 px-5 py-2.5 rounded-xl shadow-sm transition-all">👦 ${dispName}</button>`;
+                                    }).join('') 
+                                    : `<span class="text-sm text-gray-400">尚無參賽者，請點擊下方註冊</span>`
                                 }
                             </div>
                         </div>
                         
-                        <div class="flex gap-2">
-                            <input type="text" id="usernameInput" placeholder="✏️ 輸入新參賽者名稱" class="flex-1 px-5 py-3 text-lg rounded-xl border-2 border-teal-200 focus:outline-none focus:border-teal-400 text-center font-bold text-gray-700 placeholder-teal-300 shadow-inner" onkeypress="if(event.key === 'Enter') initiateLogin(this.value)">
-                            <button onclick="initiateLogin(document.getElementById('usernameInput').value)" class="bg-gradient-to-r from-teal-400 to-emerald-400 text-white font-bold py-3 px-6 text-lg rounded-xl shadow-md hover:shadow-lg transition-all transform hover:scale-105">
-                                註冊 🔥
+                        <div class="flex gap-2 w-full mt-2">
+                            <button onclick="openProfileEditModal('', true)" class="w-full bg-gradient-to-r from-teal-400 to-emerald-400 text-white font-black py-4 px-6 text-xl rounded-2xl shadow-md hover:shadow-lg transition-all transform hover:scale-[1.02]">
+                                🚀 註冊新帳號
                             </button>
                         </div>
                     </div>
@@ -284,7 +286,7 @@
                         ${isAdmin ? `<button onclick="openAdminPanel()" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-transform text-sm shrink-0">👑 管理員面板</button>` : ''}
                         
                         <button onclick="openProfileEditModal('${username}')" class="font-bold text-teal-700 bg-teal-50 px-3 py-1.5 rounded-lg border border-teal-200 shadow-sm hover:bg-teal-100 transition-colors text-sm flex items-center gap-1 shrink-0">
-                            <div class="${getUserColor(username)} w-5 h-5 rounded-full flex items-center justify-center text-[10px]">${getAvatarChar(username)}</div>
+                            <div class="${getUserColor(username)} w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white">${getAvatarChar(username)}</div>
                             <span class="hidden md:inline">我的資料卡</span>
                         </button>
                         <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-3 py-1.5 rounded-lg transition-colors text-sm border border-rose-200 bg-white shadow-sm shrink-0">登出 👋</button>
@@ -368,30 +370,30 @@
                         </div>
                         <div class="p-6 overflow-y-auto flex-1 custom-scrollbar space-y-4 bg-rose-50/30">
                             <div>
-                                <label class="block text-rose-800 font-bold mb-1 text-sm">真實姓名 (登入帳號)</label>
-                                <input type="text" id="prof-name" disabled class="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-100 text-gray-500 font-bold">
+                                <label class="block text-rose-800 font-bold mb-1 text-sm">真實姓名 (登入帳號) <span class="text-red-500">*</span></label>
+                                <input type="text" id="prof-name" placeholder="請輸入真實姓名" class="w-full px-3 py-2 rounded-lg border-2 border-rose-200 bg-white focus:outline-none focus:border-rose-400 font-bold text-gray-700">
                             </div>
                             <div>
-                                <label class="block text-rose-800 font-bold mb-1 text-sm">設定密碼 (必填) <span class="text-xs font-normal text-red-400" id="pwd-hint"></span></label>
-                                <input type="password" id="prof-pwd" placeholder="請設定登入密碼" class="w-full px-3 py-2 rounded-lg border-2 border-rose-200 focus:outline-none focus:border-rose-400">
+                                <label class="block text-rose-800 font-bold mb-1 text-sm">設定密碼 (必填) <span class="text-xs font-normal text-red-400" id="pwd-hint"></span> <span class="text-red-500">*</span></label>
+                                <input type="password" id="prof-pwd" placeholder="請設定登入密碼" class="w-full px-3 py-2 rounded-lg border-2 border-rose-200 bg-white focus:outline-none focus:border-rose-400">
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-rose-800 font-bold mb-1 text-sm">顯示暱稱 (必填)</label>
-                                    <input type="text" id="prof-nickname" placeholder="例如: 小明" class="w-full px-3 py-2 rounded-lg border-2 border-rose-200 focus:outline-none focus:border-rose-400">
+                                    <label class="block text-rose-800 font-bold mb-1 text-sm">顯示暱稱 (必填) <span class="text-red-500">*</span></label>
+                                    <input type="text" id="prof-nickname" placeholder="例如: 小明" class="w-full px-3 py-2 rounded-lg border-2 border-rose-200 bg-white focus:outline-none focus:border-rose-400">
                                 </div>
                                 <div>
                                     <label class="block text-rose-800 font-bold mb-1 text-sm">生日 (選填)</label>
-                                    <input type="date" id="prof-birthday" class="w-full px-3 py-2 rounded-lg border border-rose-200 focus:outline-none focus:border-rose-400">
+                                    <input type="date" id="prof-birthday" class="w-full px-3 py-2 rounded-lg border-2 border-rose-200 bg-white focus:outline-none focus:border-rose-400">
                                 </div>
                             </div>
                             <div>
                                 <label class="block text-rose-800 font-bold mb-1 text-sm">第一志願 / 目標 (選填)</label>
-                                <input type="text" id="prof-target" placeholder="例如: 雄中、建中..." class="w-full px-3 py-2 rounded-lg border border-rose-200 focus:outline-none focus:border-rose-400">
+                                <input type="text" id="prof-target" placeholder="例如: 雄中、建中..." class="w-full px-3 py-2 rounded-lg border-2 border-rose-200 bg-white focus:outline-none focus:border-rose-400">
                             </div>
                             <div>
                                 <label class="block text-rose-800 font-bold mb-1 text-sm">座右銘 (選填)</label>
-                                <input type="text" id="prof-motto" placeholder="一句鼓勵自己的話！" class="w-full px-3 py-2 rounded-lg border border-rose-200 focus:outline-none focus:border-rose-400">
+                                <input type="text" id="prof-motto" placeholder="一句鼓勵自己的話！" class="w-full px-3 py-2 rounded-lg border-2 border-rose-200 bg-white focus:outline-none focus:border-rose-400">
                             </div>
                             <div>
                                 <label class="block text-rose-800 font-bold mb-1 text-sm">大頭貼照片 (選填)</label>
@@ -586,7 +588,6 @@
 
         // ==========================================
         //  通用動作邏輯 (設定、登出、聊天等) 
-        //  (!!! 修復了上次遺漏的關鍵函數 !!!)
         // ==========================================
         window.saveFirebaseConfig = () => {
             const apiKey = document.getElementById('cfg-apiKey').value.trim();
@@ -602,14 +603,12 @@
             isAdmin = false;
             localStorage.removeItem('study_group_user');
             
-            // 安全解綁所有監聽器
             if(unsubDates) unsubDates();
             if(unsubGrades) unsubGrades();
             if(unsubChat) unsubChat();
             if(unsubUsers) unsubUsers();
             if(unsubProfile) unsubProfile();
             
-            // 重建基礎登入監聽並回到登入畫面
             setupLoginListener();
             window.renderLogin();
         };
@@ -627,7 +626,6 @@
             input.value = '';
         };
 
-        // 全域點擊監聽 (處理表情符號收合等)
         document.addEventListener('click', (e) => {
             const emojiPicker = document.getElementById('emoji-picker');
             const toggleBtn = document.getElementById('emoji-toggle-btn');
@@ -644,18 +642,15 @@
         // ==========================================
         window.initiateLogin = (name) => {
             const trimmed = name.trim();
-            if(!trimmed) return alert("請輸入名稱！");
+            if(!trimmed) return alert("請傳入名稱！");
             
-            // 檢查是否為現有且有建檔的使用者
             if (globalUsers.includes(trimmed) && usersProfile[trimmed]) {
                 document.getElementById('login-pwd-username').value = trimmed;
-                document.getElementById('login-pwd-username-display').innerText = `你好，${trimmed}！請輸入密碼以繼續：`;
+                const dispName = usersProfile[trimmed]?.nickname || trimmed;
+                document.getElementById('login-pwd-username-display').innerText = `你好，${dispName}！請輸入密碼以繼續：`;
                 document.getElementById('login-pwd-input').value = '';
                 openGlobalModal('login-pwd-modal');
                 setTimeout(() => document.getElementById('login-pwd-input').focus(), 100);
-            } else {
-                // 註冊流程或補填資料
-                openProfileEditModal(trimmed, true);
             }
         };
 
@@ -670,13 +665,27 @@
                 return alert("密碼錯誤，請重試！");
             }
             
-            // 登入成功
             closeGlobalModal('login-pwd-modal');
             doCompleteLogin(name);
         };
 
-        window.openProfileEditModal = (name, isRegister = false) => {
-            document.getElementById('prof-name').value = name;
+        window.openProfileEditModal = (name = '', isRegister = false) => {
+            const nameInput = document.getElementById('prof-name');
+            nameInput.value = name;
+            
+            if (isRegister && !name) {
+                // 完全新的註冊
+                nameInput.disabled = false;
+                nameInput.classList.remove('bg-gray-100', 'text-gray-500');
+                nameInput.classList.add('bg-white', 'text-gray-700');
+                nameInput.placeholder = "請輸入真實姓名作為登入帳號";
+            } else {
+                // 修改現有資料
+                nameInput.disabled = true;
+                nameInput.classList.remove('bg-white', 'text-gray-700');
+                nameInput.classList.add('bg-gray-100', 'text-gray-500');
+                nameInput.placeholder = "";
+            }
             
             const isNick = (name === 'Nick');
             document.getElementById('prof-pwd').value = usersProfile[name]?.password || (isNick ? '2iligloi' : '');
@@ -706,7 +715,7 @@
             }
 
             document.getElementById('profile-modal-title').innerText = isRegister ? '🚀 歡迎加入！請建立專屬資料卡' : '📝 修改我的資料卡';
-            document.getElementById('profile-modal-close').style.display = isRegister ? 'none' : 'flex'; // 強制註冊不可關閉
+            document.getElementById('profile-modal-close').style.display = isRegister ? 'none' : 'flex'; 
             
             openGlobalModal('profile-edit-modal');
         };
@@ -719,7 +728,7 @@
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 400; // 頭像不需要太大
+                    const MAX_WIDTH = 400; 
                     const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
                     canvas.width = img.width * scale;
                     canvas.height = img.height * scale;
@@ -738,12 +747,18 @@
         };
 
         window.saveProfile = async () => {
-            const name = document.getElementById('prof-name').value;
+            const nameInput = document.getElementById('prof-name');
+            const name = nameInput.value.trim();
             const pwd = document.getElementById('prof-pwd').value.trim();
             const nickname = document.getElementById('prof-nickname').value.trim();
             
+            if(!name) return alert("請輸入真實姓名作為登入帳號！");
             if(!pwd) return alert("請務必設定登入密碼！");
             if(!nickname) return alert("請輸入顯示暱稱！");
+
+            if (!nameInput.disabled && globalUsers.includes(name)) {
+                return alert("此真實姓名已存在，請使用該名稱登入，或輸入另一個姓名！");
+            }
 
             let updatedProfiles = JSON.parse(JSON.stringify(usersProfile));
             updatedProfiles[name] = {
@@ -755,7 +770,6 @@
                 photo: document.getElementById('prof-photo-upload').dataset.base64 || ''
             };
 
-            // 同步至 Firebase
             try {
                 if (!globalUsers.includes(name)) {
                     const newUsers = [...globalUsers, name];
@@ -765,12 +779,11 @@
                 
                 closeGlobalModal('profile-edit-modal');
                 
-                // 如果是註冊流程 (當前未登入)，則執行登入
                 if(username !== name) {
                     doCompleteLogin(name);
                 } else {
                     alert("資料卡更新成功！");
-                    window.renderMainContent(); // 更新畫面上的頭像
+                    window.renderMainContent(); 
                 }
             } catch(e) {
                 console.error(e);
@@ -781,7 +794,7 @@
         const doCompleteLogin = (name) => {
             username = name;
             viewingUser = username;
-            isAdmin = (username === 'Nick'); // 限定 Nick 為管理員
+            isAdmin = (username === 'Nick'); 
             localStorage.setItem('study_group_user', username);
             window.renderMain();
         };
@@ -805,7 +818,6 @@
                 imgEl.style.display = 'none';
                 fallbackEl.innerText = getAvatarChar(name);
                 fallbackEl.style.display = 'flex';
-                // 套用原本的隨機顏色
                 fallbackEl.className = `w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black text-white mb-3 ${getUserColor(name).split(' ')[0]}`;
             }
 
@@ -845,7 +857,6 @@
             }
         };
 
-        // Admin: Dates
         window.renderAdminDates = () => {
             const container = document.getElementById('admin-dates-list');
             const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -905,7 +916,6 @@
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
         };
 
-        // Admin: Users
         window.renderAdminUsers = () => {
             const tbody = document.getElementById('admin-users-list');
             tbody.innerHTML = globalUsers.map(u => {
@@ -1050,7 +1060,6 @@
             window.renderCalendar();
         };
 
-        // 核心月曆渲染
         window.renderCalendar = () => {
             const container = document.getElementById('calendar-grid');
             const headerContainer = document.getElementById('calendar-header-container');
@@ -1486,6 +1495,7 @@
                 } else {
                     usersProfile = {};
                 }
+                if(!username && window.renderLogin) window.renderLogin();
             });
         };
 
@@ -1493,7 +1503,6 @@
             if (!currentUser) return;
             const errHandler = (err) => console.warn("Firestore Listener Error:", err);
 
-            // 【安全性與防卡死核心更新】：動態檢查帳號是否已被管理員刪除/系統重置
             const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
             if(unsubUsers) unsubUsers();
             unsubUsers = onSnapshot(usersRef, (snap) => {
@@ -1502,10 +1511,9 @@
                 } else {
                     globalUsers = [];
                 }
-                // 檢查是否變成「幽靈帳號」
                 if (username && !globalUsers.includes(username)) {
                     alert('⚠️ 系統提示：您的帳號已被管理員移除或系統重置，請重新註冊/登入！');
-                    window.logout(); // 強制踢回登入畫面
+                    window.logout(); 
                 }
             }, errHandler);
 
