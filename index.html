@@ -146,7 +146,7 @@
         let importantDates = [];
         let allGrades = {}; 
         let chatMessages = [];
-        let usersProfile = {}; // 新增：儲存所有使用者的完整資料 (包含密碼、暱稱、目標等)
+        let usersProfile = {}; // 儲存所有使用者的完整資料 (包含密碼、暱稱、目標等)
         
         let modalState = { date: '', mainSubject: '', subSubject: '', grade: '', photoBase64: '' };
         let currentYear = new Date().getFullYear();
@@ -187,7 +187,7 @@
             if(usersProfile[u] && usersProfile[u].nickname) {
                 return usersProfile[u].nickname.charAt(0);
             }
-            return u.charAt(0);
+            return u ? u.charAt(0) : '?';
         };
 
         // ==========================================
@@ -495,7 +495,7 @@
                     </div>
                 </div>
 
-                <!-- 成績輸入 Modal (原始) -->
+                <!-- 成績輸入 Modal -->
                 <div id="score-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-opacity duration-200 opacity-0">
                     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 95%; max-height: 95dvh;" id="score-modal-content">
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
@@ -543,7 +543,7 @@
                     </div>
                 </div>
 
-                <!-- 查看他人成績 Modal (原始) -->
+                <!-- 查看他人成績 Modal -->
                 <div id="view-score-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[60] p-4 transition-opacity duration-200 opacity-0">
                     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 90%; max-height: 90dvh;">
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
@@ -561,7 +561,6 @@
             if(!modal) return;
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            // 小延遲以觸發 CSS 動畫
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
                 const inner = modal.firstElementChild;
@@ -584,6 +583,61 @@
                 modal.classList.remove('flex');
             }, 200);
         };
+
+        // ==========================================
+        //  通用動作邏輯 (設定、登出、聊天等) 
+        //  (!!! 修復了上次遺漏的關鍵函數 !!!)
+        // ==========================================
+        window.saveFirebaseConfig = () => {
+            const apiKey = document.getElementById('cfg-apiKey').value.trim();
+            if (!apiKey) return alert("API Key 為必填欄位！");
+            localStorage.setItem('study_group_firebase_config', JSON.stringify({ apiKey }));
+            alert("設定已儲存！系統將重新啟動。");
+            window.location.reload(); 
+        };
+
+        window.logout = () => {
+            username = '';
+            viewingUser = '';
+            isAdmin = false;
+            localStorage.removeItem('study_group_user');
+            
+            // 安全解綁所有監聽器
+            if(unsubDates) unsubDates();
+            if(unsubGrades) unsubGrades();
+            if(unsubChat) unsubChat();
+            if(unsubUsers) unsubUsers();
+            if(unsubProfile) unsubProfile();
+            
+            // 重建基礎登入監聽並回到登入畫面
+            setupLoginListener();
+            window.renderLogin();
+        };
+
+        window.sendChat = async () => {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            const newMsg = { user: username, text: text, timestamp: new Date().toISOString() };
+            const newChat = [...chatMessages, newMsg];
+            if(newChat.length > 50) newChat.shift();
+            
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), { messages: newChat });
+            input.value = '';
+        };
+
+        // 全域點擊監聽 (處理表情符號收合等)
+        document.addEventListener('click', (e) => {
+            const emojiPicker = document.getElementById('emoji-picker');
+            const toggleBtn = document.getElementById('emoji-toggle-btn');
+            if (emojiPicker && !emojiPicker.classList.contains('hidden')) {
+                if (!emojiPicker.contains(e.target) && e.target !== toggleBtn) {
+                    emojiPicker.classList.add('hidden');
+                }
+            }
+        });
+
 
         // ==========================================
         //  登入/註冊/個資 邏輯
@@ -822,7 +876,6 @@
         window.adminEditDate = (index) => {
             const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
             const item = sortedDates[index];
-            // 找回原始 index
             const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
             document.getElementById('edit-date-index').value = realIndex;
             document.getElementById('edit-date-title').value = item.title;
@@ -874,7 +927,6 @@
         window.adminDeleteUser = async (userToDelete) => {
             if(!confirm(`⚠️ 警告！確定要刪除帳號 [${userToDelete}] 嗎？此操作不可逆！`)) return;
             
-            // 是否轉移成績
             let transferTarget = null;
             const others = globalUsers.filter(u => u !== userToDelete);
             if (others.length > 0) {
@@ -887,24 +939,19 @@
             }
 
             try {
-                // 1. 移除 Global List
                 const newUsers = globalUsers.filter(u => u !== userToDelete);
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers });
 
-                // 2. 移除 Profile
                 let newProfiles = JSON.parse(JSON.stringify(usersProfile));
                 delete newProfiles[userToDelete];
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: newProfiles });
 
-                // 3. 處理成績 (轉移 或 刪除)
                 let newGrades = JSON.parse(JSON.stringify(allGrades));
                 if (newGrades[userToDelete]) {
                     if (transferTarget) {
-                        // 轉移成績：合併兩者的日期紀錄
                         if (!newGrades[transferTarget]) newGrades[transferTarget] = {};
                         Object.keys(newGrades[userToDelete]).forEach(dateStr => {
                             if (!newGrades[transferTarget][dateStr]) newGrades[transferTarget][dateStr] = {};
-                            // 將原本使用者的成績覆寫/新增到新使用者該日期下
                             Object.assign(newGrades[transferTarget][dateStr], newGrades[userToDelete][dateStr]);
                         });
                     }
@@ -919,7 +966,6 @@
                 alert("移除操作失敗！");
             }
         };
-
 
         // ==========================================
         //  UI 渲染函式 - 個別區塊 (月曆/動態/排行)
@@ -1004,7 +1050,7 @@
             window.renderCalendar();
         };
 
-        // 核心月曆渲染：雙層結構
+        // 核心月曆渲染
         window.renderCalendar = () => {
             const container = document.getElementById('calendar-grid');
             const headerContainer = document.getElementById('calendar-header-container');
@@ -1193,7 +1239,6 @@
 
                 const displayName = usersProfile[stat.user]?.nickname || stat.user;
 
-                // 點擊可以查看公開資料卡
                 html += `
                     <div onclick="openPublicProfile('${stat.user}')" class="bg-white rounded-xl p-2.5 border border-teal-100 shadow-sm flex items-center gap-3 relative hover:scale-[1.02] transition-transform cursor-pointer hover:border-teal-300">
                         <div class="text-2xl w-8 flex justify-center drop-shadow-sm">${rankMedal}</div>
@@ -1227,7 +1272,7 @@
         };
 
         // ==========================================
-        //  輸入成績邏輯 (保留原樣)
+        //  輸入成績邏輯 
         // ==========================================
         window.openScoreModal = (dateStr) => {
             modalState = { date: dateStr, mainSubject: '', subSubject: '', grade: '', photoBase64: '' };
@@ -1420,7 +1465,7 @@
         };
 
         // ==========================================
-        //  Firebase 監聽與初始化
+        //  Firebase 監聽與初始化 (包含幽靈帳號檢查)
         // ==========================================
         const setupLoginListener = () => {
             if (!currentUser) return;
@@ -1428,13 +1473,19 @@
             unsubUsers = onSnapshot(usersRef, (snap) => {
                 if(snap.exists()) {
                     globalUsers = snap.data().users || [];
-                    if(!username && window.renderLogin) window.renderLogin(); // 只有還在登入畫面才重繪
+                } else {
+                    globalUsers = [];
                 }
+                if(!username && window.renderLogin) window.renderLogin();
             }, (err) => console.warn("登入監聽失敗:", err));
             
             const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile');
             unsubProfile = onSnapshot(profileRef, (snap) => {
-                if(snap.exists()) usersProfile = snap.data().profiles || {};
+                if(snap.exists()) {
+                    usersProfile = snap.data().profiles || {};
+                } else {
+                    usersProfile = {};
+                }
             });
         };
 
@@ -1442,10 +1493,20 @@
             if (!currentUser) return;
             const errHandler = (err) => console.warn("Firestore Listener Error:", err);
 
+            // 【安全性與防卡死核心更新】：動態檢查帳號是否已被管理員刪除/系統重置
             const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
             if(unsubUsers) unsubUsers();
             unsubUsers = onSnapshot(usersRef, (snap) => {
-                if(snap.exists()) globalUsers = snap.data().users || [];
+                if(snap.exists()) {
+                    globalUsers = snap.data().users || [];
+                } else {
+                    globalUsers = [];
+                }
+                // 檢查是否變成「幽靈帳號」
+                if (username && !globalUsers.includes(username)) {
+                    alert('⚠️ 系統提示：您的帳號已被管理員移除或系統重置，請重新註冊/登入！');
+                    window.logout(); // 強制踢回登入畫面
+                }
             }, errHandler);
 
             const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile');
@@ -1453,8 +1514,10 @@
             unsubProfile = onSnapshot(profileRef, (snap) => {
                 if(snap.exists()) {
                     usersProfile = snap.data().profiles || {};
-                    if(username) window.renderMainContent();
+                } else {
+                    usersProfile = {};
                 }
+                if(username) window.renderMainContent();
             }, errHandler);
 
             const datesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates');
