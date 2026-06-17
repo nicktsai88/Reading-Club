@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🎒 邁向5A10+ 國中會考讀書會 ✨</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 載入 Chart.js 與 DataLabels 擴充套件用於繪製雷達圖及數據標籤 -->
+    <!-- 載入 Chart.js 用於繪製雷達圖 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         /* 確保所有瀏覽器都能給予正確的滿版高度 */
@@ -534,7 +533,7 @@
                 <div id="score-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-opacity duration-200 opacity-0">
                     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 95%; max-height: 95dvh;" id="score-modal-content">
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
-                            <h2 class="text-xl font-bold flex items-center gap-2">📝 成績紀錄 <span id="modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
+                            <h2 class="text-xl font-bold flex items-center gap-2">📝 紀錄模擬成績 <span id="modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
                             <button onclick="closeGlobalModal('score-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
                         <div class="p-6 space-y-5 bg-teal-50/30 overflow-y-auto flex-1 custom-scrollbar">
@@ -641,26 +640,20 @@
             const uGrades = allGrades[targetUser] || {};
             let subjectTotals = {};
             let subjectCounts = {};
-            let subjectDetails = {};
 
             analysisSubjects.forEach(sub => {
                 subjectTotals[sub] = 0;
                 subjectCounts[sub] = 0;
-                subjectDetails[sub] = { 'A++':0, 'A+':0, 'A':0, 'B++':0, 'B+':0, 'B':0, 'C':0 };
             });
 
             // 抓取各科目「所有」的成績資料並加總
             Object.keys(uGrades).forEach(dateStr => {
                 Object.keys(uGrades[dateStr]).forEach(sub => {
                     if (analysisSubjects.includes(sub)) {
-                        const grade = uGrades[dateStr][sub].grade;
-                        const num = gradeToNum(grade);
+                        const num = gradeToNum(uGrades[dateStr][sub].grade);
                         if (num !== null) {
                             subjectTotals[sub] += num;
                             subjectCounts[sub] += 1;
-                            if(subjectDetails[sub][grade] !== undefined) {
-                                subjectDetails[sub][grade]++;
-                            }
                         }
                     }
                 });
@@ -686,7 +679,6 @@
                 
                 radarChartInstance = new Chart(ctx, {
                     type: 'radar',
-                    plugins: [window.ChartDataLabels],
                     data: {
                         labels: analysisSubjects,
                         datasets: [{
@@ -698,66 +690,37 @@
                             pointBorderColor: '#fff',
                             pointHoverBackgroundColor: '#fff',
                             pointHoverBorderColor: 'rgba(99, 102, 241, 1)',
-                            pointRadius: 6,
-                            pointHoverRadius: 8,
                             borderWidth: 2,
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        layout: {
-                            padding: 40
-                        },
                         scales: {
                             r: {
-                                min: 0,
-                                max: 5,
                                 angleLines: { color: 'rgba(0,0,0,0.1)' },
                                 grid: { color: 'rgba(0,0,0,0.1)' },
                                 pointLabels: {
-                                    display: false // 隱藏預設外圍標籤，改用 datalabels
+                                    font: { family: 'Noto Sans TC', size: 15, weight: 'bold' },
+                                    color: '#4338ca' // text-indigo-700
                                 },
                                 ticks: {
+                                    min: 0,
+                                    max: 5,
                                     stepSize: 1,
-                                    display: false 
+                                    display: false // 隱藏內部的數字刻度 讓畫面更乾淨
                                 }
                             }
                         },
                         plugins: {
                             legend: { display: false },
-                            tooltip: { enabled: false }, // 關閉浮動提示框，全面改由點擊顯示詳細數據
-                            datalabels: {
-                                color: '#4338ca', // text-indigo-700
-                                font: { family: 'Noto Sans TC', size: 14, weight: 'bold' },
-                                formatter: function(value, context) {
-                                    const sub = context.chart.data.labels[context.dataIndex];
-                                    return sub + '\n' + value + ' 分';
-                                },
-                                textAlign: 'center',
-                                align: 'end',
-                                anchor: 'end',
-                                offset: 5,
-                                listeners: {
-                                    click: function(context) {
-                                        const sub = context.chart.data.labels[context.dataIndex];
-                                        const details = subjectDetails[sub];
-                                        if(!details) return;
-                                        const statsStr = `【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`;
-                                        alert(statsStr);
-                                        return true;
+                            tooltip: {
+                                callbacks: {
+                                    // 顯示平均分
+                                    label: function(context) {
+                                        return ' 平均實力: ' + context.raw + ' 分';
                                     }
                                 }
-                            }
-                        },
-                        onClick: (e, elements) => {
-                            if (elements.length > 0) {
-                                const idx = elements[0].index;
-                                const sub = analysisSubjects[idx];
-                                const details = subjectDetails[sub];
-                                if(!details) return;
-                                const statsStr = `【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`;
-                                alert(statsStr);
                             }
                         }
                     }
