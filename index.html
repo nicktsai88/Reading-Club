@@ -75,11 +75,16 @@
 
     <div id="app" class="w-full h-full flex flex-col overflow-hidden">
         <!-- 初始狀態顯示載入中，避免完全白畫面 -->
-        <div class="flex items-center justify-center h-full w-full">
-            <div class="glass-panel p-6 rounded-2xl shadow-lg text-center">
-                <div class="text-3xl animate-bounce mb-2">🚀</div>
-                <div class="text-lg font-bold text-teal-600">系統載入中...</div>
-                <div class="text-xs text-gray-400 mt-2">若長時間未顯示，請確認網路連線是否正常</div>
+        <div id="view-container" class="w-full h-full flex flex-col relative overflow-hidden bg-white/20">
+            <div class="flex-1 flex flex-col items-center justify-center p-6">
+                <div class="glass-panel p-8 md:p-12 rounded-[2.5rem] shadow-2xl text-center max-w-sm border-4 border-pink-200">
+                    <div class="text-5xl animate-bounce mb-4">🚀</div>
+                    <div class="text-2xl font-black text-teal-600 mb-2">系統連線中</div>
+                    <p class="text-sm font-bold text-gray-500 mb-4">正在載入雲端資料庫...</p>
+                    <div class="text-xs text-rose-500 font-bold px-3 py-2 bg-rose-50 rounded-lg border border-rose-200">
+                        若長時間卡在此畫面，可能是網路被阻擋或您的設備/瀏覽器版本過舊。請嘗試更新瀏覽器或清除快取。
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -243,7 +248,7 @@
         //  UI 渲染函式 - 系統框架與登入
         // ==========================================
         window.renderApp = () => { 
-            document.getElementById('app').innerHTML = `<div id="view-container" class="w-full h-full flex flex-col relative overflow-hidden bg-white/20"></div>`; 
+            // 不再清除 view-container，保留載入畫面，僅初始化全局 Modal
             renderGlobalModals();
         };
 
@@ -301,7 +306,7 @@
                             <div class="flex flex-wrap justify-center gap-3">
                                 ${globalUsers.length > 0 ? 
                                     globalUsers.map(u => {
-                                        const dispName = usersProfile[u]?.nickname || u;
+                                        const dispName = (usersProfile[u] && usersProfile[u].nickname) || u;
                                         return `<button onclick="initiateLogin('${u}')" class="text-md font-bold bg-white border-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:scale-105 px-5 py-2.5 rounded-xl shadow-sm transition-all">👦 ${dispName}</button>`;
                                     }).join('') 
                                     : `<span class="text-sm text-gray-400">尚無參賽者，請點擊下方註冊</span>`
@@ -672,7 +677,7 @@
             const targetUser = viewingUser === 'ALL' ? username : viewingUser;
             if (!targetUser) return;
 
-            const dispName = usersProfile[targetUser]?.nickname || targetUser;
+            const dispName = (usersProfile[targetUser] && usersProfile[targetUser].nickname) || targetUser;
             document.getElementById('progress-user-name').innerText = `👤 ${dispName} 的進度追蹤`;
 
             let html = '';
@@ -748,7 +753,7 @@
             const targetUser = viewingUser === 'ALL' ? username : viewingUser;
             if (!targetUser) return;
 
-            const dispName = usersProfile[targetUser]?.nickname || targetUser;
+            const dispName = (usersProfile[targetUser] && usersProfile[targetUser].nickname) || targetUser;
             document.getElementById('analysis-user-name').innerText = `👤 ${dispName} 的戰力分析`;
             
             // 加入地科
@@ -906,8 +911,14 @@
         window.openScoreModal = (dateStr) => {
             modalState = { date: dateStr, mainSubject: '', textbook: '', chapter: '', subSubject: '', grade: '', photoBase64: '' };
             document.getElementById('modal-date').innerText = dateStr;
-            SUBJECTS.forEach(s => { document.getElementById(`btn-sub-${s}`).classList.remove('bg-teal-500', 'text-white'); });
-            GRADES.forEach(g => { document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`).classList.remove('bg-rose-500', 'text-white'); });
+            SUBJECTS.forEach(s => { 
+                const btn = document.getElementById(`btn-sub-${s}`);
+                if (btn) btn.classList.remove('bg-teal-500', 'text-white'); 
+            });
+            GRADES.forEach(g => { 
+                const btn = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                if (btn) btn.classList.remove('bg-rose-500', 'text-white'); 
+            });
             
             document.getElementById('textbook-container').classList.add('hidden');
             document.getElementById('sub-subject-container').classList.add('hidden');
@@ -948,7 +959,7 @@
                 textbookSelector.innerHTML = TEXTBOOKS[sub].map(tb => 
                     `<button onclick="selectTextbook('${tb.id}')" id="btn-tb-${tb.id}" class="p-2 rounded-xl border-2 border-orange-200 hover:bg-orange-50 bg-white shadow-sm flex flex-col items-center justify-center transition-all hover:scale-105">
                         <img src="${tb.image}" class="h-16 w-auto object-contain mb-1 rounded bg-gray-50 border border-gray-100" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5Ij7mm7g8L3RleHQ+PC9zdmc+'">
-                        <span class="text-xs font-bold text-orange-700">${tb.name}</span>
+                        <span class="text-xs font-bold text-orange-700 mt-1 break-words">${tb.name}</span>
                     </button>`
                 ).join('');
                 
@@ -998,7 +1009,7 @@
                 subContainer.classList.remove('hidden');
                 
                 subSelector.innerHTML = tb.chapters.map(chap => 
-                    `<button onclick="selectSubSubject('${chap}')" id="btn-subitem-${chap}" class="py-1.5 px-2 rounded-lg border-2 border-blue-200 text-blue-700 font-bold hover:bg-blue-50 transition-colors bg-white shadow-sm text-xs truncate max-w-[120px]" title="${chap}">${chap}</button>`
+                    `<button onclick="selectSubSubject('${chap}')" id="btn-subitem-${chap}" class="py-1.5 px-2 rounded-lg border-2 border-blue-200 text-blue-700 font-bold hover:bg-blue-50 transition-colors bg-white shadow-sm text-xs text-left truncate max-w-full" title="${chap}">${chap}</button>`
                 ).join('');
 
                 let chapToSelect = tb.chapters[0];
@@ -1016,9 +1027,13 @@
             modalState.chapter = subItem;
 
             // 處理按鈕亮起效果
-            const subList = TEXTBOOKS[modalState.mainSubject] 
-                ? TEXTBOOKS[modalState.mainSubject].find(t => t.id === modalState.textbook)?.chapters 
-                : SUB_SUBJECTS[modalState.mainSubject];
+            let subList = null;
+            if (TEXTBOOKS[modalState.mainSubject]) {
+                const tb = TEXTBOOKS[modalState.mainSubject].find(t => t.id === modalState.textbook);
+                subList = tb ? tb.chapters : null;
+            } else {
+                subList = SUB_SUBJECTS[modalState.mainSubject];
+            }
 
             if (subList) {
                 subList.forEach(s => {
@@ -1037,7 +1052,10 @@
             if (!subItem) {
                 modalState.grade = '';
                 modalState.photoBase64 = '';
-                GRADES.forEach(g => { document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`).classList.remove('bg-rose-500', 'text-white'); });
+                GRADES.forEach(g => { 
+                    const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                    if (el) el.classList.remove('bg-rose-500', 'text-white'); 
+                });
                 document.getElementById('photo-preview-container').classList.add('hidden');
                 document.getElementById('photo-placeholder').classList.remove('hidden');
                 document.getElementById('btn-delete-grade').classList.add('hidden');
@@ -1057,7 +1075,10 @@
             } else {
                 modalState.grade = '';
                 modalState.photoBase64 = '';
-                GRADES.forEach(g => { document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`).classList.remove('bg-rose-500', 'text-white'); });
+                GRADES.forEach(g => { 
+                    const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                    if (el) el.classList.remove('bg-rose-500', 'text-white'); 
+                });
                 document.getElementById('photo-preview-container').classList.add('hidden');
                 document.getElementById('photo-placeholder').classList.remove('hidden');
                 document.getElementById('btn-delete-grade').classList.add('hidden');
@@ -1068,8 +1089,10 @@
             modalState.grade = grade;
             GRADES.forEach(g => {
                 const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
-                if(g === grade) el.classList.add('bg-rose-500', 'text-white');
-                else el.classList.remove('bg-rose-500', 'text-white');
+                if(el) {
+                    if(g === grade) el.classList.add('bg-rose-500', 'text-white');
+                    else el.classList.remove('bg-rose-500', 'text-white');
+                }
             });
         };
 
@@ -1148,7 +1171,8 @@
             if (e) e.stopPropagation(); 
             const data = (allGrades[otherUser] && allGrades[otherUser][dateStr]) ? allGrades[otherUser][dateStr] : null;
             if(!data || Object.keys(data).length === 0) {
-                alert(`${usersProfile[otherUser]?.nickname || otherUser} 在 ${dateStr} 尚未登錄成績！`);
+                const nick = (usersProfile[otherUser] && usersProfile[otherUser].nickname) || otherUser;
+                alert(`${nick} 在 ${dateStr} 尚未登錄成績！`);
                 return; 
             }
             
@@ -1158,7 +1182,7 @@
                     <div class="${getUserColor(otherUser)} w-10 h-10 rounded-full flex items-center justify-center text-lg font-black shadow-sm">
                         ${getAvatarChar(otherUser)}
                     </div>
-                    <h3 class="font-black text-xl text-teal-800">${usersProfile[otherUser]?.nickname || otherUser} 的戰果</h3>
+                    <h3 class="font-black text-xl text-teal-800">${(usersProfile[otherUser] && usersProfile[otherUser].nickname) || otherUser} 的戰果</h3>
                 </div>
             `;
             
