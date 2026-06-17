@@ -73,21 +73,7 @@
 </head>
 <body class="w-full flex flex-col overflow-hidden">
 
-    <div id="app" class="w-full h-full flex flex-col overflow-hidden">
-        <!-- 初始狀態顯示載入中，避免完全白畫面 -->
-        <div id="view-container" class="w-full h-full flex flex-col relative overflow-hidden bg-white/20">
-            <div class="flex-1 flex flex-col items-center justify-center p-6">
-                <div class="glass-panel p-8 md:p-12 rounded-[2.5rem] shadow-2xl text-center max-w-sm border-4 border-pink-200">
-                    <div class="text-5xl animate-bounce mb-4">🚀</div>
-                    <div class="text-2xl font-black text-teal-600 mb-2">系統連線中</div>
-                    <p class="text-sm font-bold text-gray-500 mb-4">正在載入雲端資料庫...</p>
-                    <div class="text-xs text-rose-500 font-bold px-3 py-2 bg-rose-50 rounded-lg border border-rose-200">
-                        若長時間卡在此畫面，可能是網路被阻擋或您的設備/瀏覽器版本過舊。請嘗試更新瀏覽器或清除快取。
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="app" class="w-full h-full flex flex-col overflow-hidden"></div>
     <div id="modals-container"></div> <!-- 放置所有動態 Modal 的容器 -->
 
     <script type="module">
@@ -113,22 +99,6 @@
             '自然': ['自然合科', '生物', '理化', '地科'],
             '社會': ['社會合科', '歷史', '地理', '公民']
         };
-        
-        // 新增教科書與章節結構設定 (目前優先建置國文科)
-        const TEXTBOOKS = {
-            '國文': [
-                {
-                    id: 'c1',
-                    name: '麻辣講義',
-                    image: 'images/c1.jpg',
-                    chapters: [
-                        '單元1 語文常識', '單元2 形音義', '單元3 成語', '單元4 修辭', 
-                        '單元5 國學常識', '單元6 閱讀測驗(一)', '單元7 閱讀測驗(二)'
-                    ]
-                }
-            ]
-        };
-
         const GRADES = ['A++', 'A+', 'A', 'B++', 'B+', 'B', 'C'];
 
         // ==========================================
@@ -179,15 +149,15 @@
         let importantDates = [];
         let allGrades = {}; 
         let chatMessages = [];
-        let usersProfile = {}; 
+        let usersProfile = {}; // 儲存所有使用者的完整資料 (包含密碼、暱稱、目標等)
         
-        let modalState = { date: '', mainSubject: '', textbook: '', chapter: '', subSubject: '', grade: '', photoBase64: '' };
+        let modalState = { date: '', mainSubject: '', subSubject: '', grade: '', photoBase64: '' };
         let currentYear = new Date().getFullYear();
-        let currentMonth = new Date().getMonth(); 
+        let currentMonth = new Date().getMonth(); // 0-11
         
         let unsubUsers, unsubDates, unsubGrades, unsubChat, unsubProfile;
         
-        let radarChartInstance = null; 
+        let radarChartInstance = null; // 全域變數供 Chart.js 使用
 
         // ==========================================
         //  輔助工具函式
@@ -207,12 +177,7 @@
         };
 
         const getStoredConfig = () => {
-            let stored = null;
-            try {
-                stored = localStorage.getItem('study_group_firebase_config');
-            } catch (e) {
-                console.warn('無法讀取 localStorage，可能被瀏覽器隱私設定阻擋', e);
-            }
+            const stored = localStorage.getItem('study_group_firebase_config');
             if (stored) {
                 try { return JSON.parse(stored); } catch(e) {}
             }
@@ -230,25 +195,11 @@
             return u ? u.charAt(0) : '?';
         };
 
-        // 取得單元成績的最新紀錄 (輔助功能用於進度追蹤)
-        const getLatestGradeRecord = (targetUser, chapName) => {
-            let latest = null;
-            const uGrades = allGrades[targetUser] || {};
-            Object.keys(uGrades).forEach(d => {
-                if (uGrades[d][chapName]) {
-                    if (!latest || new Date(d) > new Date(latest.date)) {
-                        latest = { date: d, grade: uGrades[d][chapName].grade };
-                    }
-                }
-            });
-            return latest;
-        };
-
         // ==========================================
         //  UI 渲染函式 - 系統框架與登入
         // ==========================================
         window.renderApp = () => { 
-            // 不再清除 view-container，保留載入畫面，僅初始化全局 Modal
+            document.getElementById('app').innerHTML = `<div id="view-container" class="w-full h-full flex flex-col relative overflow-hidden bg-white/20"></div>`; 
             renderGlobalModals();
         };
 
@@ -306,7 +257,7 @@
                             <div class="flex flex-wrap justify-center gap-3">
                                 ${globalUsers.length > 0 ? 
                                     globalUsers.map(u => {
-                                        const dispName = (usersProfile[u] && usersProfile[u].nickname) || u;
+                                        const dispName = usersProfile[u]?.nickname || u;
                                         return `<button onclick="initiateLogin('${u}')" class="text-md font-bold bg-white border-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:scale-105 px-5 py-2.5 rounded-xl shadow-sm transition-all">👦 ${dispName}</button>`;
                                     }).join('') 
                                     : `<span class="text-sm text-gray-400">尚無參賽者，請點擊下方註冊</span>`
@@ -336,13 +287,9 @@
                         <h1 class="text-2xl md:text-3xl font-black text-rose-500 tracking-wider hidden sm:block">邁向5A10+ 讀書會 🏆</h1>
                         <h1 class="text-xl font-black text-rose-500 tracking-wider block sm:hidden">邁向5A10+</h1>
                     </div>
-                    <div class="flex items-center gap-2 md:gap-3 pr-2 flex-wrap justify-end">
-                        ${isAdmin ? `<button onclick="openAdminPanel()" class="font-bold text-amber-700 bg-amber-50 px-2 md:px-3 py-1.5 rounded-lg border border-amber-200 shadow-sm hover:bg-amber-100 transition-colors text-sm flex items-center gap-1 shrink-0 hidden lg:flex">👑 <span class="hidden md:inline">管理員</span></button>` : ''}
+                    <div class="flex items-center gap-2 md:gap-3 pr-2">
+                        ${isAdmin ? `<button onclick="openAdminPanel()" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-transform text-sm shrink-0 hidden lg:block">👑 管理員面板</button>` : ''}
                         
-                        <button onclick="openProgressModal()" class="font-bold text-emerald-700 bg-emerald-50 px-2 md:px-3 py-1.5 rounded-lg border border-emerald-200 shadow-sm hover:bg-emerald-100 transition-colors text-sm flex items-center gap-1 shrink-0">
-                            📈 <span class="hidden md:inline">進度追蹤</span>
-                        </button>
-
                         <button onclick="openAnalysisModal()" class="font-bold text-indigo-700 bg-indigo-50 px-2 md:px-3 py-1.5 rounded-lg border border-indigo-200 shadow-sm hover:bg-indigo-100 transition-colors text-sm flex items-center gap-1 shrink-0">
                             📊 <span class="hidden md:inline">學科分析</span>
                         </button>
@@ -479,81 +426,6 @@
                     </div>
                 </div>
 
-                <!-- 成績輸入 Modal (加大且分五步驟) -->
-                <div id="score-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 95%; max-height: 95dvh;" id="score-modal-content">
-                        <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
-                            <h2 class="text-xl font-bold flex items-center gap-2">📝 成績紀錄 <span id="modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
-                            <button onclick="closeGlobalModal('score-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
-                        </div>
-                        <div class="p-6 space-y-6 bg-teal-50/30 overflow-y-auto flex-1 custom-scrollbar">
-                            <!-- Step 1: 科目 -->
-                            <div>
-                                <label class="block text-teal-800 font-bold mb-2 text-sm">📚 Step 1: 選擇科目</label>
-                                <div class="grid grid-cols-3 sm:grid-cols-5 gap-2" id="subject-selector">
-                                    ${SUBJECTS.map(s => `<button onclick="selectSubject('${s}')" id="btn-sub-${s}" class="py-2 rounded-lg border-2 border-teal-200 text-teal-700 font-bold hover:bg-teal-50 transition-colors bg-white shadow-sm">${s}</button>`).join('')}
-                                </div>
-                            </div>
-                            
-                            <!-- Step 2: 教科書 (如國文) -->
-                            <div id="textbook-container" class="hidden">
-                                <label class="block text-orange-800 font-bold mb-2 text-sm">📖 Step 2: 選擇教科書</label>
-                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="textbook-selector"></div>
-                            </div>
-
-                            <!-- Step 3: 章節或細項 -->
-                            <div id="sub-subject-container" class="hidden">
-                                <label class="block text-blue-800 font-bold mb-2 text-sm" id="sub-subject-label">🔖 Step 3: 選擇章節/細項</label>
-                                <div class="flex flex-wrap gap-2" id="sub-subject-selector"></div>
-                            </div>
-                            
-                            <!-- Step 4: 成績 -->
-                            <div>
-                                <label class="block text-rose-800 font-bold mb-2 text-sm">🎯 Step 4: 成績等級</label>
-                                <div class="grid grid-cols-4 sm:grid-cols-7 gap-2" id="grade-selector">
-                                    ${GRADES.map(g => `<button onclick="selectGrade('${g}')" id="btn-grade-${g.replace('+','p').replace('+','p')}" class="py-2 rounded-lg border-2 border-rose-200 text-rose-700 font-bold hover:bg-rose-50 transition-colors bg-white shadow-sm">${g}</button>`).join('')}
-                                </div>
-                            </div>
-                            
-                            <!-- Step 5: 拍照 -->
-                            <div>
-                                <label class="block text-purple-800 font-bold mb-2 text-sm">📸 Step 5: 拍下考卷/成績單 (選填)</label>
-                                <div class="border-2 border-dashed border-purple-200 rounded-xl p-4 text-center bg-white hover:bg-purple-50 transition-colors cursor-pointer relative shadow-inner" onclick="document.getElementById('photo-upload').click()">
-                                    <input type="file" id="photo-upload" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
-                                    <div id="photo-preview-container" class="hidden flex-col items-center">
-                                        <img id="photo-preview" class="h-32 object-contain rounded mb-2 shadow-sm border border-gray-200">
-                                        <span class="text-xs text-purple-500 font-bold bg-purple-100 px-2 py-1 rounded">更換照片</span>
-                                    </div>
-                                    <div id="photo-placeholder" class="text-purple-400">
-                                        <div class="text-3xl mb-1">📷</div>
-                                        <span class="text-sm font-bold">點擊上傳或拍照</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="p-4 bg-white border-t border-gray-100 flex justify-end gap-3 shrink-0">
-                            <button onclick="deleteGradeRecord()" id="btn-delete-grade" class="hidden px-5 py-2.5 rounded-xl font-bold text-red-500 bg-red-50 border border-red-200 hover:bg-red-100">刪除紀錄</button>
-                            <div class="flex-1"></div>
-                            <button onclick="closeGlobalModal('score-modal')" class="px-5 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100">取消</button>
-                            <button onclick="saveGrade()" class="px-6 py-2.5 rounded-xl font-bold text-white bg-rose-400 hover:bg-rose-500 shadow-md">儲存 💾</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 進度追蹤 Modal -->
-                <div id="progress-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('progress-modal')">
-                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl overflow-hidden border-4 border-emerald-200 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
-                        <div class="bg-gradient-to-r from-emerald-400 to-teal-500 p-4 flex justify-between items-center text-white shrink-0">
-                            <h2 class="text-xl font-bold flex items-center gap-2">📈 進度追蹤一覽</h2>
-                            <button onclick="closeGlobalModal('progress-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
-                        </div>
-                        <div class="p-6 bg-emerald-50/30 overflow-y-auto flex-1 custom-scrollbar">
-                            <h3 class="text-lg font-black text-emerald-800 mb-4 bg-white px-4 py-1.5 rounded-full shadow-sm border border-emerald-100 inline-block" id="progress-user-name"></h3>
-                            <div id="progress-content" class="space-y-6"></div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- 學科成績分析 Modal -->
                 <div id="analysis-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('analysis-modal')">
                     <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl overflow-hidden border-4 border-indigo-200 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
@@ -571,14 +443,32 @@
                     </div>
                 </div>
 
-                <!-- 查看他人成績 Modal -->
-                <div id="view-score-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[60] p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 90%; max-height: 90dvh;">
-                        <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
-                            <h2 class="text-xl font-bold flex items-center gap-2">👀 查看成績 <span id="view-modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
-                            <button onclick="closeGlobalModal('view-score-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
+                <!-- 瀏覽公開資料卡 Modal -->
+                <div id="view-profile-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('view-profile-modal')">
+                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform duration-200 flex flex-col relative border-4 border-teal-100">
+                        <button onclick="closeGlobalModal('view-profile-modal')" class="absolute top-4 right-4 bg-black/20 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold z-10 hover:bg-black/40">✕</button>
+                        
+                        <div class="h-32 bg-gradient-to-r from-teal-400 to-emerald-400 w-full relative"></div>
+                        
+                        <div class="px-6 pb-6 pt-0 relative flex flex-col items-center mt-[-3rem]">
+                            <img id="vp-photo" src="" class="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover bg-teal-50 mb-3" style="display:none;">
+                            <div id="vp-avatar-fallback" class="w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black text-white bg-teal-500 mb-3"></div>
+                            
+                            <h2 class="text-2xl font-black text-gray-800" id="vp-nickname"></h2>
+                            <p class="text-sm text-gray-400 font-bold mb-4" id="vp-name"></p>
+                            
+                            <div class="w-full space-y-3 text-sm">
+                                <div class="bg-rose-50 rounded-xl p-3 border border-rose-100 text-center">
+                                    <div class="text-xs text-rose-400 font-bold mb-1">🎯 目標志願</div>
+                                    <div class="font-black text-rose-600 text-lg" id="vp-target">-</div>
+                                </div>
+                                <div class="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+                                    <div class="text-xs text-gray-400 font-bold mb-1">💡 座右銘</div>
+                                    <div class="font-bold text-gray-600 italic" id="vp-motto">無</div>
+                                </div>
+                                <div class="text-center text-xs text-gray-400 font-bold mt-2" id="vp-birthday"></div>
+                            </div>
                         </div>
-                        <div class="p-6 bg-teal-50/30 overflow-y-auto custom-scrollbar flex-1" id="view-score-content"></div>
                     </div>
                 </div>
 
@@ -639,6 +529,65 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 成績輸入 Modal -->
+                <div id="score-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-opacity duration-200 opacity-0">
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 95%; max-height: 95dvh;" id="score-modal-content">
+                        <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
+                            <h2 class="text-xl font-bold flex items-center gap-2">📝 成績紀錄 <span id="modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
+                            <button onclick="closeGlobalModal('score-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
+                        </div>
+                        <div class="p-6 space-y-5 bg-teal-50/30 overflow-y-auto flex-1 custom-scrollbar">
+                            <div>
+                                <label class="block text-teal-800 font-bold mb-2">📚 選擇科目</label>
+                                <div class="grid grid-cols-5 gap-2" id="subject-selector">
+                                    ${SUBJECTS.map(s => `<button onclick="selectSubject('${s}')" id="btn-sub-${s}" class="py-2 rounded-lg border-2 border-teal-200 text-teal-700 font-bold hover:bg-teal-50 transition-colors bg-white shadow-sm">${s}</button>`).join('')}
+                                </div>
+                            </div>
+                            <div id="sub-subject-container" class="hidden">
+                                <label class="block text-blue-800 font-bold mb-2 text-sm">🔖 選擇細項</label>
+                                <div class="grid grid-cols-4 gap-2" id="sub-subject-selector"></div>
+                            </div>
+                            <div>
+                                <label class="block text-rose-800 font-bold mb-2">🎯 成績等級</label>
+                                <div class="grid grid-cols-4 gap-2" id="grade-selector">
+                                    ${GRADES.map(g => `<button onclick="selectGrade('${g}')" id="btn-grade-${g.replace('+','p').replace('+','p')}" class="py-2 rounded-lg border-2 border-rose-200 text-rose-700 font-bold hover:bg-rose-50 transition-colors bg-white shadow-sm">${g}</button>`).join('')}
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-purple-800 font-bold mb-2">📸 拍下考卷/成績單 (選填)</label>
+                                <div class="border-2 border-dashed border-purple-200 rounded-xl p-4 text-center bg-white hover:bg-purple-50 transition-colors cursor-pointer relative shadow-inner" onclick="document.getElementById('photo-upload').click()">
+                                    <input type="file" id="photo-upload" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
+                                    <div id="photo-preview-container" class="hidden flex-col items-center">
+                                        <img id="photo-preview" class="h-32 object-contain rounded mb-2 shadow-sm border border-gray-200">
+                                        <span class="text-xs text-purple-500 font-bold bg-purple-100 px-2 py-1 rounded">更換照片</span>
+                                    </div>
+                                    <div id="photo-placeholder" class="text-purple-400">
+                                        <div class="text-3xl mb-1">📷</div>
+                                        <span class="text-sm font-bold">點擊上傳或拍照</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-white border-t border-gray-100 flex justify-end gap-3 shrink-0">
+                            <button onclick="deleteGradeRecord()" id="btn-delete-grade" class="hidden px-5 py-2.5 rounded-xl font-bold text-red-500 bg-red-50 border border-red-200 hover:bg-red-100">刪除紀錄</button>
+                            <div class="flex-1"></div>
+                            <button onclick="closeGlobalModal('score-modal')" class="px-5 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100">取消</button>
+                            <button onclick="saveGrade()" class="px-6 py-2.5 rounded-xl font-bold text-white bg-rose-400 hover:bg-rose-500 shadow-md">儲存 💾</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 查看他人成績 Modal -->
+                <div id="view-score-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[60] p-4 transition-opacity duration-200 opacity-0">
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 90%; max-height: 90dvh;">
+                        <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
+                            <h2 class="text-xl font-bold flex items-center gap-2">👀 查看成績 <span id="view-modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
+                            <button onclick="closeGlobalModal('view-score-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
+                        </div>
+                        <div class="p-6 bg-teal-50/30 overflow-y-auto custom-scrollbar flex-1" id="view-score-content"></div>
+                    </div>
+                </div>
             `;
         };
 
@@ -650,7 +599,7 @@
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
                 const inner = modal.firstElementChild;
-                if(inner && inner.classList.contains('scale-95')) {
+                if(inner.classList.contains('scale-95')) {
                     inner.classList.remove('scale-95');
                 }
             }, 10);
@@ -671,92 +620,16 @@
         };
 
         // ==========================================
-        //  進度追蹤邏輯
-        // ==========================================
-        window.openProgressModal = () => {
-            const targetUser = viewingUser === 'ALL' ? username : viewingUser;
-            if (!targetUser) return;
-
-            const dispName = (usersProfile[targetUser] && usersProfile[targetUser].nickname) || targetUser;
-            document.getElementById('progress-user-name').innerText = `👤 ${dispName} 的進度追蹤`;
-
-            let html = '';
-            SUBJECTS.forEach(sub => {
-                const subColor = getSubjectColor(sub);
-                html += `<div class="mb-6 bg-white p-4 rounded-2xl shadow-sm border ${subColor.border}">
-                            <h3 class="text-lg font-black ${subColor.text} mb-3 border-b border-gray-100 pb-2">📌 ${sub}</h3>`;
-
-                const getLatestGrade = (chapName) => {
-                    let latest = null;
-                    const uGrades = allGrades[targetUser] || {};
-                    Object.keys(uGrades).forEach(d => {
-                        if (uGrades[d][chapName]) {
-                            if (!latest || new Date(d) > new Date(latest.date)) {
-                                latest = { date: d, grade: uGrades[d][chapName].grade };
-                            }
-                        }
-                    });
-                    return latest;
-                };
-
-                const renderChapterCard = (chapName) => {
-                    const rec = getLatestGrade(chapName);
-                    if (rec) {
-                        return `<div class="p-2 border-2 border-emerald-200 bg-emerald-50 rounded-xl flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden group hover:-translate-y-1 transition-transform">
-                            <span class="text-xs font-bold text-gray-700 mb-1 z-10 break-words line-clamp-2" title="${chapName}">${chapName}</span>
-                            <span class="font-black text-rose-500 text-lg leading-none z-10">${rec.grade}</span>
-                            <div class="absolute inset-0 bg-emerald-100/50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        </div>`;
-                    } else {
-                        return `<div class="p-2 border border-gray-200 bg-gray-50 rounded-xl flex flex-col items-center justify-center text-center opacity-60 hover:opacity-80 transition-opacity">
-                            <span class="text-xs font-bold text-gray-500 mb-1 break-words line-clamp-2" title="${chapName}">${chapName}</span>
-                            <span class="text-[10px] text-gray-400 border border-gray-300 rounded px-1.5 mt-0.5">- 尚未紀錄 -</span>
-                        </div>`;
-                    }
-                };
-
-                if (TEXTBOOKS[sub] && TEXTBOOKS[sub].length > 0) {
-                    // 有教科書的科目
-                    TEXTBOOKS[sub].forEach(tb => {
-                        html += `
-                            <div class="mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                                <div class="flex items-center gap-2 mb-3">
-                                    <img src="${tb.image}" class="w-8 h-10 object-contain rounded bg-white shadow-sm border border-gray-200" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5Ij7mm7g8L3RleHQ+PC9zdmc+'">
-                                    <h4 class="font-bold text-gray-800 text-sm bg-white px-2 py-0.5 rounded shadow-sm">${tb.name}</h4>
-                                </div>
-                                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">`;
-                        tb.chapters.forEach(chap => { html += renderChapterCard(chap); });
-                        html += `</div></div>`;
-                    });
-                } else if (SUB_SUBJECTS[sub]) {
-                    // 沒有教科書，只有細分的科目 (例如自然、社會)
-                    html += `<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">`;
-                    SUB_SUBJECTS[sub].forEach(chap => { html += renderChapterCard(chap); });
-                    html += `</div>`;
-                } else {
-                    // 沒有教科書也沒有細分的科目 (例如數學、英文)
-                    html += `<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">`;
-                    html += renderChapterCard(sub);
-                    html += `</div>`;
-                }
-                html += `</div>`;
-            });
-
-            document.getElementById('progress-content').innerHTML = html;
-            openGlobalModal('progress-modal');
-        };
-
-        // ==========================================
         //  學科分析雷達圖邏輯
         // ==========================================
         window.openAnalysisModal = () => {
             const targetUser = viewingUser === 'ALL' ? username : viewingUser;
             if (!targetUser) return;
 
-            const dispName = (usersProfile[targetUser] && usersProfile[targetUser].nickname) || targetUser;
+            const dispName = usersProfile[targetUser]?.nickname || targetUser;
             document.getElementById('analysis-user-name').innerText = `👤 ${dispName} 的戰力分析`;
             
-            // 加入地科
+            // 要求的九大科目
             const analysisSubjects = ['國文', '英文', '數學', '生物', '理化', '地科', '歷史', '地理', '公民'];
             
             // 將成績轉為數值 (A++=5 ~ B/C=0)
@@ -779,26 +652,14 @@
             // 抓取各科目「所有」的成績資料並加總
             Object.keys(uGrades).forEach(dateStr => {
                 Object.keys(uGrades[dateStr]).forEach(sub => {
-                    const rec = uGrades[dateStr][sub];
-                    let matchedSub = null;
-                    if (analysisSubjects.includes(rec.mainSubject)) {
-                        matchedSub = rec.mainSubject;
-                    } else if (analysisSubjects.includes(sub)) {
-                        matchedSub = sub;
-                    } else {
-                        if (rec.mainSubject && analysisSubjects.includes(rec.mainSubject)) {
-                            matchedSub = rec.mainSubject;
-                        }
-                    }
-
-                    if (matchedSub) {
-                        const grade = rec.grade;
+                    if (analysisSubjects.includes(sub)) {
+                        const grade = uGrades[dateStr][sub].grade;
                         const num = gradeToNum(grade);
                         if (num !== null) {
-                            subjectTotals[matchedSub] += num;
-                            subjectCounts[matchedSub] += 1;
-                            if(subjectDetails[matchedSub][grade] !== undefined) {
-                                subjectDetails[matchedSub][grade]++;
+                            subjectTotals[sub] += num;
+                            subjectCounts[sub] += 1;
+                            if(subjectDetails[sub][grade] !== undefined) {
+                                subjectDetails[sub][grade]++;
                             }
                         }
                     }
@@ -818,15 +679,14 @@
             setTimeout(() => {
                 const ctx = document.getElementById('radarChart').getContext('2d');
                 
+                // 如果已經有舊的圖表實例，需先銷毀以免重疊繪製
                 if (radarChartInstance) {
                     radarChartInstance.destroy();
                 }
                 
-                const dataLabelsPlugin = window.ChartDataLabels ? [window.ChartDataLabels] : [];
-
                 radarChartInstance = new Chart(ctx, {
                     type: 'radar',
-                    plugins: dataLabelsPlugin,
+                    plugins: [window.ChartDataLabels],
                     data: {
                         labels: analysisSubjects,
                         datasets: [{
@@ -906,72 +766,817 @@
         };
 
         // ==========================================
-        //  輸入成績紀錄 
+        //  通用動作邏輯 (設定、登出、聊天等) 
+        // ==========================================
+        window.saveFirebaseConfig = () => {
+            const apiKey = document.getElementById('cfg-apiKey').value.trim();
+            if (!apiKey) return alert("API Key 為必填欄位！");
+            localStorage.setItem('study_group_firebase_config', JSON.stringify({ apiKey }));
+            alert("設定已儲存！系統將重新啟動。");
+            window.location.reload(); 
+        };
+
+        window.logout = () => {
+            username = '';
+            viewingUser = '';
+            isAdmin = false;
+            localStorage.removeItem('study_group_user');
+            
+            if(unsubDates) unsubDates();
+            if(unsubGrades) unsubGrades();
+            if(unsubChat) unsubChat();
+            if(unsubUsers) unsubUsers();
+            if(unsubProfile) unsubProfile();
+            
+            // 清空本地快取，避免登入其他人時閃爍舊資料
+            allGrades = {};
+            chatMessages = [];
+            importantDates = [];
+            
+            setupLoginListener();
+            window.renderLogin();
+        };
+
+        window.sendChat = async () => {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            const newMsg = { user: username, text: text, timestamp: new Date().toISOString() };
+            const newChat = [...chatMessages, newMsg];
+            if(newChat.length > 50) newChat.shift();
+            
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), { messages: newChat });
+            input.value = '';
+        };
+
+        document.addEventListener('click', (e) => {
+            const emojiPicker = document.getElementById('emoji-picker');
+            const toggleBtn = document.getElementById('emoji-toggle-btn');
+            if (emojiPicker && !emojiPicker.classList.contains('hidden')) {
+                if (!emojiPicker.contains(e.target) && e.target !== toggleBtn) {
+                    emojiPicker.classList.add('hidden');
+                }
+            }
+        });
+
+
+        // ==========================================
+        //  登入/註冊/個資 邏輯
+        // ==========================================
+        window.initiateLogin = (name) => {
+            const trimmed = name.trim();
+            if(!trimmed) return alert("請傳入名稱！");
+            
+            if (globalUsers.includes(trimmed) && usersProfile[trimmed]) {
+                document.getElementById('login-pwd-username').value = trimmed;
+                const dispName = usersProfile[trimmed]?.nickname || trimmed;
+                document.getElementById('login-pwd-username-display').innerText = `你好，${dispName}！請輸入密碼以繼續：`;
+                document.getElementById('login-pwd-input').value = '';
+                openGlobalModal('login-pwd-modal');
+                setTimeout(() => document.getElementById('login-pwd-input').focus(), 100);
+            }
+        };
+
+        window.confirmLoginPassword = () => {
+            const name = document.getElementById('login-pwd-username').value;
+            const pwd = document.getElementById('login-pwd-input').value;
+            
+            if (name === 'Nick' && pwd !== '2iligloi') {
+                return alert("Nick 為管理員保留帳號，密碼錯誤！");
+            }
+            if (usersProfile[name] && usersProfile[name].password !== pwd) {
+                return alert("密碼錯誤，請重試！");
+            }
+            
+            closeGlobalModal('login-pwd-modal');
+            doCompleteLogin(name);
+        };
+
+        window.openProfileEditModal = (name = '', isRegister = false) => {
+            const nameInput = document.getElementById('prof-name');
+            nameInput.value = name;
+            
+            if (isRegister && !name) {
+                // 完全新的註冊
+                nameInput.disabled = false;
+                nameInput.classList.remove('bg-gray-100', 'text-gray-500');
+                nameInput.classList.add('bg-white', 'text-gray-700');
+                nameInput.placeholder = "請輸入真實姓名作為登入帳號";
+            } else {
+                // 修改現有資料
+                nameInput.disabled = true;
+                nameInput.classList.remove('bg-white', 'text-gray-700');
+                nameInput.classList.add('bg-gray-100', 'text-gray-500');
+                nameInput.placeholder = "";
+            }
+            
+            const isNick = (name === 'Nick');
+            const currentPwd = usersProfile[name]?.password || (isNick ? '2iligloi' : '');
+            document.getElementById('prof-pwd').value = currentPwd;
+            document.getElementById('prof-pwd-confirm').value = currentPwd;
+
+            if (isNick && isRegister) {
+                document.getElementById('prof-pwd').disabled = true;
+                document.getElementById('prof-pwd-confirm').disabled = true;
+                document.getElementById('pwd-hint').innerText = "(管理員預設密碼不可修改)";
+            } else {
+                document.getElementById('prof-pwd').disabled = false;
+                document.getElementById('prof-pwd-confirm').disabled = false;
+                document.getElementById('pwd-hint').innerText = "";
+            }
+
+            document.getElementById('prof-nickname').value = usersProfile[name]?.nickname || name;
+            document.getElementById('prof-birthday').value = usersProfile[name]?.birthday || '';
+            document.getElementById('prof-target').value = usersProfile[name]?.target || '';
+            document.getElementById('prof-motto').value = usersProfile[name]?.motto || '';
+            
+            let photo = usersProfile[name]?.photo || '';
+            document.getElementById('prof-photo-upload').dataset.base64 = photo;
+            
+            if (photo) {
+                document.getElementById('prof-photo-preview').src = photo;
+                document.getElementById('prof-photo-preview').classList.remove('hidden');
+                document.getElementById('prof-photo-placeholder').classList.add('hidden');
+            } else {
+                document.getElementById('prof-photo-preview').classList.add('hidden');
+                document.getElementById('prof-photo-placeholder').classList.remove('hidden');
+            }
+
+            document.getElementById('profile-modal-title').innerText = isRegister ? '🚀 歡迎加入！請建立專屬資料卡' : '📝 修改我的資料卡';
+            document.getElementById('profile-modal-close').style.display = isRegister ? 'none' : 'flex'; 
+            
+            openGlobalModal('profile-edit-modal');
+        };
+
+        window.handleProfilePhoto = (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 400; 
+                    const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    const base64 = canvas.toDataURL('image/jpeg', 0.8);
+                    document.getElementById('prof-photo-upload').dataset.base64 = base64;
+                    document.getElementById('prof-photo-preview').src = base64;
+                    document.getElementById('prof-photo-preview').classList.remove('hidden');
+                    document.getElementById('prof-photo-placeholder').classList.add('hidden');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.saveProfile = async () => {
+            const nameInput = document.getElementById('prof-name');
+            const name = nameInput.value.trim();
+            const pwd = document.getElementById('prof-pwd').value.trim();
+            const pwdConfirm = document.getElementById('prof-pwd-confirm').value.trim();
+            const nickname = document.getElementById('prof-nickname').value.trim();
+            
+            if(!name) return alert("請輸入真實姓名作為登入帳號！");
+            if(!pwd) return alert("請務必設定登入密碼！");
+            if(pwd !== pwdConfirm) return alert("兩次輸入的密碼不一致，請重新檢查！");
+            if(!nickname) return alert("請輸入顯示暱稱！");
+
+            if (!nameInput.disabled && globalUsers.includes(name)) {
+                return alert("此真實姓名已存在，請使用該名稱登入，或輸入另一個姓名！");
+            }
+
+            let updatedProfiles = JSON.parse(JSON.stringify(usersProfile));
+            updatedProfiles[name] = {
+                password: pwd,
+                nickname: nickname,
+                birthday: document.getElementById('prof-birthday').value,
+                target: document.getElementById('prof-target').value,
+                motto: document.getElementById('prof-motto').value,
+                photo: document.getElementById('prof-photo-upload').dataset.base64 || ''
+            };
+
+            try {
+                if (!globalUsers.includes(name)) {
+                    const newUsers = [...globalUsers, name];
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers }, { merge: true });
+                }
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: updatedProfiles }, { merge: true });
+                
+                closeGlobalModal('profile-edit-modal');
+                
+                if(username !== name) {
+                    doCompleteLogin(name);
+                } else {
+                    alert("資料卡更新成功！");
+                    window.renderMainContent(); 
+                }
+            } catch(e) {
+                console.error(e);
+                alert("儲存失敗！");
+            }
+        };
+
+        const doCompleteLogin = (name) => {
+            username = name;
+            viewingUser = 'ALL'; 
+            isAdmin = (username === 'Nick'); 
+            localStorage.setItem('study_group_user', username);
+            setupListeners(); // 修復：重新登入時重新掛載所有監聽器
+            window.renderMain();
+        };
+
+        window.openPublicProfile = (name) => {
+            const prof = usersProfile[name] || {};
+            document.getElementById('vp-nickname').innerText = prof.nickname || name;
+            document.getElementById('vp-name').innerText = `@${name}`;
+            document.getElementById('vp-target').innerText = prof.target || '未設定';
+            document.getElementById('vp-motto').innerText = prof.motto ? `「${prof.motto}」` : '默默努力中...';
+            document.getElementById('vp-birthday').innerText = prof.birthday ? `🎂 ${prof.birthday}` : '';
+
+            const imgEl = document.getElementById('vp-photo');
+            const fallbackEl = document.getElementById('vp-avatar-fallback');
+            
+            if(prof.photo) {
+                imgEl.src = prof.photo;
+                imgEl.style.display = 'block';
+                fallbackEl.style.display = 'none';
+            } else {
+                imgEl.style.display = 'none';
+                fallbackEl.innerText = getAvatarChar(name);
+                fallbackEl.style.display = 'flex';
+                fallbackEl.className = `w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black text-white mb-3 ${getUserColor(name).split(' ')[0]}`;
+            }
+
+            openGlobalModal('view-profile-modal');
+        };
+
+
+        // ==========================================
+        //  管理員面板邏輯
+        // ==========================================
+        window.openAdminPanel = () => {
+            renderAdminDates();
+            renderAdminUsers();
+            switchAdminTab('dates');
+            openGlobalModal('admin-panel-modal');
+        };
+
+        window.switchAdminTab = (tab) => {
+            if(tab === 'dates') {
+                document.getElementById('admin-tab-dates').classList.remove('hidden');
+                document.getElementById('admin-tab-users').classList.add('hidden');
+                document.getElementById('tab-btn-dates').classList.replace('text-gray-500', 'text-amber-600');
+                document.getElementById('tab-btn-dates').classList.replace('border-transparent', 'border-amber-500');
+                document.getElementById('tab-btn-dates').classList.replace('hover:bg-gray-100', 'bg-white');
+                document.getElementById('tab-btn-users').classList.replace('text-amber-600', 'text-gray-500');
+                document.getElementById('tab-btn-users').classList.replace('border-amber-500', 'border-transparent');
+                document.getElementById('tab-btn-users').classList.replace('bg-white', 'hover:bg-gray-100');
+            } else {
+                document.getElementById('admin-tab-dates').classList.add('hidden');
+                document.getElementById('admin-tab-users').classList.remove('hidden');
+                document.getElementById('tab-btn-users').classList.replace('text-gray-500', 'text-amber-600');
+                document.getElementById('tab-btn-users').classList.replace('border-transparent', 'border-amber-500');
+                document.getElementById('tab-btn-users').classList.replace('hover:bg-gray-100', 'bg-white');
+                document.getElementById('tab-btn-dates').classList.replace('text-amber-600', 'text-gray-500');
+                document.getElementById('tab-btn-dates').classList.replace('border-amber-500', 'border-transparent');
+                document.getElementById('tab-btn-dates').classList.replace('bg-white', 'hover:bg-gray-100');
+            }
+        };
+
+        window.renderAdminDates = () => {
+            const container = document.getElementById('admin-dates-list');
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            container.innerHTML = sortedDates.map((item, index) => `
+                <div class="bg-white p-3 rounded-lg border border-gray-200 flex justify-between items-center shadow-sm">
+                    <div>
+                        <div class="font-bold text-gray-800">${item.title}</div>
+                        <div class="text-sm text-gray-500">${item.date}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="adminEditDate(${index})" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded font-bold text-sm hover:bg-blue-100">編輯</button>
+                        <button onclick="adminDeleteDate(${index})" class="px-3 py-1.5 bg-red-50 text-red-600 rounded font-bold text-sm hover:bg-red-100">刪除</button>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.adminAddDate = async () => {
+            const title = document.getElementById('admin-new-date-title').value.trim();
+            const date = document.getElementById('admin-new-date-value').value;
+            if(!title || !date) return alert("請填寫完整");
+            const newDates = [...importantDates, { title, date }];
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+            document.getElementById('admin-new-date-title').value = '';
+            document.getElementById('admin-new-date-value').value = '';
+        };
+
+        window.adminEditDate = (index) => {
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const item = sortedDates[index];
+            const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
+            document.getElementById('edit-date-index').value = realIndex;
+            document.getElementById('edit-date-title').value = item.title;
+            document.getElementById('edit-date-value').value = item.date;
+            openGlobalModal('edit-date-modal');
+        };
+
+        window.saveEditedDate = async () => {
+            const idx = parseInt(document.getElementById('edit-date-index').value);
+            const title = document.getElementById('edit-date-title').value.trim();
+            const date = document.getElementById('edit-date-value').value;
+            if(!title || !date) return alert("不可留空");
+            let newDates = [...importantDates];
+            newDates[idx] = { title, date };
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+            closeGlobalModal('edit-date-modal');
+        };
+
+        window.adminDeleteDate = async (index) => {
+            if(!confirm("確定刪除此日程？")) return;
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const item = sortedDates[index];
+            const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
+            
+            const newDates = [...importantDates];
+            newDates.splice(realIndex, 1);
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+        };
+
+        window.renderAdminUsers = () => {
+            const tbody = document.getElementById('admin-users-list');
+            tbody.innerHTML = globalUsers.map(u => {
+                const prof = usersProfile[u] || {};
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 font-bold text-gray-800">${u}</td>
+                        <td class="p-3 text-gray-600">${prof.nickname || '-'}</td>
+                        <td class="p-3 font-mono text-gray-500">${prof.password || '<span class="text-red-400">未設定</span>'}</td>
+                        <td class="p-3 text-right space-x-1">
+                            <button onclick="openProfileEditModal('${u}')" class="px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded font-bold text-xs hover:bg-blue-100">修改個資/密碼</button>
+                            ${u === 'Nick' ? '' : `<button onclick="adminDeleteUser('${u}')" class="px-2.5 py-1.5 bg-red-50 text-red-600 rounded font-bold text-xs hover:bg-red-100">移除帳號</button>`}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        };
+
+        window.adminDeleteUser = async (userToDelete) => {
+            if(!confirm(`⚠️ 警告！確定要刪除帳號 [${userToDelete}] 嗎？此操作不可逆！`)) return;
+            
+            let transferTarget = null;
+            const others = globalUsers.filter(u => u !== userToDelete);
+            if (others.length > 0) {
+                const ans = prompt(`是否轉移其成績給其他人？\n(若不轉移請留空按確定，將連帶刪除所有成績)\n可選對象: ${others.join(', ')}`);
+                if (ans && others.includes(ans.trim())) {
+                    transferTarget = ans.trim();
+                } else if (ans) {
+                    return alert("輸入的名稱無效，已取消刪除操作。");
+                }
+            }
+
+            try {
+                const newUsers = globalUsers.filter(u => u !== userToDelete);
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers });
+
+                let newProfiles = JSON.parse(JSON.stringify(usersProfile));
+                delete newProfiles[userToDelete];
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: newProfiles });
+
+                // 更新 Grades 獨立集合中的文件
+                if (allGrades[userToDelete]) {
+                    const dates = Object.keys(allGrades[userToDelete]);
+                    for (let i = 0; i < dates.length; i++) {
+                        const dateStr = dates[i];
+                        const subs = Object.keys(allGrades[userToDelete][dateStr]);
+                        for (let j = 0; j < subs.length; j++) {
+                            const sub = subs[j];
+                            const oldDocId = `${userToDelete}_${dateStr}_${sub}`;
+                            const oldRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', oldDocId);
+                            
+                            if (transferTarget) {
+                                const newDocId = `${transferTarget}_${dateStr}_${sub}`;
+                                const newRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', newDocId);
+                                const gradeData = allGrades[userToDelete][dateStr][sub];
+                                await setDoc(newRef, {
+                                    user: transferTarget,
+                                    date: dateStr,
+                                    mainSubject: gradeData.mainSubject || gradeData.subSubject || sub,
+                                    subSubject: sub,
+                                    grade: gradeData.grade,
+                                    photo: gradeData.photo || null,
+                                    updatedAt: gradeData.updatedAt || new Date().toISOString()
+                                });
+                            }
+                            await deleteDoc(oldRef);
+                        }
+                    }
+                }
+
+                alert(`已成功移除使用者 ${userToDelete} ${transferTarget ? '，成績已轉移至 ' + transferTarget : '，成績已連帶刪除'}。`);
+                renderAdminUsers();
+            } catch(e) {
+                console.error(e);
+                alert("移除操作失敗！");
+            }
+        };
+
+        // ==========================================
+        //  UI 渲染函式 - 個別區塊 (月曆/動態/排行)
+        // ==========================================
+        window.renderSidebar = () => {
+            const container = document.getElementById('sidebar-countdowns');
+            if(!container) return;
+            const examDaysLeft = getDaysLeft(EXAM_DATE);
+            let html = `
+                <div class="bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl p-5 text-center shadow-lg text-white mb-4 transform hover:scale-[1.02] transition-transform border border-pink-300 shrink-0 z-10 relative">
+                    <h3 class="text-sm font-bold text-pink-100 mb-1">會考大日子 (2027-05-22)</h3>
+                    <div class="text-5xl font-black drop-shadow-md mb-2">${examDaysLeft >= 0 ? examDaysLeft : 0} <span class="text-xl">天</span></div>
+                    <div class="text-xs bg-black/20 rounded-full inline-block px-3 py-1 font-bold">🎯 決戰時刻</div>
+                </div>
+                <h4 class="font-bold text-teal-700 mb-2 flex items-center gap-2 shrink-0 z-10 relative">🗓️ 重要考試里程碑</h4>
+                <div class="marquee-container flex-1 w-full relative z-0 pb-1">
+                    <div class="marquee-content space-y-3 pt-2">
+            `;
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            sortedDates.forEach((item) => {
+                const days = getDaysLeft(item.date);
+                if (days >= 0) {
+                    html += `
+                        <div class="bg-white p-3 rounded-xl border border-teal-100 shadow-sm flex justify-between items-center relative overflow-hidden group">
+                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-teal-300"></div>
+                            <div class="pl-2">
+                                <div class="text-sm font-bold text-gray-700">${item.title}</div>
+                                <div class="text-xs text-gray-400">${item.date}</div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xl font-black ${days <= 7 ? 'text-rose-500' : 'text-teal-500'}">${days}</span>
+                                <span class="text-xs text-gray-500">天</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            html += `</div></div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderChat = () => {
+            const container = document.getElementById('chat-messages');
+            if(!container) return;
+            container.innerHTML = chatMessages.map(msg => {
+                const isMe = msg.user === username;
+                const displayName = usersProfile[msg.user]?.nickname || msg.user;
+                return `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        <span class="text-[10px] text-gray-400 mb-0.5 px-1">${displayName}</span>
+                        <div class="${isMe ? 'chat-bubble-me border border-blue-100' : 'chat-bubble-other border border-pink-100'} px-3 py-2 text-gray-700 shadow-sm inline-block max-w-[90%] break-words">
+                            ${msg.text}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        };
+
+        window.toggleEmojiPicker = (e) => {
+            if(e) e.stopPropagation();
+            const picker = document.getElementById('emoji-picker');
+            picker.classList.toggle('hidden');
+        };
+
+        window.insertEmoji = (emoji) => {
+            const input = document.getElementById('chatInput');
+            input.value += emoji;
+            input.focus();
+            document.getElementById('emoji-picker').classList.add('hidden');
+        };
+
+        window.changeMonth = (delta) => {
+            currentMonth += delta;
+            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+            if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+            window.renderMainContent();
+        };
+
+        window.changeViewingUser = (user) => {
+            viewingUser = user;
+            window.renderCalendar();
+        };
+
+        window.renderCalendar = () => {
+            const container = document.getElementById('calendar-grid');
+            const headerContainer = document.getElementById('calendar-header-container');
+            if(!container || !headerContainer) return;
+
+            headerContainer.innerHTML = `
+                <h2 class="text-xl md:text-2xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
+                <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-teal-700 bg-teal-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
+                    <option value="ALL" ${viewingUser === 'ALL' ? 'selected' : ''}>🌍 全部進度</option>
+                    ${globalUsers.map(u => `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>👦 ${usersProfile[u]?.nickname || u} 的個人進度</option>`).join('')}
+                </select>
+            `;
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const startPad = firstDay === 0 ? 6 : firstDay - 1;
+
+            let html = `<div class="grid grid-cols-7 gap-1 md:gap-2 mb-2 shrink-0">`;
+            ['一', '二', '三', '四', '五', '六', '日'].forEach((d, idx) => {
+                const isWeekend = idx >= 5;
+                html += `<div class="text-center font-bold ${isWeekend ? 'text-rose-500 bg-rose-50' : 'text-teal-700 bg-teal-50'} py-1 md:py-2 text-sm md:text-base rounded-lg md:rounded-xl shadow-sm border border-gray-100">${d}</div>`;
+            });
+            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[100px] md:auto-rows-[120px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
+
+            for(let i=0; i<startPad; i++) {
+                html += `<div class="bg-white/30 rounded-xl md:rounded-2xl border border-transparent"></div>`;
+            }
+
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const isToday = dateStr === formatDate(new Date());
+                const isImportant = importantDates.find(i => i.date === dateStr);
+                
+                let usersWithDataToday = [];
+                Object.entries(allGrades).forEach(([u, dates]) => {
+                    if (dates[dateStr] && Object.keys(dates[dateStr]).length > 0) {
+                        if (viewingUser === 'ALL' || u === viewingUser) {
+                            usersWithDataToday.push(u);
+                        }
+                    }
+                });
+                
+                let cellContent = '';
+                const buildBadge = (subKey, info, prefix = '') => {
+                    let subColor = getSubjectColor(subKey);
+                    let shortName = subKey;
+                    if(subKey === '自然合科') shortName = '自';
+                    else if(subKey === '社會合科') shortName = '社';
+                    else if(subKey === '地科' || subKey === '地球科學') shortName = '地科';
+                    else if(subKey === '地理') shortName = '地理';
+                    else shortName = subKey.charAt(0);
+
+                    return `
+                        <div class="text-[9px] md:text-[11px] font-bold ${subColor.bg} ${subColor.text} ${subColor.border} border px-1 py-0.5 rounded flex items-center justify-between shadow-sm">
+                            <span class="truncate">${prefix}${shortName} <span class="font-black">${info.grade}</span></span>
+                            ${info.photo ? '<span class="text-[8px] md:text-[9px] text-purple-500">📸</span>' : ''}
+                        </div>
+                    `;
+                };
+
+                if (viewingUser === 'ALL') {
+                    let hasAny = false;
+                    let tempContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
+                    Object.entries(allGrades).forEach(([u, dates]) => {
+                        if (dates[dateStr] && Object.keys(dates[dateStr]).length > 0) {
+                            hasAny = true;
+                            const uChar = getAvatarChar(u);
+                            const prefix = `<span class="opacity-60 mr-1 text-[8px]">${uChar}</span>`;
+                            Object.entries(dates[dateStr]).forEach(([subKey, info]) => {
+                                tempContent += buildBadge(subKey, info, prefix);
+                            });
+                        }
+                    });
+                    tempContent += `</div>`;
+                    if (hasAny) cellContent = tempContent;
+                } else {
+                    const userGrades = (allGrades[viewingUser] && allGrades[viewingUser][dateStr]) ? allGrades[viewingUser][dateStr] : null;
+                    if (userGrades && Object.keys(userGrades).length > 0) {
+                        cellContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
+                        Object.entries(userGrades).forEach(([subKey, info]) => {
+                            cellContent += buildBadge(subKey, info);
+                        });
+                        cellContent += `</div>`;
+                    }
+                }
+
+                const headerClass = isToday 
+                    ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-white shadow-md' 
+                    : isImportant 
+                        ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md' 
+                        : 'bg-pink-50 text-pink-700';
+
+                const clickAction = (viewingUser === username || viewingUser === 'ALL') 
+                    ? `openScoreModal('${dateStr}')` 
+                    : `viewOthersScore(event, '${viewingUser}', '${dateStr}')`;
+
+                html += `
+                    <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-2 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative">
+                        <div class="flex justify-between items-start shrink-0 mb-0.5 md:mb-1 w-full">
+                            <span class="w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass} shrink-0">${d}</span>
+                            
+                            <div class="flex flex-wrap justify-end gap-1 flex-1 mx-1 mt-0.5 overflow-hidden">
+                                ${usersWithDataToday.map(u => `
+                                    <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
+                                         class="${getUserColor(u)} w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center text-[9px] md:text-[11px] font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
+                                         title="查看 ${usersProfile[u]?.nickname || u} 的成績">
+                                        ${getAvatarChar(u)}
+                                    </div>
+                                `).join('')}
+                            </div>
+                            ${isImportant ? `<span class="text-xs md:text-sm drop-shadow-sm group-hover:scale-125 transition-transform shrink-0" title="${isImportant.title}">🔥</span>` : ''}
+                        </div>
+                        <div class="flex-1 overflow-y-auto custom-scrollbar">
+                            ${cellContent}
+                        </div>
+                    </div>
+                `;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderTimeline = () => {
+            const container = document.getElementById('timeline-feed');
+            if(!container) return;
+
+            const feed = [];
+            Object.entries(allGrades).forEach(([u, dates]) => {
+                Object.entries(dates).forEach(([d, subjects]) => {
+                    Object.entries(subjects).forEach(([s, info]) => {
+                        feed.push({ user: u, date: d, subject: s, ...info });
+                    });
+                });
+            });
+
+            feed.sort((a,b) => {
+                const timeA = a.updatedAt ? new Date(a.updatedAt) : new Date(a.date);
+                const timeB = b.updatedAt ? new Date(b.updatedAt) : new Date(b.date);
+                return timeB - timeA;
+            });
+
+            if (feed.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-70"><div class="text-4xl mb-2">🍃</div><div class="text-sm font-bold">尚無戰況紀錄，趕快搶頭香！</div></div>`;
+                return;
+            }
+
+            let html = '';
+            feed.forEach(item => {
+                const isMe = item.user === username;
+                const isA = item.grade.includes('A');
+                const emoji = isA ? '🏆' : '💪';
+                const subColor = getSubjectColor(item.subject);
+                const displayName = usersProfile[item.user]?.nickname || item.user;
+
+                html += `
+                    <div class="p-3 rounded-2xl border-2 ${subColor.border} ${subColor.bg} shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" onclick="viewOthersScore(null, '${item.user}', '${item.date}')">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-gray-700 bg-white px-2 py-0.5 rounded shadow-sm text-xs border border-gray-100 flex items-center gap-1.5">
+                                <div class="w-3 h-3 rounded-full flex items-center justify-center text-[8px] ${getUserColor(item.user)}">${getAvatarChar(item.user)}</div>
+                                ${isMe ? '我' : displayName}
+                            </span>
+                            <span class="text-[10px] text-gray-400 font-mono">${item.date}</span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            在 ${item.subject} 測驗斬獲了 <span class="font-black text-lg mx-1 ${subColor.text}">${item.grade}</span> ${emoji}
+                        </div>
+                        ${item.photo ? `<div class="absolute right-3 bottom-2 text-purple-400 text-lg opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        };
+
+        window.renderLeaderboard = () => {
+            const container = document.getElementById('leaderboard-feed');
+            if(!container) return;
+
+            let userStats = [];
+            globalUsers.forEach(u => {
+                let stats = { user: u, aPlusPlus: 0, aPlus: 0, a: 0, totalEntries: 0 };
+                const uGrades = allGrades[u] || {};
+                Object.values(uGrades).forEach(dayGrades => {
+                    Object.values(dayGrades).forEach(item => {
+                        stats.totalEntries++;
+                        if (item.grade === 'A++') stats.aPlusPlus++;
+                        if (item.grade === 'A+') stats.aPlus++;
+                        if (item.grade === 'A') stats.a++;
+                    });
+                });
+                stats.score = stats.aPlusPlus * 3 + stats.aPlus * 2 + stats.a * 1;
+                userStats.push(stats);
+            });
+
+            userStats.sort((a, b) => b.score - a.score || b.totalEntries - a.totalEntries);
+
+            if (userStats.length === 0 || userStats[0].totalEntries === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 text-sm mt-4 font-bold">目前無人上榜</div>`;
+                return;
+            }
+
+            let html = '';
+            userStats.forEach((stat, index) => {
+                if (stat.totalEntries === 0) return;
+                let rankMedal = '';
+                if (index === 0) rankMedal = '🥇';
+                else if (index === 1) rankMedal = '🥈';
+                else if (index === 2) rankMedal = '🥉';
+                else rankMedal = `<span class="text-teal-700 bg-teal-100 rounded-full w-6 h-6 flex items-center justify-center text-xs font-black shadow-inner">${index + 1}</span>`;
+
+                const displayName = usersProfile[stat.user]?.nickname || stat.user;
+
+                html += `
+                    <div onclick="openPublicProfile('${stat.user}')" class="bg-white rounded-xl p-2.5 border border-teal-100 shadow-sm flex items-center gap-3 relative hover:scale-[1.02] transition-transform cursor-pointer hover:border-teal-300">
+                        <div class="text-2xl w-8 flex justify-center drop-shadow-sm">${rankMedal}</div>
+                        <div class="flex-1 min-w-0 flex items-center gap-2">
+                            <div class="${getUserColor(stat.user)} w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0">
+                                ${getAvatarChar(stat.user)}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-black text-gray-700 text-sm mb-0.5 truncate">${displayName}</div>
+                                <div class="text-[10px] text-gray-500 flex gap-2">
+                                    <span class="text-rose-500 font-bold bg-rose-50 px-1.5 rounded">A++ x ${stat.aPlusPlus}</span>
+                                    <span class="text-orange-500 font-bold bg-orange-50 px-1.5 rounded">A+ x ${stat.aPlus}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center bg-gray-50 p-1.5 rounded-lg border border-gray-100 shrink-0">
+                            <div class="text-[10px] text-gray-400 font-bold">總刷題</div>
+                            <div class="font-black text-teal-600 text-base leading-none">${stat.totalEntries}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        };
+
+        window.renderMainContent = () => {
+            if(window.renderCalendar) window.renderCalendar();
+            if(window.renderTimeline) window.renderTimeline();
+            if(window.renderLeaderboard) window.renderLeaderboard();
+            if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) window.renderAdminUsers();
+        };
+
+        // ==========================================
+        //  輸入成績邏輯 
         // ==========================================
         window.openScoreModal = (dateStr) => {
-            modalState = { date: dateStr, mainSubject: '', textbook: '', chapter: '', subSubject: '', grade: '', photoBase64: '' };
+            modalState = { date: dateStr, mainSubject: '', subSubject: '', grade: '', photoBase64: '' };
             document.getElementById('modal-date').innerText = dateStr;
-            SUBJECTS.forEach(s => { 
-                const btn = document.getElementById(`btn-sub-${s}`);
-                if (btn) btn.classList.remove('bg-teal-500', 'text-white'); 
-            });
-            GRADES.forEach(g => { 
-                const btn = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
-                if (btn) btn.classList.remove('bg-rose-500', 'text-white'); 
-            });
-            
-            document.getElementById('textbook-container').classList.add('hidden');
+            SUBJECTS.forEach(s => { document.getElementById(`btn-sub-${s}`).classList.remove('bg-teal-500', 'text-white'); });
+            GRADES.forEach(g => { document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`).classList.remove('bg-rose-500', 'text-white'); });
             document.getElementById('sub-subject-container').classList.add('hidden');
             document.getElementById('photo-upload').value = '';
             document.getElementById('photo-preview-container').classList.add('hidden');
             document.getElementById('photo-placeholder').classList.remove('hidden');
             document.getElementById('btn-delete-grade').classList.add('hidden');
-            
             openGlobalModal('score-modal');
+        };
+
+        window.viewOthersScore = (e, otherUser, dateStr) => {
+            if (e) e.stopPropagation(); 
+            const data = (allGrades[otherUser] && allGrades[otherUser][dateStr]) ? allGrades[otherUser][dateStr] : null;
+            if(!data || Object.keys(data).length === 0) {
+                alert(`${usersProfile[otherUser]?.nickname || otherUser} 在 ${dateStr} 尚未登錄成績！`);
+                return; 
+            }
+            
+            document.getElementById('view-modal-date').innerText = dateStr;
+            let contentHtml = `
+                <div class="flex items-center gap-3 mb-4 border-b-2 border-teal-200 pb-3">
+                    <div class="${getUserColor(otherUser)} w-10 h-10 rounded-full flex items-center justify-center text-lg font-black shadow-sm">
+                        ${getAvatarChar(otherUser)}
+                    </div>
+                    <h3 class="font-black text-xl text-teal-800">${usersProfile[otherUser]?.nickname || otherUser} 的戰果</h3>
+                    </div>
+            `;
+            
+            Object.entries(data).forEach(([subKey, item]) => {
+                const subColor = getSubjectColor(subKey);
+                contentHtml += `
+                    <div class="mb-5 bg-white p-4 rounded-2xl shadow-sm border ${subColor.border} ${subColor.bg}">
+                        <div class="flex justify-between items-center mb-2 ${subColor.text}">
+                            <span class="font-bold text-lg">📌 ${subKey}</span>
+                            <span class="font-black text-xl">${item.grade}</span>
+                        </div>
+                        ${item.photo ? `<div class="mt-3"><img src="${item.photo}" class="w-full rounded-xl border border-gray-200 shadow-sm" alt="考卷照片"></div>` : '<div class="text-xs text-gray-400 text-center mt-2">（無附照片）</div>'}
+                    </div>
+                `;
+            });
+            document.getElementById('view-score-content').innerHTML = contentHtml;
+            openGlobalModal('view-score-modal');
         };
 
         window.selectSubject = (sub) => {
             modalState.mainSubject = sub;
-            modalState.textbook = '';
-            modalState.subSubject = '';
-            modalState.chapter = '';
-
-            // 更新按鈕樣式
             SUBJECTS.forEach(s => {
                 const el = document.getElementById(`btn-sub-${s}`);
-                if(el) {
-                    if(s === sub) el.classList.add('bg-teal-500', 'text-white');
-                    else el.classList.remove('bg-teal-500', 'text-white');
-                }
+                if(s === sub) el.classList.add('bg-teal-500', 'text-white');
+                else el.classList.remove('bg-teal-500', 'text-white');
             });
 
-            const textbookContainer = document.getElementById('textbook-container');
-            const textbookSelector = document.getElementById('textbook-selector');
             const subContainer = document.getElementById('sub-subject-container');
             const subSelector = document.getElementById('sub-subject-selector');
-            document.getElementById('sub-subject-label').innerText = '🔖 Step 3: 選擇章節/細項';
 
-            // 判斷是否設定了「教科書」
-            if (TEXTBOOKS[sub] && TEXTBOOKS[sub].length > 0) {
-                textbookContainer.classList.remove('hidden');
-                subContainer.classList.add('hidden'); // 先隱藏章節，等選了教科書再顯示
-                
-                textbookSelector.innerHTML = TEXTBOOKS[sub].map(tb => 
-                    `<button onclick="selectTextbook('${tb.id}')" id="btn-tb-${tb.id}" class="p-2 rounded-xl border-2 border-orange-200 hover:bg-orange-50 bg-white shadow-sm flex flex-col items-center justify-center transition-all hover:scale-105">
-                        <img src="${tb.image}" class="h-16 w-auto object-contain mb-1 rounded bg-gray-50 border border-gray-100" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5Ij7mm7g8L3RleHQ+PC9zdmc+'">
-                        <span class="text-xs font-bold text-orange-700 mt-1 break-words">${tb.name}</span>
-                    </button>`
-                ).join('');
-                
-                checkExistingRecord(null); // 還沒選章節前清空畫面
-            } 
-            // 如果沒有教科書但有子項目 (如自然、社會)
-            else if (SUB_SUBJECTS[sub]) {
-                textbookContainer.classList.add('hidden');
+            if (SUB_SUBJECTS[sub]) {
                 subContainer.classList.remove('hidden');
-                
                 subSelector.innerHTML = SUB_SUBJECTS[sub].map(sItem => 
-                    `<button onclick="selectSubSubject('${sItem}')" id="btn-subitem-${sItem}" class="py-1.5 px-3 rounded-lg border-2 border-blue-200 text-blue-700 font-bold hover:bg-blue-50 transition-colors bg-white shadow-sm text-sm">${sItem}</button>`
+                    `<button onclick="selectSubSubject('${sItem}')" id="btn-subitem-${sItem}" class="py-1.5 rounded-lg border-2 border-blue-200 text-blue-700 font-bold hover:bg-blue-50 transition-colors bg-white shadow-sm text-sm">${sItem}</button>`
                 ).join('');
 
                 let subToSelect = SUB_SUBJECTS[sub][0];
@@ -981,62 +1586,16 @@
                     }
                 }
                 window.selectSubSubject(subToSelect);
-            } 
-            // 兩者皆無 (如數學、英文)
-            else {
-                textbookContainer.classList.add('hidden');
+            } else {
                 subContainer.classList.add('hidden');
                 window.selectSubSubject(sub);
             }
         };
 
-        window.selectTextbook = (tbId) => {
-            modalState.textbook = tbId;
-            const sub = modalState.mainSubject;
-            
-            TEXTBOOKS[sub].forEach(tb => {
-                const el = document.getElementById(`btn-tb-${tb.id}`);
-                if (el) {
-                    if (tb.id === tbId) el.classList.add('bg-orange-100', 'border-orange-400');
-                    else el.classList.remove('bg-orange-100', 'border-orange-400');
-                }
-            });
-
-            const tb = TEXTBOOKS[sub].find(t => t.id === tbId);
-            if (tb) {
-                const subContainer = document.getElementById('sub-subject-container');
-                const subSelector = document.getElementById('sub-subject-selector');
-                subContainer.classList.remove('hidden');
-                
-                subSelector.innerHTML = tb.chapters.map(chap => 
-                    `<button onclick="selectSubSubject('${chap}')" id="btn-subitem-${chap}" class="py-1.5 px-2 rounded-lg border-2 border-blue-200 text-blue-700 font-bold hover:bg-blue-50 transition-colors bg-white shadow-sm text-xs text-left truncate max-w-full" title="${chap}">${chap}</button>`
-                ).join('');
-
-                let chapToSelect = tb.chapters[0];
-                for (let chap of tb.chapters) {
-                    if (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][chap]) {
-                        chapToSelect = chap; break;
-                    }
-                }
-                window.selectSubSubject(chapToSelect);
-            }
-        };
-
         window.selectSubSubject = (subItem) => {
-            modalState.subSubject = subItem; // 在新邏輯中, 將它作為該文件紀錄的關鍵鍵值
-            modalState.chapter = subItem;
-
-            // 處理按鈕亮起效果
-            let subList = null;
-            if (TEXTBOOKS[modalState.mainSubject]) {
-                const tb = TEXTBOOKS[modalState.mainSubject].find(t => t.id === modalState.textbook);
-                subList = tb ? tb.chapters : null;
-            } else {
-                subList = SUB_SUBJECTS[modalState.mainSubject];
-            }
-
-            if (subList) {
-                subList.forEach(s => {
+            modalState.subSubject = subItem;
+            if (SUB_SUBJECTS[modalState.mainSubject]) {
+                SUB_SUBJECTS[modalState.mainSubject].forEach(s => {
                     const el = document.getElementById(`btn-subitem-${s}`);
                     if (el) {
                         if(s === subItem) el.classList.add('bg-blue-500', 'text-white');
@@ -1044,24 +1603,6 @@
                     }
                 });
             }
-
-            checkExistingRecord(subItem);
-        };
-
-        const checkExistingRecord = (subItem) => {
-            if (!subItem) {
-                modalState.grade = '';
-                modalState.photoBase64 = '';
-                GRADES.forEach(g => { 
-                    const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
-                    if (el) el.classList.remove('bg-rose-500', 'text-white'); 
-                });
-                document.getElementById('photo-preview-container').classList.add('hidden');
-                document.getElementById('photo-placeholder').classList.remove('hidden');
-                document.getElementById('btn-delete-grade').classList.add('hidden');
-                return;
-            }
-
             const existing = (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][subItem]) ? allGrades[username][modalState.date][subItem] : null;
             if (existing) {
                 window.selectGrade(existing.grade);
@@ -1075,10 +1616,7 @@
             } else {
                 modalState.grade = '';
                 modalState.photoBase64 = '';
-                GRADES.forEach(g => { 
-                    const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
-                    if (el) el.classList.remove('bg-rose-500', 'text-white'); 
-                });
+                GRADES.forEach(g => { document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`).classList.remove('bg-rose-500', 'text-white'); });
                 document.getElementById('photo-preview-container').classList.add('hidden');
                 document.getElementById('photo-placeholder').classList.remove('hidden');
                 document.getElementById('btn-delete-grade').classList.add('hidden');
@@ -1089,10 +1627,8 @@
             modalState.grade = grade;
             GRADES.forEach(g => {
                 const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
-                if(el) {
-                    if(g === grade) el.classList.add('bg-rose-500', 'text-white');
-                    else el.classList.remove('bg-rose-500', 'text-white');
-                }
+                if(g === grade) el.classList.add('bg-rose-500', 'text-white');
+                else el.classList.remove('bg-rose-500', 'text-white');
             });
         };
 
@@ -1128,11 +1664,11 @@
         };
 
         window.saveGrade = async () => {
-            if(!modalState.subSubject) return alert("請完成細項選擇！");
+            if(!modalState.subSubject) return alert("請選擇科目！");
             if(!modalState.grade) return alert("請選擇成績等級！");
 
             try {
-                // 將成績獨立儲存為一個 Document，ID 命名規則為: 帳號_日期_科目章節
+                // 將成績獨立儲存為一個 Document，ID 命名規則為: 帳號_日期_科目
                 const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
                 const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
                 
@@ -1140,8 +1676,6 @@
                     user: username,
                     date: modalState.date,
                     mainSubject: modalState.mainSubject,
-                    textbook: modalState.textbook || '', // 新增欄位
-                    chapter: modalState.chapter || '', // 新增欄位
                     subSubject: modalState.subSubject,
                     grade: modalState.grade,
                     photo: modalState.photoBase64 || null,
@@ -1165,45 +1699,6 @@
                 await deleteDoc(gradeRef);
                 closeGlobalModal('score-modal');
             } catch(e) { console.error(e); }
-        };
-
-        window.viewOthersScore = (e, otherUser, dateStr) => {
-            if (e) e.stopPropagation(); 
-            const data = (allGrades[otherUser] && allGrades[otherUser][dateStr]) ? allGrades[otherUser][dateStr] : null;
-            if(!data || Object.keys(data).length === 0) {
-                const nick = (usersProfile[otherUser] && usersProfile[otherUser].nickname) || otherUser;
-                alert(`${nick} 在 ${dateStr} 尚未登錄成績！`);
-                return; 
-            }
-            
-            document.getElementById('view-modal-date').innerText = dateStr;
-            let contentHtml = `
-                <div class="flex items-center gap-3 mb-4 border-b-2 border-teal-200 pb-3">
-                    <div class="${getUserColor(otherUser)} w-10 h-10 rounded-full flex items-center justify-center text-lg font-black shadow-sm">
-                        ${getAvatarChar(otherUser)}
-                    </div>
-                    <h3 class="font-black text-xl text-teal-800">${(usersProfile[otherUser] && usersProfile[otherUser].nickname) || otherUser} 的戰果</h3>
-                </div>
-            `;
-            
-            Object.entries(data).forEach(([subKey, item]) => {
-                // 如果能取到主科，依主科配色；否則依名稱配色
-                const subColor = getSubjectColor(item.mainSubject || subKey);
-                contentHtml += `
-                    <div class="mb-5 bg-white p-4 rounded-2xl shadow-sm border ${subColor.border} ${subColor.bg}">
-                        <div class="flex flex-col gap-1 mb-2 border-b ${subColor.border} pb-2">
-                            ${item.mainSubject ? `<span class="text-xs font-bold ${subColor.text} opacity-70">${item.mainSubject} ${item.textbook ? `(${item.textbook})` : ''}</span>` : ''}
-                            <div class="flex justify-between items-center ${subColor.text}">
-                                <span class="font-bold text-lg">📌 ${subKey}</span>
-                                <span class="font-black text-xl">${item.grade}</span>
-                            </div>
-                        </div>
-                        ${item.photo ? `<div class="mt-3"><img src="${item.photo}" class="w-full rounded-xl border border-gray-200 shadow-sm" alt="考卷照片"></div>` : '<div class="text-xs text-gray-400 text-center mt-2">（無附照片）</div>'}
-                    </div>
-                `;
-            });
-            document.getElementById('view-score-content').innerHTML = contentHtml;
-            openGlobalModal('view-score-modal');
         };
 
         // ==========================================
@@ -1298,8 +1793,6 @@
                     
                     newAllGrades[data.user][data.date][data.subSubject] = {
                         mainSubject: data.mainSubject || '',
-                        textbook: data.textbook || '', // 新增
-                        chapter: data.chapter || '',   // 新增
                         grade: data.grade,
                         photo: data.photo || null,
                         updatedAt: data.updatedAt || ''
@@ -1311,16 +1804,15 @@
         };
 
         const initApp = async () => {
-            try {
-                window.renderApp();
-                const config = getStoredConfig();
-                if (!config || !config.apiKey) {
-                    window.renderSetup();
-                    return;
-                }
+            window.renderApp();
+            const config = getStoredConfig();
+            if (!config || !config.apiKey) {
+                window.renderSetup();
+                return;
+            }
 
-                const fullConfig = { ...BASE_FIREBASE_CONFIG, apiKey: config.apiKey };
-                
+            const fullConfig = { ...BASE_FIREBASE_CONFIG, apiKey: config.apiKey };
+            try {
                 if (!appInstance) {
                     appInstance = initializeApp(fullConfig);
                     auth = getAuth(appInstance);
@@ -1349,8 +1841,8 @@
                     }
                 });
             } catch (error) {
-                console.error("Firebase 連線失敗或語法執行錯誤:", error);
-                alert("Firebase 連線或初始化失敗，請檢查系統設定參數或網路連線！\n錯誤訊息：" + error.message);
+                console.error("Firebase 連線失敗:", error);
+                alert("Firebase 連線失敗，請檢查系統設定參數是否正確！");
                 window.renderSetup();
             }
         };
