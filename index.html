@@ -73,7 +73,16 @@
 </head>
 <body class="w-full flex flex-col overflow-hidden">
 
-    <div id="app" class="w-full h-full flex flex-col overflow-hidden"></div>
+    <div id="app" class="w-full h-full flex flex-col overflow-hidden">
+        <!-- 初始狀態顯示載入中，避免完全白畫面 -->
+        <div class="flex items-center justify-center h-full w-full">
+            <div class="glass-panel p-6 rounded-2xl shadow-lg text-center">
+                <div class="text-3xl animate-bounce mb-2">🚀</div>
+                <div class="text-lg font-bold text-teal-600">系統載入中...</div>
+                <div class="text-xs text-gray-400 mt-2">若長時間未顯示，請確認網路連線是否正常</div>
+            </div>
+        </div>
+    </div>
     <div id="modals-container"></div> <!-- 放置所有動態 Modal 的容器 -->
 
     <script type="module">
@@ -193,7 +202,12 @@
         };
 
         const getStoredConfig = () => {
-            const stored = localStorage.getItem('study_group_firebase_config');
+            let stored = null;
+            try {
+                stored = localStorage.getItem('study_group_firebase_config');
+            } catch (e) {
+                console.warn('無法讀取 localStorage，可能被瀏覽器隱私設定阻擋', e);
+            }
             if (stored) {
                 try { return JSON.parse(stored); } catch(e) {}
             }
@@ -760,20 +774,13 @@
             // 抓取各科目「所有」的成績資料並加總
             Object.keys(uGrades).forEach(dateStr => {
                 Object.keys(uGrades[dateStr]).forEach(sub => {
-                    // 為了相容性，這裡判斷如果 subSubject(或chapter名稱) 中包含科目字眼或是直接符合時進行歸類
-                    // 但最安全的做法是依據該紀錄當初存下的 mainSubject 來判定，因為我們結構已經將章節名稱存入 subSubject 裡了
                     const rec = uGrades[dateStr][sub];
-                    // 找出該筆紀錄到底屬於九大科目的哪一個
                     let matchedSub = null;
                     if (analysisSubjects.includes(rec.mainSubject)) {
-                        // 例如 數學, 英文 (沒有細項) -> mainSubject 即為目標
                         matchedSub = rec.mainSubject;
                     } else if (analysisSubjects.includes(sub)) {
-                        // 舊資料相容: 歷史, 地理, 地科, 理化 等等本身就是 subSubject
                         matchedSub = sub;
                     } else {
-                        // 新的 Textbook -> Chapter 資料結構：
-                        // 如果 mainSubject 是國文，那我們就把這筆國文的成績歸入國文的統計中
                         if (rec.mainSubject && analysisSubjects.includes(rec.mainSubject)) {
                             matchedSub = rec.mainSubject;
                         }
@@ -806,14 +813,15 @@
             setTimeout(() => {
                 const ctx = document.getElementById('radarChart').getContext('2d');
                 
-                // 如果已經有舊的圖表實例，需先銷毀以免重疊繪製
                 if (radarChartInstance) {
                     radarChartInstance.destroy();
                 }
                 
+                const dataLabelsPlugin = window.ChartDataLabels ? [window.ChartDataLabels] : [];
+
                 radarChartInstance = new Chart(ctx, {
                     type: 'radar',
-                    plugins: [window.ChartDataLabels],
+                    plugins: dataLabelsPlugin,
                     data: {
                         labels: analysisSubjects,
                         datasets: [{
@@ -1279,15 +1287,16 @@
         };
 
         const initApp = async () => {
-            window.renderApp();
-            const config = getStoredConfig();
-            if (!config || !config.apiKey) {
-                window.renderSetup();
-                return;
-            }
-
-            const fullConfig = { ...BASE_FIREBASE_CONFIG, apiKey: config.apiKey };
             try {
+                window.renderApp();
+                const config = getStoredConfig();
+                if (!config || !config.apiKey) {
+                    window.renderSetup();
+                    return;
+                }
+
+                const fullConfig = { ...BASE_FIREBASE_CONFIG, apiKey: config.apiKey };
+                
                 if (!appInstance) {
                     appInstance = initializeApp(fullConfig);
                     auth = getAuth(appInstance);
@@ -1316,8 +1325,8 @@
                     }
                 });
             } catch (error) {
-                console.error("Firebase 連線失敗:", error);
-                alert("Firebase 連線失敗，請檢查系統設定參數是否正確！");
+                console.error("Firebase 連線失敗或語法執行錯誤:", error);
+                alert("Firebase 連線或初始化失敗，請檢查系統設定參數或網路連線！\n錯誤訊息：" + error.message);
                 window.renderSetup();
             }
         };
