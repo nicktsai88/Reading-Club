@@ -101,14 +101,14 @@
         };
 
         const CHINESE_CHAPTERS = [
-            "單元1 第一冊 (1~5課)", "單元2 第一冊 (6~10課 自學課)", "單元3 第一冊 (主題專區 含語文常識)",
-            "單元4 第二冊 (1~5課)", "單元5 第二冊 (6~10課 自學課)", "單元6 第二冊 (主題專區 含語文常識)",
-            "會考模擬試題 1~2冊", "單元7 第三冊 (1~5課)", "單元8 第三冊 (6~10課 自學課)",
-            "單元9 第三冊 (主題專區 含語文常識)", "單元10 第四冊 (1~5課)", "單元11 第四冊 (6~10課 自學課)",
-            "單元12 第四冊 (主題專區 含語文常識)", "會考模擬試題 1~4冊", "單元13 第五冊 (1~5課)",
-            "單元14 第五冊 (6~10課 自學課)", "單元15 第五冊 (主題專區 含語文常識)", "會考模擬試題 1~5冊",
-            "單元16 第六冊 (1~5課)", "單元17 第六冊 (6課 自學課)", "單元18 第六冊 (主題專區)",
-            "會考模擬試題 1~6冊"
+            "第一冊 單元1 第 1～5 課", "第一冊 單元2 第 6～10 課 自學課", "第一冊 單元3 主題專區（含語文常識）",
+            "第二冊 單元4 第 1～5 課", "第二冊 單元5 第 6～10 課 自學課", "第二冊 單元6 主題專區(含語文常識）",
+            "1～2冊 會考模擬試題", "第三冊 單元7 第 1～5 課", "第三冊 單元8 第 6～10 課 自學課",
+            "第三冊 單元9 主題專區（含語文常識)", "第四冊 單元10 第 1～5 課", "第四冊 單元11 第 6～10 課 自學課",
+            "第四冊 單元12 主題專區（含語文常識）", "1～4 冊 會考模擬試題", "第五冊 單元13 第 1～5 課",
+            "第五冊 單元14 第 6～10 課 自學課", "第五冊 單元15 主題專區（含語文常識）", "1～5 冊 會考模擬試題",
+            "第六冊 單元16 第 1～5 課", "第六冊 單元17 第 6 課 自學課", "第六冊 單元18 主題專區",
+            "1～6 冊 會考模擬試題"
         ];
 
         const TEXTBOOKS = {
@@ -682,7 +682,6 @@
             const getBestGrade = (subKey) => {
                 let bestObj = null;
                 let bestW = 0;
-
                 Object.entries(uGrades).forEach(([dateStr, dayData]) => {
                     if(dayData[subKey]) {
                         const g = dayData[subKey].grade;
@@ -713,10 +712,10 @@
                     // 智慧拆分章節字串
                     const parts = ch.split(' ');
                     if (parts.length >= 2) {
-                        if (parts[0].startsWith('單元')) {
+                        if (parts[1].startsWith('單元')) {
                             line1 = parts[0] + ' ' + parts[1];
                             line2 = parts.slice(2).join(' ');
-                        } else if (parts[0].includes('會考模擬試題')) {
+                        } else if (parts[0].includes('冊')) {
                             line1 = parts[0];
                             line2 = parts.slice(1).join(' ');
                         }
@@ -1578,6 +1577,7 @@
                 const subColor = getSubjectColor(mainSub);
                 const displayName = usersProfile[item.user]?.nickname || item.user;
 
+                // [修正] 優化動態牆的字串顯示: 在 [主科目] [章節名稱] 獲得 [分數]
                 const mainSubStr = item.mainSubject && item.mainSubject !== item.subject ? `${item.mainSubject} ` : '';
                 const fullSubStr = `${mainSubStr}${item.subject}`;
 
@@ -1817,8 +1817,7 @@
         };
 
         const checkExistingGrade = (subKey) => {
-            let existing = (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][subKey]) ? allGrades[username][modalState.date][subKey] : null;
-
+            const existing = (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][subKey]) ? allGrades[username][modalState.date][subKey] : null;
             if (existing) {
                 window.selectGrade(existing.grade);
                 if (existing.photo) setPhotoPreview(existing.photo);
@@ -1914,7 +1913,6 @@
                 const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
                 const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
                 await deleteDoc(gradeRef);
-
                 closeGlobalModal('score-modal');
             } catch(e) { console.error(e); }
         };
