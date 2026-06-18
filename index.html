@@ -80,16 +80,13 @@
         .step3-color-book { color: #0066FF; }
         .step3-color-desc { color: #696969; }
         
+        /* 會考模擬試題：紅色文字 + 黃色螢光光暈 */
         .step3-color-exam {
             color: #FF0000 !important;
-            border: 2px solid #FFFF00 !important;
-            box-shadow: 0 0 6px rgba(255, 255, 0, 0.8);
-            border-radius: 6px;
-            padding: 4px 8px;
-            background-color: rgba(255, 255, 0, 0.1);
-        }
-        .text-white .step3-color-exam {
-            background-color: #FFFFFF !important;
+            text-shadow: 
+                0 0 5px #FFFF00, 
+                0 0 10px #FFFF00, 
+                0 0 15px #FFFF00 !important;
         }
     </style>
 </head>
@@ -208,7 +205,7 @@
             
             // 優先處理「會考模擬試題 *~*冊」
             if (formatted.includes('會考模擬試題')) {
-                formatted = formatted.replace(/(會考模擬試題\s*\d+~\d+\s*冊)/g, '<span class="step3-color-exam inline-block w-full text-center">$1</span>');
+                formatted = formatted.replace(/(會考模擬試題\s*\d+~\d+\s*冊)/g, '<span class="step3-color-exam">$1</span>');
                 return formatted;
             }
             
