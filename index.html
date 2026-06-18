@@ -788,7 +788,7 @@
                     tableHtml += `
                             <div ${clickAttr} class="w-24 sm:w-32 flex flex-col items-center justify-start p-2 shrink-0 bg-white transition-colors ${cursorClass}">
                                 <div class="w-full h-auto min-h-[4rem] flex flex-col items-center justify-center mb-2">
-                                    ${formatChapterHtml(ch)}
+                                    ${ch.includes('會考模擬試題') ? formatStep3Text(ch) : formatChapterHtml(ch)}
                                 </div>
                                 <div class="w-full mt-auto pb-1 px-1">
                                     ${renderGradeBadge(bestObj)}
