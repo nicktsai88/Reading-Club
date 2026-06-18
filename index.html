@@ -54,7 +54,8 @@
         };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-group-app';
         
-        const EXAM_DATE = new Date('2027-05-22T00:00:00');
+        // 使用字串避免舊版瀏覽器對 Date 轉換發生問題
+        const EXAM_DATE = '2027-05-22';
         const SUBJECTS = ['國文', '英文', '數學', '自然', '社會'];
         
         // 全新支援書本與章節結構
@@ -141,7 +142,6 @@
         let chatMessages = [];
         let usersProfile = {}; 
         
-        // 擴充 modalState
         let modalState = { date: '', mainSubject: '', book: '', subSubject: '', grade: '', photoBase64: '' };
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth(); 
@@ -149,29 +149,41 @@
         let unsubUsers, unsubDates, unsubGrades, unsubChat, unsubProfile;
         let radarChartInstance = null; 
 
-        // 輔助工具函式
+        // ==========================================
+        //  輔助工具函式 (增加相容性)
+        // ==========================================
         const getDaysLeft = (targetDateStr) => {
-            const now = new Date(); now.setHours(0,0,0,0);
-            const target = new Date(targetDateStr); target.setHours(0,0,0,0);
-            return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+            if(!targetDateStr) return -1;
+            try {
+                const now = new Date(); now.setHours(0,0,0,0);
+                const target = new Date(targetDateStr.replace(/-/g, '/')); // 替換為 / 以提高舊版 Safari 兼容性
+                target.setHours(0,0,0,0);
+                return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+            } catch(e) { return -1; }
         };
+        
+        const padZ = (num) => (num < 10 ? '0' : '') + num;
         const formatDate = (date) => {
-            const d = new Date(date);
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            try {
+                const d = new Date(date);
+                return `${d.getFullYear()}-${padZ(d.getMonth() + 1)}-${padZ(d.getDate())}`;
+            } catch(e) { return ''; }
         };
+
         const getStoredConfig = () => {
             const stored = localStorage.getItem('study_group_firebase_config');
             if (stored) { try { return JSON.parse(stored); } catch(e) {} }
             if (typeof __firebase_config !== 'undefined') { try { return JSON.parse(__firebase_config); } catch(e) {} }
             return null;
         };
+        
         const getAvatarChar = (u) => {
-            if(usersProfile[u] && usersProfile[u].nickname) return usersProfile[u].nickname.charAt(0);
+            if(usersProfile && usersProfile[u] && usersProfile[u].nickname) return usersProfile[u].nickname.charAt(0);
             return u ? u.charAt(0) : '?';
         };
 
-        // 取得單一科目/細項最佳成績 (供進度追蹤使用)
         const getBestGradeForSubSubject = (targetUser, subSubjectName) => {
+            if(!allGrades) return null;
             const uGrades = allGrades[targetUser];
             if (!uGrades) return null;
             let bestGrade = null;
@@ -248,9 +260,9 @@
                         <div class="bg-white/60 p-6 rounded-3xl border border-pink-100 mb-6">
                             <p class="text-sm text-rose-400 font-bold mb-3">👇 點擊你的暱稱登入 👇</p>
                             <div class="flex flex-wrap justify-center gap-3">
-                                ${globalUsers.length > 0 ? 
+                                ${(globalUsers && globalUsers.length > 0) ? 
                                     globalUsers.map(u => {
-                                        const dispName = usersProfile[u]?.nickname || u;
+                                        const dispName = (usersProfile && usersProfile[u]?.nickname) ? usersProfile[u].nickname : u;
                                         return `<button onclick="initiateLogin('${u}')" class="text-md font-bold bg-white border-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:scale-105 px-5 py-2.5 rounded-xl shadow-sm transition-all">👦 ${dispName}</button>`;
                                     }).join('') 
                                     : `<span class="text-sm text-gray-400">尚無參賽者，請點擊下方註冊</span>`
@@ -343,9 +355,10 @@
                 </div>
             `;
             if (username) {
-                window.renderSidebar();
-                window.renderMainContent();
-                window.renderChat();
+                // 加入保護層，避免單一區塊失敗導致全白
+                try { window.renderSidebar(); } catch(e) { console.error('Sidebar error:', e); }
+                try { window.renderMainContent(); } catch(e) { console.error('Main Content error:', e); }
+                try { window.renderChat(); } catch(e) { console.error('Chat error:', e); }
             }
         };
 
@@ -612,7 +625,7 @@
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
                 const inner = modal.firstElementChild;
-                if(inner.classList.contains('scale-95')) inner.classList.remove('scale-95');
+                if(inner && inner.classList.contains('scale-95')) inner.classList.remove('scale-95');
             }, 10);
         };
 
@@ -634,7 +647,8 @@
         window.openProgressModal = () => {
             const selector = document.getElementById('progress-user-selector');
             const targetUser = viewingUser === 'ALL' ? username : viewingUser;
-            selector.innerHTML = globalUsers.map(u => `<option value="${u}" ${u === targetUser ? 'selected' : ''}>👦 ${usersProfile[u]?.nickname || u} 的進度</option>`).join('');
+            const safeUsers = Array.isArray(globalUsers) ? globalUsers : [];
+            selector.innerHTML = safeUsers.map(u => `<option value="${u}" ${u === targetUser ? 'selected' : ''}>👦 ${usersProfile[u]?.nickname || u} 的進度</option>`).join('');
             renderProgressContent();
             openGlobalModal('progress-modal');
         };
@@ -680,7 +694,7 @@
         };
 
         // ==========================================
-        //  學科分析雷達圖邏輯 (更新：支援書籍章節成績)
+        //  學科分析雷達圖邏輯
         // ==========================================
         window.openAnalysisModal = () => {
             const targetUser = viewingUser === 'ALL' ? username : viewingUser;
@@ -690,43 +704,31 @@
             document.getElementById('analysis-user-name').innerText = `👤 ${dispName} 的戰力分析`;
             
             const analysisSubjects = ['國文', '英文', '數學', '生物', '理化', '地科', '歷史', '地理', '公民'];
-            
             const gradeToNum = (g) => {
                 const map = { 'A++': 5, 'A+': 4, 'A': 3, 'B++': 2, 'B+': 1, 'B': 0, 'C': 0 };
                 return map[g] !== undefined ? map[g] : null;
             };
 
             const uGrades = allGrades[targetUser] || {};
-            let subjectTotals = {};
-            let subjectCounts = {};
-            let subjectDetails = {};
+            let subjectTotals = {}; let subjectCounts = {}; let subjectDetails = {};
 
             analysisSubjects.forEach(sub => {
-                subjectTotals[sub] = 0;
-                subjectCounts[sub] = 0;
+                subjectTotals[sub] = 0; subjectCounts[sub] = 0;
                 subjectDetails[sub] = { 'A++':0, 'A+':0, 'A':0, 'B++':0, 'B+':0, 'B':0, 'C':0 };
             });
 
             Object.keys(uGrades).forEach(dateStr => {
                 Object.keys(uGrades[dateStr]).forEach(sub => {
                     const gradeData = uGrades[dateStr][sub];
-                    // 優先配對細項名稱 (如 生物)，若無則配對主科名稱 (如 國文)
                     let targetRadarSub = null;
-                    if (analysisSubjects.includes(sub)) {
-                        targetRadarSub = sub; 
-                    } else if (analysisSubjects.includes(gradeData.mainSubject)) {
-                        targetRadarSub = gradeData.mainSubject; 
-                    }
+                    if (analysisSubjects.includes(sub)) targetRadarSub = sub; 
+                    else if (analysisSubjects.includes(gradeData.mainSubject)) targetRadarSub = gradeData.mainSubject; 
                     
                     if (targetRadarSub) {
-                        const grade = gradeData.grade;
-                        const num = gradeToNum(grade);
+                        const grade = gradeData.grade; const num = gradeToNum(grade);
                         if (num !== null) {
-                            subjectTotals[targetRadarSub] += num;
-                            subjectCounts[targetRadarSub] += 1;
-                            if(subjectDetails[targetRadarSub][grade] !== undefined) {
-                                subjectDetails[targetRadarSub][grade]++;
-                            }
+                            subjectTotals[targetRadarSub] += num; subjectCounts[targetRadarSub] += 1;
+                            if(subjectDetails[targetRadarSub][grade] !== undefined) subjectDetails[targetRadarSub][grade]++;
                         }
                     }
                 });
@@ -740,84 +742,61 @@
             openGlobalModal('analysis-modal');
 
             setTimeout(() => {
-                const ctx = document.getElementById('radarChart').getContext('2d');
-                if (radarChartInstance) radarChartInstance.destroy();
-                
-                radarChartInstance = new Chart(ctx, {
-                    type: 'radar',
-                    plugins: [window.ChartDataLabels],
-                    data: {
-                        labels: analysisSubjects,
-                        datasets: [{
-                            label: '平均能力 (滿分 5)',
-                            data: dataPoints,
-                            backgroundColor: 'rgba(99, 102, 241, 0.2)', 
-                            borderColor: 'rgba(99, 102, 241, 1)',
-                            pointBackgroundColor: 'rgba(99, 102, 241, 1)',
-                            pointBorderColor: '#fff',
-                            pointHoverBackgroundColor: '#fff',
-                            pointHoverBorderColor: 'rgba(99, 102, 241, 1)',
-                            pointRadius: 6,
-                            pointHoverRadius: 8,
-                            borderWidth: 2,
-                        }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        layout: { padding: 40 },
-                        scales: {
-                            r: {
-                                min: 0, max: 5,
-                                angleLines: { color: 'rgba(0,0,0,0.1)' },
-                                grid: { color: 'rgba(0,0,0,0.1)' },
-                                pointLabels: { display: false },
-                                ticks: { stepSize: 1, display: false }
-                            }
+                try {
+                    const ctx = document.getElementById('radarChart').getContext('2d');
+                    if (radarChartInstance) radarChartInstance.destroy();
+                    
+                    radarChartInstance = new Chart(ctx, {
+                        type: 'radar', plugins: [window.ChartDataLabels],
+                        data: {
+                            labels: analysisSubjects,
+                            datasets: [{
+                                label: '平均能力 (滿分 5)', data: dataPoints,
+                                backgroundColor: 'rgba(99, 102, 241, 0.2)', borderColor: 'rgba(99, 102, 241, 1)',
+                                pointBackgroundColor: 'rgba(99, 102, 241, 1)', pointBorderColor: '#fff',
+                                pointHoverBackgroundColor: '#fff', pointHoverBorderColor: 'rgba(99, 102, 241, 1)',
+                                pointRadius: 6, pointHoverRadius: 8, borderWidth: 2,
+                            }]
                         },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: { enabled: false },
-                            datalabels: {
-                                color: '#4338ca', 
-                                font: { family: 'Noto Sans TC', size: 14, weight: 'bold' },
-                                formatter: function(value, context) {
-                                    const sub = context.chart.data.labels[context.dataIndex];
-                                    return sub + '\n' + value + ' 分';
-                                },
-                                textAlign: 'center', align: 'end', anchor: 'end', offset: 5,
-                                listeners: {
-                                    click: function(context) {
-                                        const sub = context.chart.data.labels[context.dataIndex];
-                                        const details = subjectDetails[sub];
-                                        if(!details) return;
-                                        alert(`【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`);
-                                        return true;
+                        options: {
+                            responsive: true, maintainAspectRatio: false, layout: { padding: 40 },
+                            scales: { r: { min: 0, max: 5, angleLines: { color: 'rgba(0,0,0,0.1)' }, grid: { color: 'rgba(0,0,0,0.1)' }, pointLabels: { display: false }, ticks: { stepSize: 1, display: false } } },
+                            plugins: {
+                                legend: { display: false }, tooltip: { enabled: false },
+                                datalabels: {
+                                    color: '#4338ca', font: { family: 'Noto Sans TC', size: 14, weight: 'bold' },
+                                    formatter: function(value, context) { const sub = context.chart.data.labels[context.dataIndex]; return sub + '\n' + value + ' 分'; },
+                                    textAlign: 'center', align: 'end', anchor: 'end', offset: 5,
+                                    listeners: {
+                                        click: function(context) {
+                                            const sub = context.chart.data.labels[context.dataIndex]; const details = subjectDetails[sub];
+                                            if(!details) return;
+                                            alert(`【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`);
+                                            return true;
+                                        }
                                     }
                                 }
-                            }
-                        },
-                        onClick: (e, elements) => {
-                            if (elements.length > 0) {
-                                const idx = elements[0].index;
-                                const sub = analysisSubjects[idx];
-                                const details = subjectDetails[sub];
-                                if(!details) return;
-                                alert(`【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`);
+                            },
+                            onClick: (e, elements) => {
+                                if (elements.length > 0) {
+                                    const sub = analysisSubjects[elements[0].index]; const details = subjectDetails[sub];
+                                    if(!details) return;
+                                    alert(`【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`);
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                } catch(e) { console.error('Chart rendering error:', e); }
             }, 100);
         };
 
         // ==========================================
-        //  輸入成績邏輯 (全新支援書籍章節 5 步驟流程)
+        //  輸入成績邏輯 
         // ==========================================
         window.openScoreModal = (dateStr) => {
             modalState = { date: dateStr, mainSubject: '', book: '', subSubject: '', grade: '', photoBase64: '' };
             document.getElementById('modal-date').innerText = dateStr;
             
-            // 重置 UI
             SUBJECTS.forEach(s => { document.getElementById(`btn-sub-${s}`).classList.remove('bg-teal-500', 'text-white'); });
             GRADES.forEach(g => { document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`).classList.remove('bg-rose-500', 'text-white'); });
             document.getElementById('book-container').classList.add('hidden');
@@ -830,9 +809,7 @@
         };
 
         window.selectSubject = (sub) => {
-            modalState.mainSubject = sub;
-            modalState.book = '';
-            modalState.subSubject = '';
+            modalState.mainSubject = sub; modalState.book = ''; modalState.subSubject = '';
             
             SUBJECTS.forEach(s => {
                 const el = document.getElementById(`btn-sub-${s}`);
@@ -845,8 +822,7 @@
             const subContainer = document.getElementById('sub-subject-container');
 
             if (BOOKS[sub]) {
-                bookContainer.classList.remove('hidden');
-                subContainer.classList.add('hidden');
+                bookContainer.classList.remove('hidden'); subContainer.classList.add('hidden');
                 bookSelector.innerHTML = BOOKS[sub].map(b => `
                     <div onclick="selectBook('${b.id}')" id="btn-book-${b.id}" class="border-2 border-amber-200 rounded-xl p-2 cursor-pointer hover:bg-amber-50 transition-colors flex flex-col items-center shadow-sm bg-white">
                         <img src="${b.image}" class="h-16 md:h-20 object-contain mb-1 rounded" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmZjNlMCIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1zaXplPSIyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiNkOTc3MDYiPuabuOexjTwvdGV4dD48L3N2Zz4='">
@@ -854,22 +830,19 @@
                     </div>
                 `).join('');
             } else if (SUB_SUBJECTS[sub]) {
-                bookContainer.classList.add('hidden');
-                subContainer.classList.remove('hidden');
+                bookContainer.classList.add('hidden'); subContainer.classList.remove('hidden');
                 document.getElementById('sub-subject-selector').innerHTML = SUB_SUBJECTS[sub].map(sItem => 
                     `<button onclick="selectSubSubject('${sItem}')" id="btn-subitem-${sItem.replace(/[\s～()]/g,'_')}" class="py-2 px-1 rounded-lg border-2 border-blue-200 text-blue-700 font-bold hover:bg-blue-50 transition-colors bg-white shadow-sm text-xs md:text-sm break-words h-full">${sItem}</button>`
                 ).join('');
                 window.selectSubSubject(SUB_SUBJECTS[sub][0]);
             } else {
-                bookContainer.classList.add('hidden');
-                subContainer.classList.add('hidden');
+                bookContainer.classList.add('hidden'); subContainer.classList.add('hidden');
                 window.selectSubSubject(sub);
             }
         };
 
         window.selectBook = (bookId) => {
-            modalState.book = bookId;
-            const sub = modalState.mainSubject;
+            modalState.book = bookId; const sub = modalState.mainSubject;
             
             BOOKS[sub].forEach(b => {
                 const el = document.getElementById(`btn-book-${b.id}`);
@@ -899,31 +872,29 @@
                 });
             } else if (modalState.book && BOOKS[modalState.mainSubject]) {
                 const bookData = BOOKS[modalState.mainSubject].find(b => b.id === modalState.book);
-                bookData.chapters.forEach((chap, idx) => {
-                    const el = document.getElementById(`btn-subitem-chap_${idx}`);
-                    if (el) {
-                        if(chap === subItem) el.classList.add('bg-blue-500', 'text-white');
-                        else el.classList.remove('bg-blue-500', 'text-white');
-                    }
-                });
+                if(bookData) {
+                    bookData.chapters.forEach((chap, idx) => {
+                        const el = document.getElementById(`btn-subitem-chap_${idx}`);
+                        if (el) {
+                            if(chap === subItem) el.classList.add('bg-blue-500', 'text-white');
+                            else el.classList.remove('bg-blue-500', 'text-white');
+                        }
+                    });
+                }
             }
 
-            const existing = (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][subItem]) ? allGrades[username][modalState.date][subItem] : null;
+            const existing = (allGrades && allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][subItem]) ? allGrades[username][modalState.date][subItem] : null;
             if (existing) {
                 window.selectGrade(existing.grade);
                 if (existing.photo) setPhotoPreview(existing.photo);
                 else {
-                     modalState.photoBase64 = '';
-                     document.getElementById('photo-preview-container').classList.add('hidden');
-                     document.getElementById('photo-placeholder').classList.remove('hidden');
+                     modalState.photoBase64 = ''; document.getElementById('photo-preview-container').classList.add('hidden'); document.getElementById('photo-placeholder').classList.remove('hidden');
                 }
                 document.getElementById('btn-delete-grade').classList.remove('hidden');
             } else {
-                modalState.grade = '';
-                modalState.photoBase64 = '';
+                modalState.grade = ''; modalState.photoBase64 = '';
                 GRADES.forEach(g => { document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`).classList.remove('bg-rose-500', 'text-white'); });
-                document.getElementById('photo-preview-container').classList.add('hidden');
-                document.getElementById('photo-placeholder').classList.remove('hidden');
+                document.getElementById('photo-preview-container').classList.add('hidden'); document.getElementById('photo-placeholder').classList.remove('hidden');
                 document.getElementById('btn-delete-grade').classList.add('hidden');
             }
         };
@@ -938,21 +909,16 @@
         };
 
         window.handlePhotoUpload = (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
+            const file = e.target.files[0]; if(!file) return;
             const reader = new FileReader();
             reader.onload = (event) => {
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 600; 
-                    const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
-                    canvas.width = img.width * scale;
-                    canvas.height = img.height * scale;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const base64 = canvas.toDataURL('image/jpeg', 0.6);
-                    setPhotoPreview(base64);
+                    const MAX_WIDTH = 600; const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
+                    canvas.width = img.width * scale; canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    setPhotoPreview(canvas.toDataURL('image/jpeg', 0.6));
                 };
                 img.src = event.target.result;
             };
@@ -961,8 +927,7 @@
 
         const setPhotoPreview = (base64) => {
             modalState.photoBase64 = base64;
-            const preview = document.getElementById('photo-preview');
-            preview.src = base64;
+            document.getElementById('photo-preview').src = base64;
             document.getElementById('photo-placeholder').classList.add('hidden');
             document.getElementById('photo-preview-container').classList.remove('hidden');
             document.getElementById('photo-preview-container').classList.add('flex');
@@ -975,28 +940,18 @@
             try {
                 const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
                 const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
-                
                 await setDoc(gradeRef, {
-                    user: username,
-                    date: modalState.date,
-                    mainSubject: modalState.mainSubject,
-                    subSubject: modalState.subSubject,
-                    grade: modalState.grade,
-                    photo: modalState.photoBase64 || null,
-                    updatedAt: new Date().toISOString() 
+                    user: username, date: modalState.date, mainSubject: modalState.mainSubject,
+                    subSubject: modalState.subSubject, grade: modalState.grade,
+                    photo: modalState.photoBase64 || null, updatedAt: new Date().toISOString() 
                 });
-                
                 closeGlobalModal('score-modal');
-            } catch(e) {
-                console.error(e);
-                alert("儲存失敗，請確認圖片是否過大！");
-            }
+            } catch(e) { console.error(e); alert("儲存失敗，請確認圖片是否過大！"); }
         };
 
         window.deleteGradeRecord = async () => {
             if(!modalState.subSubject) return;
             if(!confirm(`確定要刪除 ${modalState.date} 的 ${modalState.subSubject} 紀錄嗎？`)) return;
-
             try {
                 const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
                 const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
@@ -1006,310 +961,320 @@
         };
 
         // ==========================================
-        //  UI 渲染其他雜項 
+        //  UI 渲染側邊欄、月曆、動態、排行榜 (加入防護)
         // ==========================================
-        window.viewOthersScore = (e, otherUser, dateStr) => {
-            if (e) e.stopPropagation(); 
-            const data = (allGrades[otherUser] && allGrades[otherUser][dateStr]) ? allGrades[otherUser][dateStr] : null;
-            if(!data || Object.keys(data).length === 0) {
-                alert(`${usersProfile[otherUser]?.nickname || otherUser} 在 ${dateStr} 尚未登錄成績！`);
-                return; 
-            }
-            
-            document.getElementById('view-modal-date').innerText = dateStr;
-            let contentHtml = `
-                <div class="flex items-center gap-3 mb-4 border-b-2 border-teal-200 pb-3">
-                    <div class="${getUserColor(otherUser)} w-10 h-10 rounded-full flex items-center justify-center text-lg font-black shadow-sm">
-                        ${getAvatarChar(otherUser)}
-                    </div>
-                    <h3 class="font-black text-xl text-teal-800">${usersProfile[otherUser]?.nickname || otherUser} 的戰果</h3>
-                    </div>
+        window.renderSidebar = () => {
+            const container = document.getElementById('sidebar-countdowns');
+            if(!container) return;
+            const examDaysLeft = getDaysLeft(EXAM_DATE);
+            let html = `
+                <div class="bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl p-5 text-center shadow-lg text-white mb-4 transform hover:scale-[1.02] transition-transform border border-pink-300 shrink-0 z-10 relative">
+                    <h3 class="text-sm font-bold text-pink-100 mb-1">會考大日子 (${EXAM_DATE})</h3>
+                    <div class="text-5xl font-black drop-shadow-md mb-2">${examDaysLeft >= 0 ? examDaysLeft : 0} <span class="text-xl">天</span></div>
+                    <div class="text-xs bg-black/20 rounded-full inline-block px-3 py-1 font-bold">🎯 決戰時刻</div>
+                </div>
+                <h4 class="font-bold text-teal-700 mb-2 flex items-center gap-2 shrink-0 z-10 relative">🗓️ 重要考試里程碑</h4>
+                <div class="marquee-container flex-1 w-full relative z-0 pb-1">
+                    <div class="marquee-content space-y-3 pt-2">
             `;
+            const safeDates = Array.isArray(importantDates) ? importantDates : [];
+            const sortedDates = [...safeDates].sort((a, b) => new Date(a.date.replace(/-/g, '/')) - new Date(b.date.replace(/-/g, '/')));
             
-            Object.entries(data).forEach(([subKey, item]) => {
-                const subColor = getSubjectColor(subKey);
-                contentHtml += `
-                    <div class="mb-5 bg-white p-4 rounded-2xl shadow-sm border ${subColor.border} ${subColor.bg}">
-                        <div class="flex justify-between items-center mb-2 ${subColor.text}">
-                            <span class="font-bold text-lg">📌 ${subKey}</span>
-                            <span class="font-black text-xl">${item.grade}</span>
+            sortedDates.forEach((item) => {
+                const days = getDaysLeft(item.date);
+                if (days >= 0) {
+                    html += `
+                        <div class="bg-white p-3 rounded-xl border border-teal-100 shadow-sm flex justify-between items-center relative overflow-hidden group">
+                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-teal-300"></div>
+                            <div class="pl-2">
+                                <div class="text-sm font-bold text-gray-700">${item.title}</div>
+                                <div class="text-xs text-gray-400">${item.date}</div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xl font-black ${days <= 7 ? 'text-rose-500' : 'text-teal-500'}">${days}</span>
+                                <span class="text-xs text-gray-500">天</span>
+                            </div>
                         </div>
-                        ${item.photo ? `<div class="mt-3"><img src="${item.photo}" class="w-full rounded-xl border border-gray-200 shadow-sm" alt="考卷照片"></div>` : '<div class="text-xs text-gray-400 text-center mt-2">（無附照片）</div>'}
+                    `;
+                }
+            });
+            html += `</div></div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderCalendar = () => {
+            const container = document.getElementById('calendar-grid');
+            const headerContainer = document.getElementById('calendar-header-container');
+            if(!container || !headerContainer) return;
+
+            const safeUsers = Array.isArray(globalUsers) ? globalUsers : [];
+            
+            headerContainer.innerHTML = `
+                <h2 class="text-xl md:text-2xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
+                <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-teal-700 bg-teal-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
+                    <option value="ALL" ${viewingUser === 'ALL' ? 'selected' : ''}>🌍 全部進度</option>
+                    ${safeUsers.map(u => `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>👦 ${(usersProfile && usersProfile[u]?.nickname) ? usersProfile[u].nickname : u} 的個人進度</option>`).join('')}
+                </select>
+            `;
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const startPad = firstDay === 0 ? 6 : firstDay - 1;
+
+            let html = `<div class="grid grid-cols-7 gap-1 md:gap-2 mb-2 shrink-0">`;
+            ['一', '二', '三', '四', '五', '六', '日'].forEach((d, idx) => {
+                const isWeekend = idx >= 5;
+                html += `<div class="text-center font-bold ${isWeekend ? 'text-rose-500 bg-rose-50' : 'text-teal-700 bg-teal-50'} py-1 md:py-2 text-sm md:text-base rounded-lg md:rounded-xl shadow-sm border border-gray-100">${d}</div>`;
+            });
+            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[100px] md:auto-rows-[120px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
+
+            for(let i=0; i<startPad; i++) {
+                html += `<div class="bg-white/30 rounded-xl md:rounded-2xl border border-transparent"></div>`;
+            }
+
+            const safeDates = Array.isArray(importantDates) ? importantDates : [];
+            const safeGrades = allGrades || {};
+
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${currentYear}-${padZ(currentMonth+1)}-${padZ(d)}`;
+                const isToday = dateStr === formatDate(new Date());
+                const isImportant = safeDates.find(i => i.date === dateStr);
+                
+                let usersWithDataToday = [];
+                Object.entries(safeGrades).forEach(([u, dates]) => {
+                    if (dates && dates[dateStr] && Object.keys(dates[dateStr]).length > 0) {
+                        if (viewingUser === 'ALL' || u === viewingUser) usersWithDataToday.push(u);
+                    }
+                });
+                
+                let cellContent = '';
+                const buildBadge = (subKey, info, prefix = '') => {
+                    let subColor = getSubjectColor(subKey);
+                    let shortName = subKey;
+                    if(subKey === '自然合科') shortName = '自';
+                    else if(subKey === '社會合科') shortName = '社';
+                    else if(subKey === '地科' || subKey === '地球科學') shortName = '地科';
+                    else if(subKey === '地理') shortName = '地理';
+                    else shortName = subKey.charAt ? subKey.charAt(0) : '?';
+
+                    return `
+                        <div class="text-[9px] md:text-[11px] font-bold ${subColor.bg} ${subColor.text} ${subColor.border} border px-1 py-0.5 rounded flex items-center justify-between shadow-sm">
+                            <span class="truncate">${prefix}${shortName} <span class="font-black">${info.grade}</span></span>
+                            ${info.photo ? '<span class="text-[8px] md:text-[9px] text-purple-500">📸</span>' : ''}
+                        </div>
+                    `;
+                };
+
+                if (viewingUser === 'ALL') {
+                    let hasAny = false;
+                    let tempContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
+                    Object.entries(safeGrades).forEach(([u, dates]) => {
+                        if (dates && dates[dateStr] && Object.keys(dates[dateStr]).length > 0) {
+                            hasAny = true;
+                            const uChar = getAvatarChar(u);
+                            const prefix = `<span class="opacity-60 mr-1 text-[8px]">${uChar}</span>`;
+                            Object.entries(dates[dateStr]).forEach(([subKey, info]) => {
+                                tempContent += buildBadge(subKey, info, prefix);
+                            });
+                        }
+                    });
+                    tempContent += `</div>`;
+                    if (hasAny) cellContent = tempContent;
+                } else {
+                    const userGrades = (safeGrades[viewingUser] && safeGrades[viewingUser][dateStr]) ? safeGrades[viewingUser][dateStr] : null;
+                    if (userGrades && Object.keys(userGrades).length > 0) {
+                        cellContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
+                        Object.entries(userGrades).forEach(([subKey, info]) => {
+                            cellContent += buildBadge(subKey, info);
+                        });
+                        cellContent += `</div>`;
+                    }
+                }
+
+                const headerClass = isToday 
+                    ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-white shadow-md' 
+                    : isImportant 
+                        ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md' 
+                        : 'bg-pink-50 text-pink-700';
+
+                const clickAction = (viewingUser === username || viewingUser === 'ALL') 
+                    ? `openScoreModal('${dateStr}')` 
+                    : `viewOthersScore(event, '${viewingUser}', '${dateStr}')`;
+
+                html += `
+                    <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-2 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative">
+                        <div class="flex justify-between items-start shrink-0 mb-0.5 md:mb-1 w-full">
+                            <span class="w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass} shrink-0">${d}</span>
+                            <div class="flex flex-wrap justify-end gap-1 flex-1 mx-1 mt-0.5 overflow-hidden">
+                                ${usersWithDataToday.map(u => `
+                                    <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
+                                         class="${getUserColor(u)} w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center text-[9px] md:text-[11px] font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
+                                         title="查看 ${(usersProfile && usersProfile[u]?.nickname) ? usersProfile[u].nickname : u} 的成績">
+                                        ${getAvatarChar(u)}
+                                    </div>
+                                `).join('')}
+                            </div>
+                            ${isImportant ? `<span class="text-xs md:text-sm drop-shadow-sm group-hover:scale-125 transition-transform shrink-0" title="${isImportant.title}">🔥</span>` : ''}
+                        </div>
+                        <div class="flex-1 overflow-y-auto custom-scrollbar">
+                            ${cellContent}
+                        </div>
+                    </div>
+                `;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderTimeline = () => {
+            const container = document.getElementById('timeline-feed');
+            if(!container) return;
+
+            const feed = [];
+            const safeGrades = allGrades || {};
+            
+            Object.entries(safeGrades).forEach(([u, dates]) => {
+                if(dates) {
+                    Object.entries(dates).forEach(([d, subjects]) => {
+                        if(subjects) {
+                            Object.entries(subjects).forEach(([s, info]) => {
+                                feed.push({ user: u, date: d, subject: s, ...info });
+                            });
+                        }
+                    });
+                }
+            });
+
+            feed.sort((a,b) => {
+                const timeA = a.updatedAt ? new Date(a.updatedAt) : new Date(a.date.replace(/-/g, '/'));
+                const timeB = b.updatedAt ? new Date(b.updatedAt) : new Date(b.date.replace(/-/g, '/'));
+                return timeB - timeA;
+            });
+
+            if (feed.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-70"><div class="text-4xl mb-2">🍃</div><div class="text-sm font-bold">尚無戰況紀錄，趕快搶頭香！</div></div>`;
+                return;
+            }
+
+            let html = '';
+            feed.forEach(item => {
+                const isMe = item.user === username;
+                const isA = item.grade && item.grade.includes('A');
+                const emoji = isA ? '🏆' : '💪';
+                const subColor = getSubjectColor(item.subject);
+                const displayName = (usersProfile && usersProfile[item.user]?.nickname) ? usersProfile[item.user].nickname : item.user;
+
+                html += `
+                    <div class="p-3 rounded-2xl border-2 ${subColor.border} ${subColor.bg} shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" onclick="viewOthersScore(null, '${item.user}', '${item.date}')">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-gray-700 bg-white px-2 py-0.5 rounded shadow-sm text-xs border border-gray-100 flex items-center gap-1.5">
+                                <div class="w-3 h-3 rounded-full flex items-center justify-center text-[8px] ${getUserColor(item.user)}">${getAvatarChar(item.user)}</div>
+                                ${isMe ? '我' : displayName}
+                            </span>
+                            <span class="text-[10px] text-gray-400 font-mono">${item.date}</span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            在 ${item.subject} 測驗斬獲了 <span class="font-black text-lg mx-1 ${subColor.text}">${item.grade}</span> ${emoji}
+                        </div>
+                        ${item.photo ? `<div class="absolute right-3 bottom-2 text-purple-400 text-lg opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
                     </div>
                 `;
             });
-            document.getElementById('view-score-content').innerHTML = contentHtml;
-            openGlobalModal('view-score-modal');
+            container.innerHTML = html;
         };
 
-        window.saveFirebaseConfig = () => {
-            const apiKey = document.getElementById('cfg-apiKey').value.trim();
-            if (!apiKey) return alert("API Key 為必填欄位！");
-            localStorage.setItem('study_group_firebase_config', JSON.stringify({ apiKey }));
-            alert("設定已儲存！系統將重新啟動。");
-            window.location.reload(); 
-        };
+        window.renderLeaderboard = () => {
+            const container = document.getElementById('leaderboard-feed');
+            if(!container) return;
 
-        window.logout = () => {
-            username = ''; viewingUser = 'ALL'; isAdmin = false;
-            localStorage.removeItem('study_group_user');
-            if(unsubDates) unsubDates(); if(unsubGrades) unsubGrades(); if(unsubChat) unsubChat(); if(unsubUsers) unsubUsers(); if(unsubProfile) unsubProfile();
-            allGrades = {}; chatMessages = []; importantDates = [];
-            setupLoginListener(); window.renderLogin();
-        };
-
-        window.sendChat = async () => {
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            if(!text) return;
-            const newMsg = { user: username, text: text, timestamp: new Date().toISOString() };
-            const newChat = [...chatMessages, newMsg];
-            if(newChat.length > 50) newChat.shift();
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), { messages: newChat });
-            input.value = '';
-        };
-
-        document.addEventListener('click', (e) => {
-            const emojiPicker = document.getElementById('emoji-picker');
-            const toggleBtn = document.getElementById('emoji-toggle-btn');
-            if (emojiPicker && !emojiPicker.classList.contains('hidden') && !emojiPicker.contains(e.target) && e.target !== toggleBtn) {
-                emojiPicker.classList.add('hidden');
-            }
-        });
-
-        window.initiateLogin = (name) => {
-            const trimmed = name.trim();
-            if(!trimmed) return alert("請傳入名稱！");
-            if (globalUsers.includes(trimmed) && usersProfile[trimmed]) {
-                document.getElementById('login-pwd-username').value = trimmed;
-                const dispName = usersProfile[trimmed]?.nickname || trimmed;
-                document.getElementById('login-pwd-username-display').innerText = `你好，${dispName}！請輸入密碼以繼續：`;
-                document.getElementById('login-pwd-input').value = '';
-                openGlobalModal('login-pwd-modal');
-                setTimeout(() => document.getElementById('login-pwd-input').focus(), 100);
-            }
-        };
-
-        window.confirmLoginPassword = () => {
-            const name = document.getElementById('login-pwd-username').value;
-            const pwd = document.getElementById('login-pwd-input').value;
-            if (name === 'Nick' && pwd !== '2iligloi') return alert("Nick 為管理員保留帳號，密碼錯誤！");
-            if (usersProfile[name] && usersProfile[name].password !== pwd) return alert("密碼錯誤，請重試！");
-            closeGlobalModal('login-pwd-modal');
-            doCompleteLogin(name);
-        };
-
-        const doCompleteLogin = (name) => {
-            username = name; viewingUser = 'ALL'; isAdmin = (username === 'Nick'); 
-            localStorage.setItem('study_group_user', username);
-            setupListeners(); 
-            window.renderMain();
-        };
-
-        window.openProfileEditModal = (name = '', isRegister = false) => {
-            const nameInput = document.getElementById('prof-name');
-            nameInput.value = name;
-            if (isRegister && !name) {
-                nameInput.disabled = false;
-                nameInput.classList.remove('bg-gray-100', 'text-gray-500'); nameInput.classList.add('bg-white', 'text-gray-700');
-                nameInput.placeholder = "請輸入真實姓名作為登入帳號";
-            } else {
-                nameInput.disabled = true;
-                nameInput.classList.remove('bg-white', 'text-gray-700'); nameInput.classList.add('bg-gray-100', 'text-gray-500');
-                nameInput.placeholder = "";
-            }
+            let userStats = [];
+            const safeUsers = Array.isArray(globalUsers) ? globalUsers : [];
+            const safeGrades = allGrades || {};
             
-            const isNick = (name === 'Nick');
-            const currentPwd = usersProfile[name]?.password || (isNick ? '2iligloi' : '');
-            document.getElementById('prof-pwd').value = currentPwd;
-            document.getElementById('prof-pwd-confirm').value = currentPwd;
-
-            if (isNick && isRegister) {
-                document.getElementById('prof-pwd').disabled = true; document.getElementById('prof-pwd-confirm').disabled = true;
-                document.getElementById('pwd-hint').innerText = "(管理員預設密碼不可修改)";
-            } else {
-                document.getElementById('prof-pwd').disabled = false; document.getElementById('prof-pwd-confirm').disabled = false;
-                document.getElementById('pwd-hint').innerText = "";
-            }
-
-            document.getElementById('prof-nickname').value = usersProfile[name]?.nickname || name;
-            document.getElementById('prof-birthday').value = usersProfile[name]?.birthday || '';
-            document.getElementById('prof-target').value = usersProfile[name]?.target || '';
-            document.getElementById('prof-motto').value = usersProfile[name]?.motto || '';
-            
-            let photo = usersProfile[name]?.photo || '';
-            document.getElementById('prof-photo-upload').dataset.base64 = photo;
-            
-            if (photo) {
-                document.getElementById('prof-photo-preview').src = photo;
-                document.getElementById('prof-photo-preview').classList.remove('hidden'); document.getElementById('prof-photo-placeholder').classList.add('hidden');
-            } else {
-                document.getElementById('prof-photo-preview').classList.add('hidden'); document.getElementById('prof-photo-placeholder').classList.remove('hidden');
-            }
-
-            document.getElementById('profile-modal-title').innerText = isRegister ? '🚀 歡迎加入！請建立專屬資料卡' : '📝 修改我的資料卡';
-            document.getElementById('profile-modal-close').style.display = isRegister ? 'none' : 'flex'; 
-            openGlobalModal('profile-edit-modal');
-        };
-
-        window.handleProfilePhoto = (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 400; const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
-                    canvas.width = img.width * scale; canvas.height = img.height * scale;
-                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const base64 = canvas.toDataURL('image/jpeg', 0.8);
-                    document.getElementById('prof-photo-upload').dataset.base64 = base64;
-                    document.getElementById('prof-photo-preview').src = base64;
-                    document.getElementById('prof-photo-preview').classList.remove('hidden'); document.getElementById('prof-photo-placeholder').classList.add('hidden');
-                };
-                img.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        };
-
-        window.saveProfile = async () => {
-            const nameInput = document.getElementById('prof-name');
-            const name = nameInput.value.trim();
-            const pwd = document.getElementById('prof-pwd').value.trim();
-            const pwdConfirm = document.getElementById('prof-pwd-confirm').value.trim();
-            const nickname = document.getElementById('prof-nickname').value.trim();
-            
-            if(!name) return alert("請輸入真實姓名作為登入帳號！");
-            if(!pwd) return alert("請務必設定登入密碼！");
-            if(pwd !== pwdConfirm) return alert("兩次輸入的密碼不一致，請重新檢查！");
-            if(!nickname) return alert("請輸入顯示暱稱！");
-            if (!nameInput.disabled && globalUsers.includes(name)) return alert("此真實姓名已存在，請使用該名稱登入，或輸入另一個姓名！");
-
-            let updatedProfiles = JSON.parse(JSON.stringify(usersProfile));
-            updatedProfiles[name] = {
-                password: pwd, nickname: nickname, birthday: document.getElementById('prof-birthday').value,
-                target: document.getElementById('prof-target').value, motto: document.getElementById('prof-motto').value,
-                photo: document.getElementById('prof-photo-upload').dataset.base64 || ''
-            };
-
-            try {
-                if (!globalUsers.includes(name)) {
-                    const newUsers = [...globalUsers, name];
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers }, { merge: true });
-                }
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: updatedProfiles }, { merge: true });
-                closeGlobalModal('profile-edit-modal');
-                if(username !== name) doCompleteLogin(name);
-                else { alert("資料卡更新成功！"); window.renderMainContent(); }
-            } catch(e) { console.error(e); alert("儲存失敗！"); }
-        };
-
-        window.openPublicProfile = (name) => {
-            const prof = usersProfile[name] || {};
-            document.getElementById('vp-nickname').innerText = prof.nickname || name; document.getElementById('vp-name').innerText = `@${name}`;
-            document.getElementById('vp-target').innerText = prof.target || '未設定'; document.getElementById('vp-motto').innerText = prof.motto ? `「${prof.motto}」` : '默默努力中...';
-            document.getElementById('vp-birthday').innerText = prof.birthday ? `🎂 ${prof.birthday}` : '';
-
-            const imgEl = document.getElementById('vp-photo'); const fallbackEl = document.getElementById('vp-avatar-fallback');
-            if(prof.photo) {
-                imgEl.src = prof.photo; imgEl.style.display = 'block'; fallbackEl.style.display = 'none';
-            } else {
-                imgEl.style.display = 'none'; fallbackEl.innerText = getAvatarChar(name); fallbackEl.style.display = 'flex';
-                fallbackEl.className = `w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black text-white mb-3 ${getUserColor(name).split(' ')[0]}`;
-            }
-            openGlobalModal('view-profile-modal');
-        };
-
-        // 管理員邏輯
-        window.openAdminPanel = () => { renderAdminDates(); renderAdminUsers(); switchAdminTab('dates'); openGlobalModal('admin-panel-modal'); };
-        window.switchAdminTab = (tab) => {
-            if(tab === 'dates') {
-                document.getElementById('admin-tab-dates').classList.remove('hidden'); document.getElementById('admin-tab-users').classList.add('hidden');
-                document.getElementById('tab-btn-dates').classList.replace('text-gray-500', 'text-amber-600'); document.getElementById('tab-btn-dates').classList.replace('border-transparent', 'border-amber-500'); document.getElementById('tab-btn-dates').classList.replace('hover:bg-gray-100', 'bg-white');
-                document.getElementById('tab-btn-users').classList.replace('text-amber-600', 'text-gray-500'); document.getElementById('tab-btn-users').classList.replace('border-amber-500', 'border-transparent'); document.getElementById('tab-btn-users').classList.replace('bg-white', 'hover:bg-gray-100');
-            } else {
-                document.getElementById('admin-tab-dates').classList.add('hidden'); document.getElementById('admin-tab-users').classList.remove('hidden');
-                document.getElementById('tab-btn-users').classList.replace('text-gray-500', 'text-amber-600'); document.getElementById('tab-btn-users').classList.replace('border-transparent', 'border-amber-500'); document.getElementById('tab-btn-users').classList.replace('hover:bg-gray-100', 'bg-white');
-                document.getElementById('tab-btn-dates').classList.replace('text-amber-600', 'text-gray-500'); document.getElementById('tab-btn-dates').classList.replace('border-amber-500', 'border-transparent'); document.getElementById('tab-btn-dates').classList.replace('bg-white', 'hover:bg-gray-100');
-            }
-        };
-        window.renderAdminDates = () => {
-            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
-            document.getElementById('admin-dates-list').innerHTML = sortedDates.map((item, index) => `
-                <div class="bg-white p-3 rounded-lg border border-gray-200 flex justify-between items-center shadow-sm">
-                    <div><div class="font-bold text-gray-800">${item.title}</div><div class="text-sm text-gray-500">${item.date}</div></div>
-                    <div class="flex gap-2"><button onclick="adminEditDate(${index})" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded font-bold text-sm hover:bg-blue-100">編輯</button><button onclick="adminDeleteDate(${index})" class="px-3 py-1.5 bg-red-50 text-red-600 rounded font-bold text-sm hover:bg-red-100">刪除</button></div>
-                </div>
-            `).join('');
-        };
-        window.adminAddDate = async () => {
-            const title = document.getElementById('admin-new-date-title').value.trim(); const date = document.getElementById('admin-new-date-value').value;
-            if(!title || !date) return alert("請填寫完整");
-            const newDates = [...importantDates, { title, date }];
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
-            document.getElementById('admin-new-date-title').value = ''; document.getElementById('admin-new-date-value').value = '';
-        };
-        window.adminEditDate = (index) => {
-            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
-            const item = sortedDates[index]; const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
-            document.getElementById('edit-date-index').value = realIndex; document.getElementById('edit-date-title').value = item.title; document.getElementById('edit-date-value').value = item.date;
-            openGlobalModal('edit-date-modal');
-        };
-        window.saveEditedDate = async () => {
-            const idx = parseInt(document.getElementById('edit-date-index').value);
-            const title = document.getElementById('edit-date-title').value.trim(); const date = document.getElementById('edit-date-value').value;
-            if(!title || !date) return alert("不可留空");
-            let newDates = [...importantDates]; newDates[idx] = { title, date };
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
-            closeGlobalModal('edit-date-modal');
-        };
-        window.adminDeleteDate = async (index) => {
-            if(!confirm("確定刪除此日程？")) return;
-            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
-            const item = sortedDates[index]; const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
-            const newDates = [...importantDates]; newDates.splice(realIndex, 1);
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
-        };
-        window.renderAdminUsers = () => {
-            document.getElementById('admin-users-list').innerHTML = globalUsers.map(u => {
-                const prof = usersProfile[u] || {};
-                return `<tr class="hover:bg-gray-50"><td class="p-3 font-bold text-gray-800">${u}</td><td class="p-3 text-gray-600">${prof.nickname || '-'}</td><td class="p-3 font-mono text-gray-500">${prof.password || '<span class="text-red-400">未設定</span>'}</td><td class="p-3 text-right space-x-1"><button onclick="openProfileEditModal('${u}')" class="px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded font-bold text-xs hover:bg-blue-100">修改個資/密碼</button>${u === 'Nick' ? '' : `<button onclick="adminDeleteUser('${u}')" class="px-2.5 py-1.5 bg-red-50 text-red-600 rounded font-bold text-xs hover:bg-red-100">移除帳號</button>`}</td></tr>`;
-            }).join('');
-        };
-        window.adminDeleteUser = async (userToDelete) => {
-            if(!confirm(`⚠️ 警告！確定要刪除帳號 [${userToDelete}] 嗎？此操作不可逆！`)) return;
-            let transferTarget = null; const others = globalUsers.filter(u => u !== userToDelete);
-            if (others.length > 0) {
-                const ans = prompt(`是否轉移其成績給其他人？\n(若不轉移請留空按確定，將連帶刪除所有成績)\n可選對象: ${others.join(', ')}`);
-                if (ans && others.includes(ans.trim())) transferTarget = ans.trim();
-                else if (ans) return alert("輸入的名稱無效，已取消刪除操作。");
-            }
-            try {
-                const newUsers = globalUsers.filter(u => u !== userToDelete);
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers });
-                let newProfiles = JSON.parse(JSON.stringify(usersProfile)); delete newProfiles[userToDelete];
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: newProfiles });
-                if (allGrades[userToDelete]) {
-                    const dates = Object.keys(allGrades[userToDelete]);
-                    for (let i = 0; i < dates.length; i++) {
-                        const dateStr = dates[i]; const subs = Object.keys(allGrades[userToDelete][dateStr]);
-                        for (let j = 0; j < subs.length; j++) {
-                            const sub = subs[j]; const oldDocId = `${userToDelete}_${dateStr}_${sub}`; const oldRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', oldDocId);
-                            if (transferTarget) {
-                                const newDocId = `${transferTarget}_${dateStr}_${sub}`; const newRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', newDocId); const gradeData = allGrades[userToDelete][dateStr][sub];
-                                await setDoc(newRef, { user: transferTarget, date: dateStr, mainSubject: gradeData.mainSubject || gradeData.subSubject || sub, subSubject: sub, grade: gradeData.grade, photo: gradeData.photo || null, updatedAt: gradeData.updatedAt || new Date().toISOString() });
+            safeUsers.forEach(u => {
+                let stats = { user: u, aPlusPlus: 0, aPlus: 0, a: 0, totalEntries: 0 };
+                const uGrades = safeGrades[u] || {};
+                Object.values(uGrades).forEach(dayGrades => {
+                    if(dayGrades) {
+                        Object.values(dayGrades).forEach(item => {
+                            if(item) {
+                                stats.totalEntries++;
+                                if (item.grade === 'A++') stats.aPlusPlus++;
+                                if (item.grade === 'A+') stats.aPlus++;
+                                if (item.grade === 'A') stats.a++;
                             }
-                            await deleteDoc(oldRef);
-                        }
+                        });
                     }
-                }
-                alert(`已成功移除使用者 ${userToDelete} ${transferTarget ? '，成績已轉移至 ' + transferTarget : '，成績已連帶刪除'}。`);
-                renderAdminUsers();
-            } catch(e) { console.error(e); alert("移除操作失敗！"); }
+                });
+                stats.score = stats.aPlusPlus * 3 + stats.aPlus * 2 + stats.a * 1;
+                userStats.push(stats);
+            });
+
+            userStats.sort((a, b) => b.score - a.score || b.totalEntries - a.totalEntries);
+
+            if (userStats.length === 0 || userStats[0].totalEntries === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 text-sm mt-4 font-bold">目前無人上榜</div>`;
+                return;
+            }
+
+            let html = '';
+            userStats.forEach((stat, index) => {
+                if (stat.totalEntries === 0) return;
+                let rankMedal = '';
+                if (index === 0) rankMedal = '🥇';
+                else if (index === 1) rankMedal = '🥈';
+                else if (index === 2) rankMedal = '🥉';
+                else rankMedal = `<span class="text-teal-700 bg-teal-100 rounded-full w-6 h-6 flex items-center justify-center text-xs font-black shadow-inner">${index + 1}</span>`;
+
+                const displayName = (usersProfile && usersProfile[stat.user]?.nickname) ? usersProfile[stat.user].nickname : stat.user;
+
+                html += `
+                    <div onclick="openPublicProfile('${stat.user}')" class="bg-white rounded-xl p-2.5 border border-teal-100 shadow-sm flex items-center gap-3 relative hover:scale-[1.02] transition-transform cursor-pointer hover:border-teal-300">
+                        <div class="text-2xl w-8 flex justify-center drop-shadow-sm">${rankMedal}</div>
+                        <div class="flex-1 min-w-0 flex items-center gap-2">
+                            <div class="${getUserColor(stat.user)} w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0">
+                                ${getAvatarChar(stat.user)}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-black text-gray-700 text-sm mb-0.5 truncate">${displayName}</div>
+                                <div class="text-[10px] text-gray-500 flex gap-2">
+                                    <span class="text-rose-500 font-bold bg-rose-50 px-1.5 rounded">A++ x ${stat.aPlusPlus}</span>
+                                    <span class="text-orange-500 font-bold bg-orange-50 px-1.5 rounded">A+ x ${stat.aPlus}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center bg-gray-50 p-1.5 rounded-lg border border-gray-100 shrink-0">
+                            <div class="text-[10px] text-gray-400 font-bold">總刷題</div>
+                            <div class="font-black text-teal-600 text-base leading-none">${stat.totalEntries}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
         };
 
-        // Firebase 監聽與初始化
+        window.renderChat = () => {
+            const container = document.getElementById('chat-messages');
+            if(!container) return;
+            const safeChat = Array.isArray(chatMessages) ? chatMessages : [];
+            container.innerHTML = safeChat.map(msg => {
+                const isMe = msg.user === username;
+                const displayName = (usersProfile && usersProfile[msg.user]?.nickname) ? usersProfile[msg.user].nickname : msg.user;
+                return `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        <span class="text-[10px] text-gray-400 mb-0.5 px-1">${displayName}</span>
+                        <div class="${isMe ? 'chat-bubble-me border border-blue-100' : 'chat-bubble-other border border-pink-100'} px-3 py-2 text-gray-700 shadow-sm inline-block max-w-[90%] break-words">
+                            ${msg.text}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        };
+
+        // ==========================================
+        //  Firebase 監聽與初始化
+        // ==========================================
         const setupLoginListener = () => {
             if (!currentUser) return;
             unsubUsers = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), (snap) => {
@@ -1335,7 +1300,7 @@
             if(unsubProfile) unsubProfile();
             unsubProfile = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), (snap) => {
                 usersProfile = snap.exists() ? snap.data().profiles || {} : {};
-                if(username) window.renderMainContent();
+                if(username) try { window.renderMainContent(); } catch(e){}
             }, errHandler);
 
             const datesRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates');
@@ -1346,14 +1311,16 @@
                     importantDates = [{ date: '2026-09-09', title: '第1次模擬考' }, { date: '2026-10-13', title: '第1次段考' }, { date: '2026-10-28', title: '第2次模擬考' }];
                     setDoc(datesRef, { list: importantDates }).catch(errHandler);
                 }
-                if(username) window.renderSidebar();
-                if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) window.renderAdminDates();
+                if(username) {
+                    try { window.renderSidebar(); } catch(e){}
+                    try { if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) window.renderAdminDates(); } catch(e){}
+                }
             }, errHandler);
 
             if(unsubChat) unsubChat();
             unsubChat = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), (snap) => {
                 if(snap.exists()) chatMessages = snap.data().messages || [];
-                if(username) window.renderChat();
+                if(username) try { window.renderChat(); } catch(e){}
             }, errHandler);
 
             if(unsubGrades) unsubGrades();
@@ -1369,7 +1336,7 @@
                     };
                 });
                 allGrades = newAllGrades;
-                if(username) window.renderMainContent();
+                if(username) try { window.renderMainContent(); } catch(e){}
             }, errHandler);
         };
 
