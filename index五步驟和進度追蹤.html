@@ -512,12 +512,12 @@
 
                 <!-- 進度追蹤 Modal -->
                 <div id="progress-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('progress-modal')">
-                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-[95vw] overflow-hidden border-4 border-orange-200 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
+                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl overflow-hidden border-4 border-orange-200 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
                         <div class="bg-gradient-to-r from-orange-400 to-amber-500 p-4 flex justify-between items-center text-white shrink-0">
                             <h2 class="text-xl font-bold flex items-center gap-2" id="progress-user-name">📈 闖關進度</h2>
                             <button onclick="closeGlobalModal('progress-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
-                        <div class="p-6 bg-gray-50/50 overflow-y-auto flex-1 custom-scrollbar" id="progress-content">
+                        <div class="p-6 bg-orange-50/30 overflow-y-auto flex-1 custom-scrollbar" id="progress-content">
                             <!-- 內容由 JS 動態生成 -->
                         </div>
                     </div>
@@ -693,58 +693,51 @@
             };
 
             const renderGradeBadge = (grade) => {
-                if(!grade) return `<div class="bg-gray-200 text-gray-400 text-[10px] sm:text-xs py-1.5 px-1 rounded font-bold mx-auto w-full text-center">無紀錄</div>`;
+                if(!grade) return `<span class="bg-gray-100 text-gray-400 text-xs px-2 py-1 rounded font-bold">尚未紀錄</span>`;
                 const isA = grade.includes('A');
-                const borderColor = isA ? 'border-red-500 text-red-500' : 'border-orange-500 text-orange-500';
-                const bgColor = isA ? 'bg-red-50' : 'bg-orange-50';
-                return `<div class="${bgColor} ${borderColor} border text-[11px] sm:text-sm py-1.5 px-1 rounded-sm font-black mx-auto w-full text-center shadow-sm">${grade}</div>`;
+                return `<span class="${isA ? 'bg-rose-100 text-rose-600' : 'bg-orange-100 text-orange-600'} text-xs px-2 py-1 rounded font-black border border-current shadow-sm">${grade}</span>`;
             };
 
-            const buildHorizontalTable = (title, imgSrc, chapters, subjectKeyFn) => {
-                let tableHtml = `
-                <div class="overflow-x-auto custom-scrollbar pb-3">
-                    <div class="inline-flex min-w-full border-2 border-gray-300 rounded-xl overflow-hidden bg-white shadow-sm">
-                        <div class="w-28 sm:w-36 flex flex-col items-center justify-center p-2 border-r-2 border-gray-300 bg-gray-50 shrink-0">
-                            <div class="font-black text-xs sm:text-sm text-center mb-2 text-gray-800 whitespace-pre-line leading-relaxed">${title}</div>
-                            ${imgSrc ? `<img src="${imgSrc}" class="w-16 h-24 sm:w-20 sm:h-28 object-cover shadow-sm border border-gray-200 rounded" onerror="this.style.display='none'">` : '<div class="text-3xl sm:text-4xl opacity-40 my-2">📚</div>'}
-                        </div>
-                        <div class="flex flex-row divide-x-2 divide-gray-200">
-                `;
-                chapters.forEach(ch => {
-                    const queryKey = subjectKeyFn(ch);
-                    const grade = getBestGrade(queryKey);
-                    tableHtml += `
-                            <div class="w-24 sm:w-32 flex flex-col items-center justify-start p-2 shrink-0 bg-white hover:bg-gray-50 transition-colors">
-                                <div class="text-[10px] sm:text-xs text-gray-700 font-bold mb-3 text-center leading-normal whitespace-pre-line break-words w-full h-16 flex items-center justify-center">${ch}</div>
-                                <div class="w-full mt-auto pb-1 px-1">
-                                    ${renderGradeBadge(grade)}
-                                </div>
-                            </div>
-                    `;
-                });
-                tableHtml += `
-                        </div>
-                    </div>
-                </div>
-                `;
-                return tableHtml;
-            };
-
-            let html = '<div class="space-y-6">';
+            let html = '';
             
-            // 國文 (麻辣講義)
-            html += buildHorizontalTable('國文\n(麻辣講義)', 'images/c1.jpg', CHINESE_CHAPTERS, (ch) => ch);
+            // 國文 (讀取麻辣講義)
+            html += `<h4 class="font-black text-lg text-red-700 mt-2 mb-3 border-b-2 border-red-100 pb-1 flex items-center gap-2">📖 國文 (麻辣講義)</h4>`;
+            html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">`;
+            CHINESE_CHAPTERS.forEach(ch => {
+                html += `
+                <div class="bg-white p-3 rounded-xl border border-gray-200 flex flex-col justify-between shadow-sm hover:border-red-300 hover:shadow-md transition-all group">
+                    <span class="text-sm font-bold text-gray-700 mb-2 whitespace-pre-line group-hover:text-red-700 transition-colors">${ch}</span>
+                    <div class="text-right">${renderGradeBadge(getBestGrade(ch))}</div>
+                </div>`;
+            });
+            html += `</div>`;
 
-            // 自然合科
-            html += buildHorizontalTable('自然合科', null, SUB_SUBJECTS['自然'], (sub) => sub);
-
-            // 社會合科
-            html += buildHorizontalTable('社會合科', null, SUB_SUBJECTS['社會'], (sub) => sub);
+            // 自然、社會
+            ['自然', '社會'].forEach(mainSub => {
+                const color = SUBJECT_COLORS[mainSub];
+                html += `<h4 class="font-black text-lg ${color.text} mt-8 mb-3 border-b-2 ${color.border} pb-1 flex items-center gap-2">🔬 ${mainSub}合科</h4>`;
+                html += `<div class="grid grid-cols-2 md:grid-cols-4 gap-3">`;
+                SUB_SUBJECTS[mainSub].forEach(sub => {
+                    html += `
+                    <div class="bg-white p-3 rounded-xl border border-gray-200 flex flex-col justify-between shadow-sm hover:shadow-md transition-all">
+                        <span class="text-sm font-bold text-gray-700 mb-2">${sub}</span>
+                        <div class="text-right">${renderGradeBadge(getBestGrade(sub))}</div>
+                    </div>`;
+                });
+                html += `</div>`;
+            });
 
             // 英文、數學
-            html += buildHorizontalTable('單一主科', null, ['英文', '數學'], (sub) => sub);
-
-            html += '</div>';
+            html += `<h4 class="font-black text-lg text-indigo-700 mt-8 mb-3 border-b-2 border-indigo-100 pb-1 flex items-center gap-2">📐 其他單一科目</h4>`;
+            html += `<div class="grid grid-cols-2 md:grid-cols-4 gap-3 pb-4">`;
+            ['英文', '數學'].forEach(sub => {
+                html += `
+                <div class="bg-white p-3 rounded-xl border border-gray-200 flex flex-col justify-between shadow-sm hover:shadow-md transition-all">
+                    <span class="text-sm font-bold text-gray-700 mb-2">${sub}</span>
+                    <div class="text-right">${renderGradeBadge(getBestGrade(sub))}</div>
+                </div>`;
+            });
+            html += `</div>`;
 
             document.getElementById('progress-content').innerHTML = html;
             openGlobalModal('progress-modal');
