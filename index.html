@@ -422,7 +422,7 @@
                         <input type="password" id="login-pwd-input" placeholder="請輸入密碼" class="w-full px-4 py-3 rounded-xl border-2 border-teal-200 focus:outline-none focus:border-teal-400 text-center font-bold text-lg mb-6" onkeypress="if(event.key === 'Enter') confirmLoginPassword()">
                         <div class="flex gap-3">
                             <button onclick="closeGlobalModal('login-pwd-modal')" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100">取消</button>
-                            <button onclick="confirmLoginPassword()" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-teal-400 hover:bg-teal-500 shadow-md">登入</button>
+                            <button onclick="confirmLoginPassword()" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-teal-400 hover:bg-teal-50 shadow-md">登入</button>
                         </div>
                     </div>
                 </div>
@@ -741,6 +741,10 @@
 
             const buildHorizontalTable = (title, imgSrc, chapters, subjectKeyFn) => {
                 const formatChapterHtml = (ch) => {
+                    if (ch.includes('會考模擬試題')) {
+                        return `<div class="step3-color-exam font-black text-center w-full text-[11px] sm:text-xs leading-tight whitespace-pre-line flex items-center justify-center h-full">${ch.replace(' ', '\n')}</div>`;
+                    }
+                    
                     let line1 = '';
                     let line2 = '';
                     let line3 = '';
@@ -751,9 +755,6 @@
                         line1 = parts[0];
                         line2 = parts[1];
                         line3 = parts.slice(2).join(' ');
-                    } else if (parts.length >= 2 && parts[0].includes('會考模擬試題')) {
-                        line1 = parts[0];
-                        line2 = parts.slice(1).join(' ');
                     }
                     
                     // 根據是否有匹配到主標題來決定渲染三行或單行
@@ -788,7 +789,7 @@
                     tableHtml += `
                             <div ${clickAttr} class="w-24 sm:w-32 flex flex-col items-center justify-start p-2 shrink-0 bg-white transition-colors ${cursorClass}">
                                 <div class="w-full h-auto min-h-[4rem] flex flex-col items-center justify-center mb-2">
-                                    ${ch.includes('會考模擬試題') ? formatStep3Text(ch) : formatChapterHtml(ch)}
+                                    ${formatChapterHtml(ch)}
                                 </div>
                                 <div class="w-full mt-auto pb-1 px-1">
                                     ${renderGradeBadge(bestObj)}
