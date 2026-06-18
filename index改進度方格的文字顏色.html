@@ -541,7 +541,7 @@
                 </div>
 
                 <!-- 瀏覽公開資料卡 Modal -->
-                <div id="view-profile-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[80] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('view-profile-modal')">
+                <div id="view-profile-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('view-profile-modal')">
                     <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform duration-200 flex flex-col relative border-4 border-teal-100">
                         <button onclick="closeGlobalModal('view-profile-modal')" class="absolute top-4 right-4 bg-black/20 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold z-10 hover:bg-black/40">✕</button>
                         
@@ -566,17 +566,6 @@
                                 <div class="text-center text-xs text-gray-400 font-bold mt-2" id="vp-birthday"></div>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- 查看他人成績 Modal (z-index 提高，可覆蓋在其他視窗之上) -->
-                <div id="view-score-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[80] p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 90%; max-height: 90dvh;">
-                        <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
-                            <h2 class="text-xl font-bold flex items-center gap-2">👀 查看成績 <span id="view-modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
-                            <button onclick="closeGlobalModal('view-score-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
-                        </div>
-                        <div class="p-6 bg-teal-50/30 overflow-y-auto custom-scrollbar flex-1" id="view-score-content"></div>
                     </div>
                 </div>
 
@@ -637,6 +626,17 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 查看他人成績 Modal -->
+                <div id="view-score-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[60] p-4 transition-opacity duration-200 opacity-0">
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 90%; max-height: 90dvh;">
+                        <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
+                            <h2 class="text-xl font-bold flex items-center gap-2">👀 查看成績 <span id="view-modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
+                            <button onclick="closeGlobalModal('view-score-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
+                        </div>
+                        <div class="p-6 bg-teal-50/30 overflow-y-auto custom-scrollbar flex-1" id="view-score-content"></div>
+                    </div>
+                </div>
             `;
         };
 
@@ -680,24 +680,20 @@
             const uGrades = allGrades[targetUser] || {};
             
             const getBestGrade = (subKey) => {
-                let bestObj = null;
+                let best = null;
                 let bestW = 0;
-                Object.entries(uGrades).forEach(([dateStr, dayData]) => {
+                Object.values(uGrades).forEach(dayData => {
                     if(dayData[subKey]) {
                         const g = dayData[subKey].grade;
                         const w = GRADE_WEIGHT[g] || 0;
-                        if(w > bestW) {
-                            bestW = w;
-                            bestObj = { grade: g, date: dateStr };
-                        }
+                        if(w > bestW) { bestW = w; best = g; }
                     }
                 });
-                return bestObj;
+                return best;
             };
 
-            const renderGradeBadge = (bestObj) => {
-                if(!bestObj) return `<div class="bg-gray-200 text-gray-400 text-[10px] sm:text-xs py-1.5 px-1 rounded font-bold mx-auto w-full text-center">無紀錄</div>`;
-                const grade = bestObj.grade;
+            const renderGradeBadge = (grade) => {
+                if(!grade) return `<div class="bg-gray-200 text-gray-400 text-[10px] sm:text-xs py-1.5 px-1 rounded font-bold mx-auto w-full text-center">無紀錄</div>`;
                 const isA = grade.includes('A');
                 const borderColor = isA ? 'border-red-500 text-red-500' : 'border-orange-500 text-orange-500';
                 const bgColor = isA ? 'bg-red-50' : 'bg-orange-50';
@@ -743,17 +739,14 @@
                 `;
                 chapters.forEach(ch => {
                     const queryKey = subjectKeyFn(ch);
-                    const bestObj = getBestGrade(queryKey);
-                    const cursorClass = bestObj ? 'cursor-pointer hover:bg-gray-100 hover:shadow-inner' : 'hover:bg-gray-50';
-                    const clickAttr = bestObj ? `onclick="viewOthersScore(event, '${targetUser}', '${bestObj.date}')"` : '';
-                    
+                    const grade = getBestGrade(queryKey);
                     tableHtml += `
-                            <div ${clickAttr} class="w-24 sm:w-32 flex flex-col items-center justify-start p-2 shrink-0 bg-white transition-colors ${cursorClass}">
+                            <div class="w-24 sm:w-32 flex flex-col items-center justify-start p-2 shrink-0 bg-white hover:bg-gray-50 transition-colors">
                                 <div class="w-full h-16 flex flex-col items-center justify-center mb-3">
                                     ${formatChapterHtml(ch)}
                                 </div>
                                 <div class="w-full mt-auto pb-1 px-1">
-                                    ${renderGradeBadge(bestObj)}
+                                    ${renderGradeBadge(grade)}
                                 </div>
                             </div>
                     `;
@@ -1133,7 +1126,7 @@
 
         const doCompleteLogin = (name) => {
             username = name;
-            viewingUser = name; // [修正] 預設視角改為當前登入者，不再是 'ALL'
+            viewingUser = 'ALL'; 
             isAdmin = (username === 'Nick'); 
             localStorage.setItem('study_group_user', username);
             setupListeners();
@@ -1577,10 +1570,6 @@
                 const subColor = getSubjectColor(mainSub);
                 const displayName = usersProfile[item.user]?.nickname || item.user;
 
-                // [修正] 優化動態牆的字串顯示: 在 [主科目] [章節名稱] 獲得 [分數]
-                const mainSubStr = item.mainSubject && item.mainSubject !== item.subject ? `${item.mainSubject} ` : '';
-                const fullSubStr = `${mainSubStr}${item.subject}`;
-
                 html += `
                     <div class="p-3 rounded-2xl border-2 ${subColor.border} ${subColor.bg} shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" onclick="viewOthersScore(null, '${item.user}', '${item.date}')">
                         <div class="flex justify-between items-center mb-1">
@@ -1591,7 +1580,7 @@
                             <span class="text-[10px] text-gray-400 font-mono">${item.date}</span>
                         </div>
                         <div class="text-sm text-gray-600">
-                            在 <span class="font-bold text-gray-800" title="${fullSubStr}">${fullSubStr.length > 20 ? fullSubStr.substring(0,18)+'...' : fullSubStr}</span> 獲得 <span class="font-black text-lg mx-1 ${subColor.text}">${item.grade}</span> ${emoji}
+                            在 <span class="font-bold" title="${item.subject}">${item.subject.length > 10 ? item.subject.substring(0,8)+'...' : item.subject}</span> 測驗斬獲了 <span class="font-black text-lg mx-1 ${subColor.text}">${item.grade}</span> ${emoji}
                         </div>
                         ${item.photo ? `<div class="absolute right-3 bottom-2 text-purple-400 text-lg opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
                     </div>
