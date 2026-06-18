@@ -79,18 +79,6 @@
         .step3-color-unit { color: #DC143C; }
         .step3-color-book { color: #0066FF; }
         .step3-color-desc { color: #696969; }
-        
-        .step3-color-exam {
-            color: #FF0000 !important;
-            border: 2px solid #FFFF00 !important;
-            box-shadow: 0 0 6px rgba(255, 255, 0, 0.8);
-            border-radius: 6px;
-            padding: 4px 8px;
-            background-color: rgba(255, 255, 0, 0.1);
-        }
-        .text-white .step3-color-exam {
-            background-color: #FFFFFF !important;
-        }
     </style>
 </head>
 <body class="w-full flex flex-col overflow-hidden">
@@ -205,13 +193,6 @@
         // ==========================================
         const formatStep3Text = (text) => {
             let formatted = text;
-            
-            // 優先處理「會考模擬試題 *~*冊」
-            if (formatted.includes('會考模擬試題')) {
-                formatted = formatted.replace(/(會考模擬試題\s*\d+~\d+\s*冊)/g, '<span class="step3-color-exam inline-block w-full text-center">$1</span>');
-                return formatted;
-            }
-            
             formatted = formatted.replace(/(單元\d+)/g, '<span class="step3-color-unit">$1</span>');
             formatted = formatted.replace(/(第[一二三四五六七八九十\d]+冊)/g, '<span class="step3-color-book">$1</span>');
             formatted = formatted.replace(/(\(.*?\)|（.*?）)/g, '<span class="step3-color-desc">$1</span>');
