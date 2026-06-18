@@ -701,37 +701,10 @@
             };
 
             const buildHorizontalTable = (title, imgSrc, chapters, subjectKeyFn) => {
-                const formatChapterHtml = (ch) => {
-                    let line1 = '';
-                    let line2 = ch;
-                    
-                    // 智慧拆分章節字串
-                    const parts = ch.split(' ');
-                    if (parts.length >= 2) {
-                        if (parts[1].startsWith('單元')) {
-                            line1 = parts[0] + ' ' + parts[1];
-                            line2 = parts.slice(2).join(' ');
-                        } else if (parts[0].includes('冊')) {
-                            line1 = parts[0];
-                            line2 = parts.slice(1).join(' ');
-                        }
-                    }
-                    
-                    // 根據是否有匹配到主標題來決定渲染雙行或單行
-                    if (line1) {
-                        return `
-                            <div class="text-[#0066FF] text-[11px] sm:text-xs font-black mb-1 leading-tight w-full text-center">${line1}</div>
-                            <div class="text-[10px] sm:text-xs text-gray-700 font-bold leading-tight whitespace-pre-line w-full text-center">${line2}</div>
-                        `;
-                    } else {
-                        return `<div class="text-[10px] sm:text-xs text-gray-700 font-bold leading-tight whitespace-pre-line w-full text-center flex items-center justify-center h-full">${line2}</div>`;
-                    }
-                };
-
                 let tableHtml = `
-                <div class="overflow-x-auto custom-scrollbar pb-3 relative">
-                    <div class="inline-flex min-w-full border-2 border-gray-300 rounded-xl bg-white shadow-sm">
-                        <div class="w-28 sm:w-36 flex flex-col items-center justify-center p-2 border-r-2 border-gray-300 bg-gray-50 shrink-0 sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] rounded-l-xl">
+                <div class="overflow-x-auto custom-scrollbar pb-3">
+                    <div class="inline-flex min-w-full border-2 border-gray-300 rounded-xl overflow-hidden bg-white shadow-sm">
+                        <div class="w-28 sm:w-36 flex flex-col items-center justify-center p-2 border-r-2 border-gray-300 bg-gray-50 shrink-0">
                             <div class="font-black text-xs sm:text-sm text-center mb-2 text-gray-800 whitespace-pre-line leading-relaxed">${title}</div>
                             ${imgSrc ? `<img src="${imgSrc}" class="w-16 h-24 sm:w-20 sm:h-28 object-cover shadow-sm border border-gray-200 rounded" onerror="this.style.display='none'">` : '<div class="text-3xl sm:text-4xl opacity-40 my-2">📚</div>'}
                         </div>
@@ -742,9 +715,7 @@
                     const grade = getBestGrade(queryKey);
                     tableHtml += `
                             <div class="w-24 sm:w-32 flex flex-col items-center justify-start p-2 shrink-0 bg-white hover:bg-gray-50 transition-colors">
-                                <div class="w-full h-16 flex flex-col items-center justify-center mb-3">
-                                    ${formatChapterHtml(ch)}
-                                </div>
+                                <div class="text-[10px] sm:text-xs text-gray-700 font-bold mb-3 text-center leading-normal whitespace-pre-line break-words w-full h-16 flex items-center justify-center">${ch}</div>
                                 <div class="w-full mt-auto pb-1 px-1">
                                     ${renderGradeBadge(grade)}
                                 </div>
