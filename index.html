@@ -1564,7 +1564,7 @@
                     <option value="ALL" ${viewingUser === 'ALL' ? 'selected' : ''}>🌍 全部進度</option>
                     ${globalUsers.map(u => {
                         const dispName = usersProfile[u]?.nickname || u;
-                        return `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>【${getAvatarChar(u)}】 ${dispName} 的個人進度</option>`;
+                        return `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>❤️ ${dispName} 的個人進度</option>`;
                     }).join('')}
                 </select>
             `;
@@ -1782,6 +1782,7 @@
                                 <div class="font-black text-gray-700 text-sm mb-0.5 truncate">${displayName}</div>
                                 <div class="text-[10px] text-gray-500 flex gap-2 items-center mt-1">
                                     <span class="text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 shadow-sm">平均 ${stat.average.toFixed(2)} 分</span>
+                                    <span class="text-gray-500 font-bold bg-gray-100 px-1.5 py-0.5 rounded">總分 ${stat.totalScore}</span>
                                 </div>
                             </div>
                         </div>
