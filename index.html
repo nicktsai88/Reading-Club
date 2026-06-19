@@ -113,10 +113,10 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-group-app';
         
         const EXAM_DATE = new Date('2027-05-22T00:00:00');
-        const SUBJECTS = ['國文', '英文', '數學', '生物', '理化', '自然', '社會'];
+        const SUBJECTS = ['國文', '英文', '數學', '生物', '理化', '歷史', '自然', '社會'];
         const SUB_SUBJECTS = {
             '自然': ['自然合科', '地科'],
-            '社會': ['社會合科', '歷史', '地理', '公民']
+            '社會': ['社會合科', '地理', '公民']
         };
 
         const CHINESE_CHAPTERS = [
@@ -173,6 +173,17 @@
             "單元18 第六冊 (磁)", "會考模擬試題 5~6冊"
         ];
 
+        const HISTORY_CHAPTERS = [
+            "單元1 第一冊 (史前~大航海時代的台灣)", "單元2 第一冊 (清帝國統治下的台灣)", "單元3 第二冊 (日治時期的台灣)",
+            "單元4 第二冊 (戰後台灣)", "會考模擬試題 1~2冊",
+            "單元5 第三冊 (商周至隋唐時期)", "單元6 第三冊 (宋元與明清時期)", "單元7 第三冊 (西力衝擊下的晚清與東亞)",
+            "單元8 第四冊 (中華民國的建立與社會變遷)", "單元9 第四冊 (現代國家的挑戰與變局)", "單元10 第四冊 (共黨政權在中國與當代東亞的局勢)",
+            "會考模擬試題 1~4冊",
+            "單元11 第五冊 (多元並立的古代文化)", "單元12 第五冊 (普世宗教與近代歐洲的興起)", "單元13 第五冊 (近代歐洲的變革與現代世界的形成)",
+            "單元14 第六冊 (現代國家的誕生與第一次世界大戰)", "單元15 第六冊 (第二次世界大戰與戰後發展)",
+            "會考模擬試題 1~6冊"
+        ];
+
         const TEXTBOOKS = {
             '國文': [
                 { id: 'c1', name: '麻辣講義', img: 'images/c1.jpg', chapters: CHINESE_CHAPTERS }
@@ -188,6 +199,9 @@
             ],
             '理化': [
                 { id: 'p1', name: '大滿貫', img: 'images/p1.jpg', chapters: PHY_CHAPTERS }
+            ],
+            '歷史': [
+                { id: 'h1', name: '大滿貫', img: 'images/h1.jpg', chapters: HISTORY_CHAPTERS }
             ]
         };
 
@@ -879,6 +893,9 @@
 
             // 理化 (大滿貫)
             html += buildHorizontalTable('理化\n(大滿貫)', 'images/p1.jpg', PHY_CHAPTERS, (ch) => ch);
+
+            // 歷史 (大滿貫)
+            html += buildHorizontalTable('歷史\n(大滿貫)', 'images/h1.jpg', HISTORY_CHAPTERS, (ch) => ch);
 
             // 自然合科
             html += buildHorizontalTable('自然合科', null, SUB_SUBJECTS['自然'], (sub) => sub);
