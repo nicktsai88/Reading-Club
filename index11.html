@@ -113,9 +113,9 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-group-app';
         
         const EXAM_DATE = new Date('2027-05-22T00:00:00');
-        const SUBJECTS = ['國文', '英文', '數學', '生物', '理化', '自然', '社會'];
+        const SUBJECTS = ['國文', '英文', '數學', '自然', '社會'];
         const SUB_SUBJECTS = {
-            '自然': ['自然合科', '地科'],
+            '自然': ['自然合科', '生物', '理化', '地科'],
             '社會': ['社會合科', '歷史', '地理', '公民']
         };
 
@@ -157,22 +157,6 @@
             "會考模擬試題 1~6冊"
         ];
 
-        const BIO_CHAPTERS = [
-            "單元1 第一冊 (生命世界)", "單元2 第一冊 (養分)", "單元3 第一冊 (生物的運輸與防禦)",
-            "單元4 第一冊 (生物的協調作用)", "單元5 第一冊 (生物的恆定性)", "單元6 第二冊 (生殖)",
-            "單元7 第二冊 (遺傳)", "單元8 第二冊 (地球上的生物)", "單元9 第二冊 (生物與環境)"
-        ];
-
-        const PHY_CHAPTERS = [
-            "單元1 第三冊 (基本測量與科學方法)", "單元2 第三冊 (物質與能)", "單元3 第三冊 (波動與聲音)",
-            "單元4 第三冊 (光)", "單元5 第三冊 (溫度與熱)", "單元6 第三冊 (原子與分子的反應世界)",
-            "單元7 第四冊 (化學計量/化學反應/氧化還原)", "單元8 第四冊 (酸鹼鹽)", "單元9 第四冊 (反應速率與反應平衡)",
-            "單元10 第四冊 (有機化合物)", "單元11 第四冊 (力與壓力)", "會考模擬試題 3~4冊",
-            "單元12 第五冊 (直線運動)", "單元13 第五冊 (力與運動)", "單元14 第五冊 (功與能)",
-            "單元15 第五冊 (電)", "單元16 第六冊 (電與生活)", "單元17 第六冊 (電化學與電池)",
-            "單元18 第六冊 (磁)", "會考模擬試題 5~6冊"
-        ];
-
         const TEXTBOOKS = {
             '國文': [
                 { id: 'c1', name: '麻辣講義', img: 'images/c1.jpg', chapters: CHINESE_CHAPTERS }
@@ -182,12 +166,6 @@
             ],
             '數學': [
                 { id: 'm1', name: '麻辣講義', img: 'images/m1.jpg', chapters: MATH_CHAPTERS }
-            ],
-            '生物': [
-                { id: 'b1', name: '麻辣講義', img: 'images/b1.jpg', chapters: BIO_CHAPTERS }
-            ],
-            '理化': [
-                { id: 'p1', name: '大滿貫', img: 'images/p1.jpg', chapters: PHY_CHAPTERS }
             ]
         };
 
@@ -810,9 +788,6 @@
                         line1 = parts[0];
                         line2 = parts[1];
                         line3 = parts.slice(2).join(' ');
-                    } else if (parts.length >= 2 && parts[0].includes('會考模擬試題')) {
-                        line1 = parts[0];
-                        line2 = parts.slice(1).join(' ');
                     }
                     
                     // 根據是否有匹配到主標題來決定渲染三行或單行
@@ -873,12 +848,6 @@
 
             // 數學 (麻辣講義)
             html += buildHorizontalTable('數學\n(麻辣講義)', 'images/m1.jpg', MATH_CHAPTERS, (ch) => ch);
-
-            // 生物 (麻辣講義)
-            html += buildHorizontalTable('生物\n(麻辣講義)', 'images/b1.jpg', BIO_CHAPTERS, (ch) => ch);
-
-            // 理化 (大滿貫)
-            html += buildHorizontalTable('理化\n(大滿貫)', 'images/p1.jpg', PHY_CHAPTERS, (ch) => ch);
 
             // 自然合科
             html += buildHorizontalTable('自然合科', null, SUB_SUBJECTS['自然'], (sub) => sub);
@@ -1880,7 +1849,7 @@
             const tbObj = tbs.find(t => t.id === tbId);
             if(tbObj && tbObj.chapters) {
                 document.getElementById('sub-subject-selector').innerHTML = tbObj.chapters.map((ch, idx) => 
-                    `<button onclick="selectSubSubject('${ch}', ${idx})" id="btn-subitem-${idx}" class="py-2 px-3 rounded-xl border-2 border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-50 transition-colors bg-white shadow-sm text-xs md:text-sm text-center whitespace-pre-line hover:scale-[1.02] flex items-center justify-center h-full min-h-[3.5rem] leading-tight">${formatStep3Text(ch)}</button>`
+                    `<button onclick="selectSubSubject('${ch}', ${idx})" id="btn-subitem-${idx}" class="py-2 px-3 rounded-xl border-2 border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-50 transition-colors bg-white shadow-sm text-xs md:text-sm text-left whitespace-pre-line hover:scale-[1.02]">${formatStep3Text(ch)}</button>`
                 ).join('');
             }
             
