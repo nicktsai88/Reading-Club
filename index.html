@@ -1657,7 +1657,7 @@
                         <div class="flex justify-between items-start shrink-0 mb-0.5 md:mb-1 w-full">
                             <span class="w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass} shrink-0">${d}</span>
                             
-                            <div class="flex flex-wrap justify-end content-start gap-1 flex-1 mx-1 mt-0.5 overflow-y-auto custom-scrollbar max-h-12 md:max-h-14 pr-1">
+                            <div class="flex flex-wrap justify-end gap-1 flex-1 mx-1 mt-0.5 overflow-hidden">
                                 ${usersWithDataToday.map(u => `
                                     <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
                                          class="${getUserColor(u)} w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center text-[9px] md:text-[11px] font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
