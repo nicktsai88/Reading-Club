@@ -1739,20 +1739,21 @@
 
             let userStats = [];
             globalUsers.forEach(u => {
-                let stats = { user: u, totalScore: 0, totalEntries: 0 };
+                let stats = { user: u, aPlusPlus: 0, aPlus: 0, a: 0, totalEntries: 0 };
                 const uGrades = allGrades[u] || {};
                 Object.values(uGrades).forEach(dayGrades => {
                     Object.values(dayGrades).forEach(item => {
                         stats.totalEntries++;
-                        stats.totalScore += GRADE_WEIGHT[item.grade] || 0;
+                        if (item.grade === 'A++') stats.aPlusPlus++;
+                        if (item.grade === 'A+') stats.aPlus++;
+                        if (item.grade === 'A') stats.a++;
                     });
                 });
-                stats.average = stats.totalEntries > 0 ? (stats.totalScore / stats.totalEntries) : 0;
+                stats.score = stats.aPlusPlus * 3 + stats.aPlus * 2 + stats.a * 1;
                 userStats.push(stats);
             });
 
-            // 依照總平均分數由高到低排名，若平均相同則比較總刷題數
-            userStats.sort((a, b) => b.average - a.average || b.totalEntries - a.totalEntries);
+            userStats.sort((a, b) => b.score - a.score || b.totalEntries - a.totalEntries);
 
             if (userStats.length === 0 || userStats[0].totalEntries === 0) {
                 container.innerHTML = `<div class="text-center text-gray-400 text-sm mt-4 font-bold">目前無人上榜</div>`;
@@ -1779,9 +1780,9 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="font-black text-gray-700 text-sm mb-0.5 truncate">${displayName}</div>
-                                <div class="text-[10px] text-gray-500 flex gap-2 items-center mt-1">
-                                    <span class="text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 shadow-sm">平均 ${stat.average.toFixed(2)} 分</span>
-                                    <span class="text-gray-500 font-bold bg-gray-100 px-1.5 py-0.5 rounded">總分 ${stat.totalScore}</span>
+                                <div class="text-[10px] text-gray-500 flex gap-2">
+                                    <span class="text-rose-500 font-bold bg-rose-50 px-1.5 rounded">A++ x ${stat.aPlusPlus}</span>
+                                    <span class="text-orange-500 font-bold bg-orange-50 px-1.5 rounded">A+ x ${stat.aPlus}</span>
                                 </div>
                             </div>
                         </div>
