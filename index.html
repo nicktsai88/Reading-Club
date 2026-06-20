@@ -107,7 +107,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ==========================================
         // 系統常數與設定
@@ -290,180 +290,11 @@
         };
 
         // ==========================================
-        // UI 渲染函式 - 系統框架與登入
+        // UI 渲染函式 - 靜態框架與共用 Modals
         // ==========================================
-        window.renderApp = () => { 
-            document.getElementById('app').innerHTML = `<div id="view-container" class="w-full h-full flex flex-col relative overflow-hidden bg-white/20"></div>`; 
-            renderGlobalModals();
-        };
-
-        window.renderSetup = () => {
-            const container = document.getElementById('view-container');
-            const currentConfig = getStoredConfig() || {};
-            container.innerHTML = `
-                <div class="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-y-auto">
-                    <div class="glass-panel p-8 md:p-10 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] max-w-[95vw] border-4 border-teal-200 relative overflow-hidden">
-                        <h1 class="text-2xl md:text-3xl font-black text-teal-600 mb-2 drop-shadow-sm text-center">⚙️ 系統資料庫設定</h1>
-                        <p class="text-sm text-gray-500 mb-6 text-center font-bold">請填入您的 Firebase API Key 以啟用雲端同步功能</p>
-                        <div class="space-y-3 bg-white/60 p-6 rounded-2xl border border-teal-100">
-                            <div>
-                                <label class="block text-xs font-bold text-teal-800 mb-1">API Key (必填) *</label>
-                                <input type="text" id="cfg-apiKey" value="${currentConfig.apiKey || ''}" placeholder="AIzaSy..." class="w-full px-3 py-2 rounded-lg border border-teal-200 focus:outline-none focus:border-teal-400 text-sm font-mono">
-                            </div>
-                        </div>
-                        <div class="mt-6 flex gap-3 justify-center">
-                            ${currentConfig.apiKey ? `<button onclick="renderLogin()" class="px-5 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors">取消</button>` : ''}
-                            <button onclick="saveFirebaseConfig()" class="flex-1 bg-gradient-to-r from-teal-400 to-emerald-400 text-white font-bold py-2.5 px-6 rounded-xl shadow-md hover:shadow-lg transition-all">
-                                💾 儲存並啟動系統
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        };
-
-        window.renderLogin = () => {
-            const container = document.getElementById('view-container');
-            container.innerHTML = `
-                <div class="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-y-auto">
-                    <div class="glass-panel p-8 md:p-12 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] max-w-[95vw] text-center border-4 border-pink-200 relative overflow-hidden">
-                        <div class="absolute top-4 left-4 text-4xl animate-bounce-slow">✨</div>
-                        <div class="absolute bottom-4 right-4 text-4xl animate-bounce-slow" style="animation-delay: 1s;">🎓</div>
-                        <button onclick="renderSetup()" class="absolute top-5 right-5 text-gray-400 hover:text-teal-600 transition-colors bg-white/50 p-2 rounded-full border border-gray-200 hover:bg-white" title="系統設定">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                        </button>
-                        
-                        <div class="flex justify-center items-center gap-4 md:gap-6 mb-8 mt-2">
-                            <div class="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-1 shadow-lg border-4 border-red-200 overflow-hidden flex justify-center items-center hover:scale-105 transition-transform">
-                                <img src="school1.jpg" alt="雄中" class="w-full h-full object-contain rounded-full" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2ZmY2RkMiIvPjwvc3ZnPg=='">
-                            </div>
-                            <div class="text-4xl md:text-5xl font-black text-pink-400">X</div>
-                            <div class="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-1 shadow-lg border-4 border-red-200 overflow-hidden flex justify-center items-center hover:scale-105 transition-transform">
-                                <img src="school2.jpg" alt="雄女" class="w-full h-full object-contain rounded-full" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2ZmY2RkMiIvPjwvc3ZnPg=='">
-                            </div>
-                        </div>
-
-                        <h1 class="text-3xl md:text-4xl font-black text-rose-500 mb-3 drop-shadow-sm tracking-wide">🎒 邁向5A10+</h1>
-                        <h2 class="text-xl font-bold text-teal-600 mb-8 bg-teal-50 inline-block px-6 py-2 rounded-full border border-teal-100">國中會考讀書會 💯</h2>
-                        
-                        <div class="bg-white/60 p-6 rounded-3xl border border-pink-100 mb-6">
-                            <p class="text-sm text-rose-400 font-bold mb-3">👇 點擊你的暱稱登入 👇</p>
-                            <div class="flex flex-wrap justify-center gap-3">
-                                ${globalUsers.length > 0 ? 
-                                    globalUsers.map(u => {
-                                        const dispName = usersProfile[u]?.nickname || u;
-                                        return `<button onclick="initiateLogin('${u}')" class="flex items-center gap-2 text-md font-bold bg-white border-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:scale-105 py-1.5 pl-2 pr-4 rounded-xl shadow-sm transition-all">
-                                            <div class="${getUserColor(u)} w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-sm border-2 border-white shrink-0">${getAvatarChar(u)}</div>
-                                            <span>${dispName}</span>
-                                        </button>`;
-                                    }).join('') 
-                                    : `<span class="text-sm text-gray-400">尚無參賽者，請點擊下方註冊</span>`
-                                }
-                            </div>
-                        </div>
-                        
-                        <div class="flex gap-2 w-full mt-2">
-                            <button onclick="openProfileEditModal('', true)" class="w-full bg-gradient-to-r from-teal-400 to-emerald-400 text-white font-black py-4 px-6 text-xl rounded-2xl shadow-md hover:shadow-lg transition-all transform hover:scale-[1.02]">
-                                🚀 註冊新帳號
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        };
-
-        window.renderMain = () => {
-            const container = document.getElementById('view-container');
-            container.innerHTML = `
-                <div class="bg-white/80 backdrop-blur-md border-b-2 border-pink-200 p-3 flex justify-between items-center shadow-sm shrink-0 z-20 relative">
-                    <div class="flex items-center gap-4 pl-2">
-                        <div class="flex gap-2">
-                            <img src="school1.jpg" alt="雄中" class="w-full h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-10 bg-rose-50" onerror="this.style.display='none'">
-                            <img src="school2.jpg" alt="雄女" class="w-full h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-0 bg-rose-50" onerror="this.style.display='none'">
-                        </div>
-                        <h1 class="text-2xl md:text-3xl font-black text-rose-500 tracking-wider hidden lg:block">邁向5A10+ 讀書會 🏆</h1>
-                        <h1 class="text-xl font-black text-rose-500 tracking-wider block lg:hidden">5A10+</h1>
-                    </div>
-                    <div class="flex flex-wrap items-center justify-end gap-2 pr-2">
-                        ${isAdmin ? `<button onclick="openAdminPanel()" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-transform text-sm shrink-0 hidden xl:block">👑 管理員</button>` : ''}
-                        
-                        <button onclick="openPlanModal()" class="font-bold text-sky-700 bg-sky-50 px-2 md:px-3 py-1.5 rounded-lg border border-sky-200 shadow-sm hover:bg-sky-100 transition-colors text-sm flex items-center gap-1 shrink-0">
-                            🗓️ <span class="hidden md:inline">我的計畫表</span>
-                        </button>
-
-                        <button onclick="openWeaknessCamp()" class="font-bold text-red-700 bg-red-50 px-2 md:px-3 py-1.5 rounded-lg border border-red-200 shadow-sm hover:bg-red-100 transition-colors text-sm flex items-center gap-1 shrink-0">
-                            🔥 <span class="hidden md:inline">弱點集中營</span>
-                        </button>
-
-                        <button onclick="openProgressModal()" class="font-bold text-orange-700 bg-orange-50 px-2 md:px-3 py-1.5 rounded-lg border border-orange-200 shadow-sm hover:bg-orange-100 transition-colors text-sm flex items-center gap-1 shrink-0">
-                            📈 <span class="hidden xl:inline">進度追蹤</span>
-                        </button>
-                        
-                        <button onclick="openAnalysisModal()" class="font-bold text-indigo-700 bg-indigo-50 px-2 md:px-3 py-1.5 rounded-lg border border-indigo-200 shadow-sm hover:bg-indigo-100 transition-colors text-sm flex items-center gap-1 shrink-0">
-                            📊 <span class="hidden xl:inline">學科分析</span>
-                        </button>
-                        
-                        <button onclick="openProfileEditModal('${username}')" class="font-bold text-teal-700 bg-teal-50 px-2 md:px-3 py-1.5 rounded-lg border border-teal-200 shadow-sm hover:bg-teal-100 transition-colors text-sm flex items-center gap-1 shrink-0">
-                            <div class="${getUserColor(username)} w-5 h-5 rounded-full flex items-center justify-center text-[10px]">${getAvatarChar(username)}</div>
-                            <span class="hidden xl:inline">我的資料卡</span>
-                        </button>
-                        
-                        <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-2 md:px-3 py-1.5 rounded-lg transition-colors text-sm border border-rose-200 bg-white shadow-sm shrink-0">登出 👋</button>
-                    </div>
-                </div>
-
-                <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-                    <div class="w-full md:w-60 lg:w-72 flex flex-col bg-white/50 border-b-2 md:border-b-0 md:border-r-2 border-pink-100 z-10 shrink-0 h-full min-h-0">
-                        <div id="sidebar-countdowns" class="p-4 flex flex-col border-b-2 border-pink-100 shrink-0 h-[45%] min-h-[250px] relative overflow-hidden"></div>
-                        <div class="flex-1 flex flex-col bg-white/60 overflow-hidden relative min-h-0">
-                            <div class="bg-pink-100/50 p-2 text-center font-bold text-pink-600 border-b border-pink-100 text-sm shadow-sm shrink-0">💬 加油打氣留言板</div>
-                            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-sm relative min-h-0"></div>
-                            
-                            <div class="p-2 bg-white flex flex-col border-t border-pink-100 relative shrink-0">
-                                <div id="emoji-picker" class="hidden absolute bottom-full left-2 mb-2 bg-white border border-pink-200 p-2 rounded-xl shadow-lg grid grid-cols-5 gap-2 z-50">
-                                    ${['😀','😂','🥰','😎','🥺','💪','🔥','💯','📚','🎓','✨','🎉','📝','🏆','💖'].map(e => `<button onclick="insertEmoji('${e}')" class="text-xl hover:scale-125 transition-transform">${e}</button>`).join('')}
-                                </div>
-                                <div class="flex gap-1.5 items-center w-full">
-                                    <button id="emoji-toggle-btn" onclick="toggleEmojiPicker(event)" class="text-2xl hover:bg-pink-50 px-1 rounded-lg transition-colors shrink-0">😀</button>
-                                    <div class="flex-1 min-w-0">
-                                        <input type="text" id="chatInput" placeholder="說點什麼..." class="w-full px-3 py-2 rounded-lg border border-pink-200 focus:outline-none focus:border-pink-400 bg-gray-50 text-sm" onkeypress="if(event.key === 'Enter') sendChat()">
-                                    </div>
-                                    <button onclick="sendChat()" class="bg-pink-400 text-white px-3 py-2 rounded-lg font-bold hover:bg-pink-500 transition-colors shrink-0 whitespace-nowrap text-sm">送出</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex-1 bg-white/30 p-4 flex flex-col relative z-0 min-w-0">
-                        <div class="flex justify-between items-center mb-4 bg-white/80 p-3 rounded-2xl border border-pink-100 shadow-sm shrink-0">
-                            <button onclick="changeMonth(-1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">◀ 上個月</button>
-                            <div class="flex flex-col items-center flex-1 mx-2 overflow-hidden" id="calendar-header-container"></div>
-                            <button onclick="changeMonth(1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">下個月 ▶</button>
-                        </div>
-                        <div id="calendar-grid" class="flex-1 flex flex-col min-h-0"></div>
-                    </div>
-
-                    <div class="w-full md:w-60 lg:w-72 flex flex-col bg-white/60 z-10 shrink-0 border-l-2 border-pink-100 min-h-0 h-full">
-                        <div class="flex-1 flex flex-col min-h-0 border-b-2 border-pink-100">
-                            <div class="bg-gradient-to-r from-rose-100 to-pink-100 p-2 text-center font-bold text-rose-600 shadow-sm shrink-0 text-sm">🌟 最新戰況動態</div>
-                            <div id="timeline-feed" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar"></div>
-                        </div>
-                        <div class="flex-1 flex flex-col min-h-0">
-                            <div class="bg-gradient-to-r from-teal-100 to-emerald-100 p-2 text-center font-bold text-teal-700 shadow-sm shrink-0 text-sm">🏆 榮譽排行榜</div>
-                            <div id="leaderboard-feed" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-teal-50/30"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            if (username) {
-                window.renderSidebar();
-                window.renderMainContent();
-                window.renderChat();
-            }
-        };
-
         const renderGlobalModals = () => {
             const container = document.getElementById('modals-container');
+            if(!container) return;
             container.innerHTML = `
                 <!-- 登入 Modal -->
                 <div id="login-pwd-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0">
@@ -474,7 +305,7 @@
                         <input type="password" id="login-pwd-input" placeholder="請輸入密碼" class="w-full px-4 py-3 rounded-xl border-2 border-teal-200 focus:outline-none focus:border-teal-400 text-center font-bold text-lg mb-6" onkeypress="if(event.key === 'Enter') confirmLoginPassword()">
                         <div class="flex gap-3">
                             <button onclick="closeGlobalModal('login-pwd-modal')" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100">取消</button>
-                            <button onclick="confirmLoginPassword()" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-teal-400 hover:bg-teal-500 shadow-md">登入</button>
+                            <button onclick="confirmLoginPassword()" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-teal-400 hover:bg-teal-50 shadow-md">登入</button>
                         </div>
                     </div>
                 </div>
@@ -594,7 +425,7 @@
                     </div>
                 </div>
 
-                <!-- 🗓️ 我的計畫表 Modal (Drag & Drop) -->
+                <!-- 🗓️ 我的計畫表 Modal -->
                 <div id="plan-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('plan-modal')">
                     <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl overflow-hidden border-4 border-sky-200 transform scale-95 transition-transform duration-200 flex flex-col h-[90vh]">
                         <div class="bg-gradient-to-r from-sky-400 to-blue-500 p-4 flex justify-between items-center text-white shrink-0">
@@ -765,28 +596,174 @@
             `;
         };
 
-        window.openGlobalModal = (id) => {
-            const modal = document.getElementById(id);
-            if(!modal) return;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                const inner = modal.firstElementChild;
-                if(inner.classList.contains('scale-95')) inner.classList.remove('scale-95');
-            }, 10);
+        window.renderApp = () => { 
+            document.getElementById('app').innerHTML = `<div id="view-container" class="w-full h-full flex flex-col relative overflow-hidden bg-white/20"></div>`; 
+            renderGlobalModals();
         };
 
-        window.closeGlobalModal = (id) => {
-            const modal = document.getElementById(id);
-            if(!modal) return;
-            modal.classList.add('opacity-0');
-            const inner = modal.firstElementChild;
-            if(inner && !inner.classList.contains('scale-95')) inner.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }, 200);
+        window.renderSetup = () => {
+            const container = document.getElementById('view-container');
+            const currentConfig = getStoredConfig() || {};
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-y-auto">
+                    <div class="glass-panel p-8 md:p-10 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] max-w-[95vw] border-4 border-teal-200 relative overflow-hidden">
+                        <h1 class="text-2xl md:text-3xl font-black text-teal-600 mb-2 drop-shadow-sm text-center">⚙️ 系統資料庫設定</h1>
+                        <p class="text-sm text-gray-500 mb-6 text-center font-bold">請填入您的 Firebase API Key 以啟用雲端同步功能</p>
+                        <div class="space-y-3 bg-white/60 p-6 rounded-2xl border border-teal-100">
+                            <div>
+                                <label class="block text-xs font-bold text-teal-800 mb-1">API Key (必填) *</label>
+                                <input type="text" id="cfg-apiKey" value="${currentConfig.apiKey || ''}" placeholder="AIzaSy..." class="w-full px-3 py-2 rounded-lg border border-teal-200 focus:outline-none focus:border-teal-400 text-sm font-mono">
+                            </div>
+                        </div>
+                        <div class="mt-6 flex gap-3 justify-center">
+                            ${currentConfig.apiKey ? `<button onclick="renderLogin()" class="px-5 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors">取消</button>` : ''}
+                            <button onclick="saveFirebaseConfig()" class="flex-1 bg-gradient-to-r from-teal-400 to-emerald-400 text-white font-bold py-2.5 px-6 rounded-xl shadow-md hover:shadow-lg transition-all">
+                                💾 儲存並啟動系統
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.renderLogin = () => {
+            const container = document.getElementById('view-container');
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-y-auto">
+                    <div class="glass-panel p-8 md:p-12 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] max-w-[95vw] text-center border-4 border-pink-200 relative overflow-hidden">
+                        <div class="absolute top-4 left-4 text-4xl animate-bounce-slow">✨</div>
+                        <div class="absolute bottom-4 right-4 text-4xl animate-bounce-slow" style="animation-delay: 1s;">🎓</div>
+                        <button onclick="renderSetup()" class="absolute top-5 right-5 text-gray-400 hover:text-teal-600 transition-colors bg-white/50 p-2 rounded-full border border-gray-200 hover:bg-white" title="系統設定">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </button>
+                        
+                        <div class="flex justify-center items-center gap-4 md:gap-6 mb-8 mt-2">
+                            <div class="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-1 shadow-lg border-4 border-red-200 overflow-hidden flex justify-center items-center hover:scale-105 transition-transform">
+                                <img src="school1.jpg" alt="雄中" class="w-full h-full object-contain rounded-full" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2ZmY2RkMiIvPjwvc3ZnPg=='">
+                            </div>
+                            <div class="text-4xl md:text-5xl font-black text-pink-400">X</div>
+                            <div class="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-1 shadow-lg border-4 border-red-200 overflow-hidden flex justify-center items-center hover:scale-105 transition-transform">
+                                <img src="school2.jpg" alt="雄女" class="w-full h-full object-contain rounded-full" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2ZmY2RkMiIvPjwvc3ZnPg=='">
+                            </div>
+                        </div>
+
+                        <h1 class="text-3xl md:text-4xl font-black text-rose-500 mb-3 drop-shadow-sm tracking-wide">🎒 邁向5A10+</h1>
+                        <h2 class="text-xl font-bold text-teal-600 mb-8 bg-teal-50 inline-block px-6 py-2 rounded-full border border-teal-100">國中會考讀書會 💯</h2>
+                        
+                        <div class="bg-white/60 p-6 rounded-3xl border border-pink-100 mb-6">
+                            <p class="text-sm text-rose-400 font-bold mb-3">👇 點擊你的暱稱登入 👇</p>
+                            <div class="flex flex-wrap justify-center gap-3">
+                                ${globalUsers.length > 0 ? 
+                                    globalUsers.map(u => {
+                                        const dispName = usersProfile[u]?.nickname || u;
+                                        return `<button onclick="initiateLogin('${u}')" class="flex items-center gap-2 text-md font-bold bg-white border-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:scale-105 py-1.5 pl-2 pr-4 rounded-xl shadow-sm transition-all">
+                                            <div class="${getUserColor(u)} w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-sm border-2 border-white shrink-0">${getAvatarChar(u)}</div>
+                                            <span>${dispName}</span>
+                                        </button>`;
+                                    }).join('') 
+                                    : `<span class="text-sm text-gray-400">尚無參賽者，請點擊下方註冊</span>`
+                                }
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-2 w-full mt-2">
+                            <button onclick="openProfileEditModal('', true)" class="w-full bg-gradient-to-r from-teal-400 to-emerald-400 text-white font-black py-4 px-6 text-xl rounded-2xl shadow-md hover:shadow-lg transition-all transform hover:scale-[1.02]">
+                                🚀 註冊新帳號
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.renderMain = () => {
+            const container = document.getElementById('view-container');
+            container.innerHTML = `
+                <div class="bg-white/80 backdrop-blur-md border-b-2 border-pink-200 p-3 flex justify-between items-center shadow-sm shrink-0 z-20 relative">
+                    <div class="flex items-center gap-4 pl-2">
+                        <div class="flex gap-2">
+                            <img src="school1.jpg" alt="雄中" class="w-full h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-10 bg-rose-50" onerror="this.style.display='none'">
+                            <img src="school2.jpg" alt="雄女" class="w-full h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-0 bg-rose-50" onerror="this.style.display='none'">
+                        </div>
+                        <h1 class="text-2xl md:text-3xl font-black text-rose-500 tracking-wider hidden lg:block">邁向5A10+ 讀書會 🏆</h1>
+                        <h1 class="text-xl font-black text-rose-500 tracking-wider block lg:hidden">5A10+</h1>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-end gap-2 pr-2">
+                        ${isAdmin ? `<button onclick="openAdminPanel()" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-transform text-sm shrink-0 hidden xl:block">👑 管理員</button>` : ''}
+                        
+                        <button onclick="openPlanModal()" class="font-bold text-sky-700 bg-sky-50 px-2 md:px-3 py-1.5 rounded-lg border border-sky-200 shadow-sm hover:bg-sky-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            🗓️ <span class="hidden md:inline">我的計畫表</span>
+                        </button>
+
+                        <button onclick="openWeaknessCamp()" class="font-bold text-red-700 bg-red-50 px-2 md:px-3 py-1.5 rounded-lg border border-red-200 shadow-sm hover:bg-red-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            🔥 <span class="hidden md:inline">弱點集中營</span>
+                        </button>
+
+                        <button onclick="openProgressModal()" class="font-bold text-orange-700 bg-orange-50 px-2 md:px-3 py-1.5 rounded-lg border border-orange-200 shadow-sm hover:bg-orange-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            📈 <span class="hidden xl:inline">進度追蹤</span>
+                        </button>
+                        
+                        <button onclick="openAnalysisModal()" class="font-bold text-indigo-700 bg-indigo-50 px-2 md:px-3 py-1.5 rounded-lg border border-indigo-200 shadow-sm hover:bg-indigo-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            📊 <span class="hidden xl:inline">學科分析</span>
+                        </button>
+                        
+                        <button onclick="openProfileEditModal('${username}')" class="font-bold text-teal-700 bg-teal-50 px-2 md:px-3 py-1.5 rounded-lg border border-teal-200 shadow-sm hover:bg-teal-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            <div class="${getUserColor(username)} w-5 h-5 rounded-full flex items-center justify-center text-[10px]">${getAvatarChar(username)}</div>
+                            <span class="hidden xl:inline">我的資料卡</span>
+                        </button>
+                        
+                        <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-2 md:px-3 py-1.5 rounded-lg transition-colors text-sm border border-rose-200 bg-white shadow-sm shrink-0">登出 👋</button>
+                    </div>
+                </div>
+
+                <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                    <div class="w-full md:w-60 lg:w-72 flex flex-col bg-white/50 border-b-2 md:border-b-0 md:border-r-2 border-pink-100 z-10 shrink-0 h-full min-h-0">
+                        <div id="sidebar-countdowns" class="p-4 flex flex-col border-b-2 border-pink-100 shrink-0 h-[45%] min-h-[250px] relative overflow-hidden"></div>
+                        <div class="flex-1 flex flex-col bg-white/60 overflow-hidden relative min-h-0">
+                            <div class="bg-pink-100/50 p-2 text-center font-bold text-pink-600 border-b border-pink-100 text-sm shadow-sm shrink-0">💬 加油打氣留言板</div>
+                            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-sm relative min-h-0"></div>
+                            
+                            <div class="p-2 bg-white flex flex-col border-t border-pink-100 relative shrink-0">
+                                <div id="emoji-picker" class="hidden absolute bottom-full left-2 mb-2 bg-white border border-pink-200 p-2 rounded-xl shadow-lg grid grid-cols-5 gap-2 z-50">
+                                    ${['😀','😂','🥰','😎','🥺','💪','🔥','💯','📚','🎓','✨','🎉','📝','🏆','💖'].map(e => `<button onclick="insertEmoji('${e}')" class="text-xl hover:scale-125 transition-transform">${e}</button>`).join('')}
+                                </div>
+                                <div class="flex gap-1.5 items-center w-full">
+                                    <button id="emoji-toggle-btn" onclick="toggleEmojiPicker(event)" class="text-2xl hover:bg-pink-50 px-1 rounded-lg transition-colors shrink-0">😀</button>
+                                    <div class="flex-1 min-w-0">
+                                        <input type="text" id="chatInput" placeholder="說點什麼..." class="w-full px-3 py-2 rounded-lg border border-pink-200 focus:outline-none focus:border-pink-400 bg-gray-50 text-sm" onkeypress="if(event.key === 'Enter') sendChat()">
+                                    </div>
+                                    <button onclick="sendChat()" class="bg-pink-400 text-white px-3 py-2 rounded-lg font-bold hover:bg-pink-500 transition-colors shrink-0 whitespace-nowrap text-sm">送出</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 bg-white/30 p-4 flex flex-col relative z-0 min-w-0">
+                        <div class="flex justify-between items-center mb-4 bg-white/80 p-3 rounded-2xl border border-pink-100 shadow-sm shrink-0">
+                            <button onclick="changeMonth(-1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">◀ 上個月</button>
+                            <div class="flex flex-col items-center flex-1 mx-2 overflow-hidden" id="calendar-header-container"></div>
+                            <button onclick="changeMonth(1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">下個月 ▶</button>
+                        </div>
+                        <div id="calendar-grid" class="flex-1 flex flex-col min-h-0"></div>
+                    </div>
+
+                    <div class="w-full md:w-60 lg:w-72 flex flex-col bg-white/60 z-10 shrink-0 border-l-2 border-pink-100 min-h-0 h-full">
+                        <div class="flex-1 flex flex-col min-h-0 border-b-2 border-pink-100">
+                            <div class="bg-gradient-to-r from-rose-100 to-pink-100 p-2 text-center font-bold text-rose-600 shadow-sm shrink-0 text-sm">🌟 最新戰況動態</div>
+                            <div id="timeline-feed" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar"></div>
+                        </div>
+                        <div class="flex-1 flex flex-col min-h-0">
+                            <div class="bg-gradient-to-r from-teal-100 to-emerald-100 p-2 text-center font-bold text-teal-700 shadow-sm shrink-0 text-sm">🏆 榮譽排行榜</div>
+                            <div id="leaderboard-feed" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-teal-50/30"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            if (username) {
+                window.renderSidebar();
+                window.renderMainContent();
+                window.renderChat();
+            }
         };
 
         // ==========================================
@@ -1851,8 +1828,355 @@
         };
 
         // ==========================================
-        //  Firebase 監聽與初始化
+        // 通用動作與 Firebase 邏輯
         // ==========================================
+        window.saveFirebaseConfig = () => {
+            const apiKey = document.getElementById('cfg-apiKey').value.trim();
+            if (!apiKey) return alert("API Key 為必填欄位！");
+            localStorage.setItem('study_group_firebase_config', JSON.stringify({ apiKey }));
+            alert("設定已儲存！系統將重新啟動。");
+            window.location.reload(); 
+        };
+
+        window.logout = () => {
+            username = ''; viewingUser = ''; isAdmin = false;
+            localStorage.removeItem('study_group_user');
+            
+            if(unsubDates) unsubDates();
+            if(unsubGrades) unsubGrades();
+            if(unsubChat) unsubChat();
+            if(unsubUsers) unsubUsers();
+            if(unsubProfile) unsubProfile();
+            if(unsubPlans) unsubPlans();
+            
+            allGrades = {}; allPlans = {}; chatMessages = []; importantDates = [];
+            setupLoginListener(); window.renderLogin();
+        };
+
+        window.sendChat = async () => {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if(!text) return;
+            const newMsg = { user: username, text: text, timestamp: new Date().toISOString() };
+            const newChat = [...chatMessages, newMsg];
+            if(newChat.length > 50) newChat.shift();
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), { messages: newChat });
+            input.value = '';
+        };
+
+        document.addEventListener('click', (e) => {
+            const emojiPicker = document.getElementById('emoji-picker');
+            const toggleBtn = document.getElementById('emoji-toggle-btn');
+            if (emojiPicker && !emojiPicker.classList.contains('hidden')) {
+                if (!emojiPicker.contains(e.target) && e.target !== toggleBtn) emojiPicker.classList.add('hidden');
+            }
+        });
+
+        window.initiateLogin = (name) => {
+            const trimmed = name.trim();
+            if(!trimmed) return alert("請傳入名稱！");
+            if (globalUsers.includes(trimmed) && usersProfile[trimmed]) {
+                document.getElementById('login-pwd-username').value = trimmed;
+                const dispName = usersProfile[trimmed]?.nickname || trimmed;
+                document.getElementById('login-pwd-username-display').innerText = `你好，${dispName}！請輸入密碼以繼續：`;
+                document.getElementById('login-pwd-input').value = '';
+                openGlobalModal('login-pwd-modal');
+                setTimeout(() => document.getElementById('login-pwd-input').focus(), 100);
+            }
+        };
+
+        window.confirmLoginPassword = () => {
+            const name = document.getElementById('login-pwd-username').value;
+            const pwd = document.getElementById('login-pwd-input').value;
+            if (name === 'Nick' && pwd !== '2iligloi') return alert("Nick 為管理員保留帳號，密碼錯誤！");
+            if (usersProfile[name] && usersProfile[name].password !== pwd) return alert("密碼錯誤，請重試！");
+            closeGlobalModal('login-pwd-modal');
+            doCompleteLogin(name);
+        };
+
+        window.openProfileEditModal = (name = '', isRegister = false) => {
+            const nameInput = document.getElementById('prof-name');
+            nameInput.value = name;
+            
+            if (isRegister && !name) {
+                nameInput.disabled = false;
+                nameInput.classList.remove('bg-gray-100', 'text-gray-500');
+                nameInput.classList.add('bg-white', 'text-gray-700');
+                nameInput.placeholder = "請輸入真實姓名作為登入帳號";
+            } else {
+                nameInput.disabled = true;
+                nameInput.classList.remove('bg-white', 'text-gray-700');
+                nameInput.classList.add('bg-gray-100', 'text-gray-500');
+                nameInput.placeholder = "";
+            }
+            
+            const isNick = (name === 'Nick');
+            const currentPwd = usersProfile[name]?.password || (isNick ? '2iligloi' : '');
+            document.getElementById('prof-pwd').value = currentPwd;
+            document.getElementById('prof-pwd-confirm').value = currentPwd;
+
+            if (isNick && isRegister) {
+                document.getElementById('prof-pwd').disabled = true; document.getElementById('prof-pwd-confirm').disabled = true;
+                document.getElementById('pwd-hint').innerText = "(管理員預設密碼不可修改)";
+            } else {
+                document.getElementById('prof-pwd').disabled = false; document.getElementById('prof-pwd-confirm').disabled = false;
+                document.getElementById('pwd-hint').innerText = "";
+            }
+
+            document.getElementById('prof-nickname').value = usersProfile[name]?.nickname || name;
+            document.getElementById('prof-birthday').value = usersProfile[name]?.birthday || '';
+            document.getElementById('prof-target').value = usersProfile[name]?.target || '';
+            document.getElementById('prof-motto').value = usersProfile[name]?.motto || '';
+            
+            let photo = usersProfile[name]?.photo || '';
+            document.getElementById('prof-photo-upload').dataset.base64 = photo;
+            
+            if (photo) {
+                document.getElementById('prof-photo-preview').src = photo;
+                document.getElementById('prof-photo-preview').classList.remove('hidden');
+                document.getElementById('prof-photo-placeholder').classList.add('hidden');
+            } else {
+                document.getElementById('prof-photo-preview').classList.add('hidden');
+                document.getElementById('prof-photo-placeholder').classList.remove('hidden');
+            }
+
+            document.getElementById('profile-modal-title').innerText = isRegister ? '🚀 歡迎加入！請建立專屬資料卡' : '📝 修改我的資料卡';
+            document.getElementById('profile-modal-close').style.display = isRegister ? 'none' : 'flex'; 
+            openGlobalModal('profile-edit-modal');
+        };
+
+        window.handleProfilePhoto = (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 400; 
+                    const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const base64 = canvas.toDataURL('image/jpeg', 0.8);
+                    document.getElementById('prof-photo-upload').dataset.base64 = base64;
+                    document.getElementById('prof-photo-preview').src = base64;
+                    document.getElementById('prof-photo-preview').classList.remove('hidden');
+                    document.getElementById('prof-photo-placeholder').classList.add('hidden');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.saveProfile = async () => {
+            const nameInput = document.getElementById('prof-name');
+            const name = nameInput.value.trim();
+            const pwd = document.getElementById('prof-pwd').value.trim();
+            const pwdConfirm = document.getElementById('prof-pwd-confirm').value.trim();
+            const nickname = document.getElementById('prof-nickname').value.trim();
+            
+            if(!name) return alert("請輸入真實姓名作為登入帳號！");
+            if(!pwd) return alert("請務必設定登入密碼！");
+            if(pwd !== pwdConfirm) return alert("兩次輸入的密碼不一致，請重新檢查！");
+            if(!nickname) return alert("請輸入顯示暱稱！");
+
+            const isNewUser = !globalUsers.includes(name);
+            if (!nameInput.disabled && !isNewUser) return alert("此真實姓名已存在，請使用該名稱登入，或輸入另一個姓名！");
+
+            let assignedColor = usersProfile[name]?.color;
+            if (isNewUser) {
+                const usedColors = Object.values(usersProfile).map(p => p.color).filter(Boolean);
+                const availableColors = USER_COLORS.filter(c => !usedColors.includes(c));
+                if (availableColors.length > 0) assignedColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+                else assignedColor = USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)];
+            }
+
+            let updatedProfiles = JSON.parse(JSON.stringify(usersProfile));
+            updatedProfiles[name] = {
+                password: pwd, nickname: nickname,
+                birthday: document.getElementById('prof-birthday').value,
+                target: document.getElementById('prof-target').value,
+                motto: document.getElementById('prof-motto').value,
+                photo: document.getElementById('prof-photo-upload').dataset.base64 || '', color: assignedColor
+            };
+
+            try {
+                if (isNewUser) {
+                    const newUsers = [...globalUsers, name];
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers }, { merge: true });
+                }
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: updatedProfiles }, { merge: true });
+                closeGlobalModal('profile-edit-modal');
+                if(username !== name) doCompleteLogin(name);
+                else { alert("資料卡更新成功！"); window.renderMainContent(); }
+            } catch(e) { console.error(e); alert("儲存失敗！"); }
+        };
+
+        const doCompleteLogin = (name) => {
+            username = name; viewingUser = name; isAdmin = (username === 'Nick'); 
+            localStorage.setItem('study_group_user', username);
+            setupListeners(); window.renderMain();
+        };
+
+        window.openPublicProfile = (name) => {
+            const prof = usersProfile[name] || {};
+            document.getElementById('vp-nickname').innerText = prof.nickname || name;
+            document.getElementById('vp-name').innerText = `@${name}`;
+            document.getElementById('vp-target').innerText = prof.target || '未設定';
+            document.getElementById('vp-motto').innerText = prof.motto ? `「${prof.motto}」` : '默默努力中...';
+            document.getElementById('vp-birthday').innerText = prof.birthday ? `🎂 ${prof.birthday}` : '';
+
+            const imgEl = document.getElementById('vp-photo');
+            const fallbackEl = document.getElementById('vp-avatar-fallback');
+            if(prof.photo) {
+                imgEl.src = prof.photo; imgEl.style.display = 'block'; fallbackEl.style.display = 'none';
+            } else {
+                imgEl.style.display = 'none'; fallbackEl.innerText = getAvatarChar(name);
+                fallbackEl.style.display = 'flex';
+                fallbackEl.className = `w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black mb-3 ${getUserColor(name)}`;
+            }
+            openGlobalModal('view-profile-modal');
+        };
+
+        window.openAdminPanel = () => {
+            renderAdminDates(); renderAdminUsers(); switchAdminTab('dates'); openGlobalModal('admin-panel-modal');
+        };
+
+        window.switchAdminTab = (tab) => {
+            if(tab === 'dates') {
+                document.getElementById('admin-tab-dates').classList.remove('hidden'); document.getElementById('admin-tab-users').classList.add('hidden');
+                document.getElementById('tab-btn-dates').classList.replace('text-gray-500', 'text-amber-600'); document.getElementById('tab-btn-dates').classList.replace('border-transparent', 'border-amber-500'); document.getElementById('tab-btn-dates').classList.replace('hover:bg-gray-100', 'bg-white');
+                document.getElementById('tab-btn-users').classList.replace('text-amber-600', 'text-gray-500'); document.getElementById('tab-btn-users').classList.replace('border-amber-500', 'border-transparent'); document.getElementById('tab-btn-users').classList.replace('bg-white', 'hover:bg-gray-100');
+            } else {
+                document.getElementById('admin-tab-dates').classList.add('hidden'); document.getElementById('admin-tab-users').classList.remove('hidden');
+                document.getElementById('tab-btn-users').classList.replace('text-gray-500', 'text-amber-600'); document.getElementById('tab-btn-users').classList.replace('border-transparent', 'border-amber-500'); document.getElementById('tab-btn-users').classList.replace('hover:bg-gray-100', 'bg-white');
+                document.getElementById('tab-btn-dates').classList.replace('text-amber-600', 'text-gray-500'); document.getElementById('tab-btn-dates').classList.replace('border-amber-500', 'border-transparent'); document.getElementById('tab-btn-dates').classList.replace('bg-white', 'hover:bg-gray-100');
+            }
+        };
+
+        window.renderAdminDates = () => {
+            const container = document.getElementById('admin-dates-list');
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            container.innerHTML = sortedDates.map((item, index) => `
+                <div class="bg-white p-3 rounded-lg border border-gray-200 flex justify-between items-center shadow-sm">
+                    <div>
+                        <div class="font-bold text-gray-800">${item.title}</div>
+                        <div class="text-sm text-gray-500">${item.date}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="adminEditDate(${index})" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded font-bold text-sm hover:bg-blue-100">編輯</button>
+                        <button onclick="adminDeleteDate(${index})" class="px-3 py-1.5 bg-red-50 text-red-600 rounded font-bold text-sm hover:bg-red-100">刪除</button>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.adminAddDate = async () => {
+            const title = document.getElementById('admin-new-date-title').value.trim();
+            const date = document.getElementById('admin-new-date-value').value;
+            if(!title || !date) return alert("請填寫完整");
+            const newDates = [...importantDates, { title, date }];
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+            document.getElementById('admin-new-date-title').value = ''; document.getElementById('admin-new-date-value').value = '';
+        };
+
+        window.adminEditDate = (index) => {
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const item = sortedDates[index];
+            const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
+            document.getElementById('edit-date-index').value = realIndex;
+            document.getElementById('edit-date-title').value = item.title;
+            document.getElementById('edit-date-value').value = item.date;
+            openGlobalModal('edit-date-modal');
+        };
+
+        window.saveEditedDate = async () => {
+            const idx = parseInt(document.getElementById('edit-date-index').value);
+            const title = document.getElementById('edit-date-title').value.trim();
+            const date = document.getElementById('edit-date-value').value;
+            if(!title || !date) return alert("不可留空");
+            let newDates = [...importantDates]; newDates[idx] = { title, date };
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+            closeGlobalModal('edit-date-modal');
+        };
+
+        window.adminDeleteDate = async (index) => {
+            if(!confirm("確定刪除此日程？")) return;
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const item = sortedDates[index];
+            const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
+            const newDates = [...importantDates]; newDates.splice(realIndex, 1);
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+        };
+
+        window.renderAdminUsers = () => {
+            const tbody = document.getElementById('admin-users-list');
+            tbody.innerHTML = globalUsers.map(u => {
+                const prof = usersProfile[u] || {};
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 font-bold text-gray-800">${u}</td>
+                        <td class="p-3 text-gray-600">${prof.nickname || '-'}</td>
+                        <td class="p-3 font-mono text-gray-500">${prof.password || '<span class="text-red-400">未設定</span>'}</td>
+                        <td class="p-3 text-right space-x-1">
+                            <button onclick="openProfileEditModal('${u}')" class="px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded font-bold text-xs hover:bg-blue-100">修改個資</button>
+                            ${u === 'Nick' ? '' : `<button onclick="adminDeleteUser('${u}')" class="px-2.5 py-1.5 bg-red-50 text-red-600 rounded font-bold text-xs hover:bg-red-100">移除</button>`}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        };
+
+        window.adminDeleteUser = async (userToDelete) => {
+            if(!confirm(`⚠️ 警告！確定要刪除帳號 [${userToDelete}] 嗎？此操作不可逆！`)) return;
+            let transferTarget = null;
+            const others = globalUsers.filter(u => u !== userToDelete);
+            if (others.length > 0) {
+                const ans = prompt(`是否轉移其成績給其他人？\n(若不轉移請留空按確定，將連帶刪除所有成績)\n可選對象: ${others.join(', ')}`);
+                if (ans && others.includes(ans.trim())) transferTarget = ans.trim();
+                else if (ans) return alert("輸入的名稱無效，已取消刪除操作。");
+            }
+
+            try {
+                const newUsers = globalUsers.filter(u => u !== userToDelete);
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers });
+
+                let newProfiles = JSON.parse(JSON.stringify(usersProfile));
+                delete newProfiles[userToDelete];
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: newProfiles });
+
+                if (allGrades[userToDelete]) {
+                    const dates = Object.keys(allGrades[userToDelete]);
+                    for (let i = 0; i < dates.length; i++) {
+                        const dateStr = dates[i];
+                        const subs = Object.keys(allGrades[userToDelete][dateStr]);
+                        for (let j = 0; j < subs.length; j++) {
+                            const sub = subs[j];
+                            const oldDocId = `${userToDelete}_${dateStr}_${sub}`;
+                            const oldRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', oldDocId);
+                            
+                            if (transferTarget) {
+                                const newDocId = `${transferTarget}_${dateStr}_${sub}`;
+                                const newRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', newDocId);
+                                const gradeData = allGrades[userToDelete][dateStr][sub];
+                                await setDoc(newRef, {
+                                    user: transferTarget, date: dateStr,
+                                    mainSubject: gradeData.mainSubject || gradeData.subSubject || sub,
+                                    subSubject: sub, grade: gradeData.grade, photo: gradeData.photo || null,
+                                    updatedAt: gradeData.updatedAt || new Date().toISOString()
+                                });
+                            }
+                            await deleteDoc(oldRef);
+                        }
+                    }
+                }
+                alert(`已成功移除使用者 ${userToDelete} ${transferTarget ? '，成績已轉移至 ' + transferTarget : '，成績已連帶刪除'}。`);
+                renderAdminUsers();
+            } catch(e) { console.error(e); alert("移除操作失敗！"); }
+        };
+
         const setupListeners = () => {
             if (!currentUser) return;
             const errHandler = (err) => console.warn("Firestore Listener Error:", err);
@@ -1861,8 +2185,7 @@
             unsubUsers = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), (snap) => {
                 globalUsers = snap.exists() ? (snap.data().users || []) : [];
                 if (username && !globalUsers.includes(username)) {
-                    alert('⚠️ 系統提示：您的帳號已被管理員移除或系統重置，請重新註冊/登入！');
-                    window.logout(); 
+                    alert('⚠️ 系統提示：您的帳號已被管理員移除或系統重置，請重新註冊/登入！'); window.logout(); 
                 }
             }, errHandler);
 
@@ -1878,9 +2201,7 @@
                     importantDates = snap.data().list || [];
                 } else {
                     importantDates = [
-                        { date: '2026-09-09', title: '第1次模擬考' },
-                        { date: '2026-10-13', title: '第1次段考' },
-                        { date: '2026-10-28', title: '第2次模擬考' }
+                        { date: '2026-09-09', title: '第1次模擬考' }, { date: '2026-10-13', title: '第1次段考' }, { date: '2026-10-28', title: '第2次模擬考' }
                     ];
                     setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: importantDates }).catch(errHandler);
                 }
@@ -1903,12 +2224,8 @@
                     if(!newAllGrades[data.user]) newAllGrades[data.user] = {};
                     if(!newAllGrades[data.user][data.date]) newAllGrades[data.user][data.date] = {};
                     newAllGrades[data.user][data.date][data.subSubject] = {
-                        mainSubject: data.mainSubject || '',
-                        grade: data.grade,
-                        photo: data.photo || null,
-                        isWeakness: data.isWeakness || false,
-                        weaknessNote: data.weaknessNote || '',
-                        updatedAt: data.updatedAt || ''
+                        mainSubject: data.mainSubject || '', grade: data.grade, photo: data.photo || null,
+                        isWeakness: data.isWeakness || false, weaknessNote: data.weaknessNote || '', updatedAt: data.updatedAt || ''
                     };
                 });
                 allGrades = newAllGrades;
@@ -1927,9 +2244,7 @@
                 });
                 allPlans = newAllPlans;
                 if(username) window.renderMainContent();
-                if(!document.getElementById('plan-modal')?.classList.contains('hidden')) {
-                    window.renderPlanCalendar();
-                }
+                if(!document.getElementById('plan-modal')?.classList.contains('hidden')) window.renderPlanCalendar();
             }, errHandler);
         };
 
@@ -1948,10 +2263,7 @@
         const initApp = async () => {
             window.renderApp();
             const config = getStoredConfig();
-            if (!config || !config.apiKey) {
-                window.renderSetup();
-                return;
-            }
+            if (!config || !config.apiKey) { window.renderSetup(); return; }
 
             const fullConfig = { ...BASE_FIREBASE_CONFIG, apiKey: config.apiKey };
             try {
@@ -1962,11 +2274,8 @@
                 }
 
                 const initAuth = async () => {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+                    else await signInAnonymously(auth);
                 };
                 await initAuth();
 
@@ -1974,12 +2283,8 @@
                     if (user) {
                         currentUser = user;
                         const savedUser = localStorage.getItem('study_group_user');
-                        if (savedUser) {
-                            doCompleteLogin(savedUser); 
-                        } else {
-                            setupLoginListener();
-                            window.renderLogin();
-                        }
+                        if (savedUser) doCompleteLogin(savedUser); 
+                        else { setupLoginListener(); window.renderLogin(); }
                     }
                 });
             } catch (error) {
