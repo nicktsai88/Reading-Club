@@ -88,13 +88,6 @@
                 0 0 10px #FFFF00, 
                 0 0 15px #FFFF00 !important;
         }
-
-        /* 拖曳時的目標特效 */
-        .drag-over {
-            background-color: #fdf2f8 !important;
-            border-color: #f472b6 !important;
-            transform: scale(1.02);
-        }
     </style>
 </head>
 <body class="w-full flex flex-col overflow-hidden">
@@ -291,15 +284,14 @@
         let globalUsers = [];
         let importantDates = [];
         let allGrades = {}; 
-        let allPlans = {}; // 新增：用來儲存所有人的計畫
         let chatMessages = [];
         let usersProfile = {}; 
         
-        let modalState = { date: '', mainSubject: '', textbook: '', subSubject: '', grade: '', photoBase64: '', isWeakness: false, weaknessNote: '' };
+        let modalState = { date: '', mainSubject: '', textbook: '', subSubject: '', grade: '', photoBase64: '' };
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth(); 
         
-        let unsubUsers, unsubDates, unsubGrades, unsubChat, unsubProfile, unsubPlans;
+        let unsubUsers, unsubDates, unsubGrades, unsubChat, unsubProfile;
         
         let radarChartInstance = null; 
 
@@ -309,6 +301,7 @@
         const formatStep3Text = (text) => {
             let formatted = text;
             
+            // 優先處理「會考模擬試題 *~*冊」
             if (formatted.includes('會考模擬試題')) {
                 formatted = formatted.replace(/(會考模擬試題\s*\d+~\d+\s*冊)/g, '<span class="step3-color-exam">$1</span>');
                 return formatted;
@@ -438,48 +431,32 @@
         window.renderMain = () => {
             const container = document.getElementById('view-container');
             container.innerHTML = `
-                <div class="bg-white/80 backdrop-blur-md border-b-2 border-pink-200 p-3 flex flex-col md:flex-row justify-between items-center shadow-sm shrink-0 z-20 relative gap-2">
-                    <div class="flex items-center gap-4 pl-2 w-full md:w-auto justify-between md:justify-start">
-                        <div class="flex items-center gap-4">
-                            <div class="flex gap-2">
-                                <img src="school1.jpg" alt="雄中" class="w-10 h-10 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-10 bg-rose-50" onerror="this.style.display='none'">
-                                <img src="school2.jpg" alt="雄女" class="w-10 h-10 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-0 bg-rose-50" onerror="this.style.display='none'">
-                            </div>
-                            <h1 class="text-xl md:text-3xl font-black text-rose-500 tracking-wider">邁向5A10+ 讀書會</h1>
+                <div class="bg-white/80 backdrop-blur-md border-b-2 border-pink-200 p-3 flex justify-between items-center shadow-sm shrink-0 z-20 relative">
+                    <div class="flex items-center gap-4 pl-2">
+                        <div class="flex gap-2">
+                            <img src="school1.jpg" alt="雄中" class="w-full h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-10 bg-rose-50" onerror="this.style.display='none'">
+                            <img src="school2.jpg" alt="雄女" class="w-full h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-0 bg-rose-50" onerror="this.style.display='none'">
                         </div>
-                        
-                        <!-- 手機版隱藏，桌面版顯示的管理與登出放在右側 -->
-                        <div class="hidden md:flex items-center gap-2">
-                            ${isAdmin ? `<button onclick="openAdminPanel()" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-transform text-sm shrink-0">👑 管理員</button>` : ''}
-                            <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-3 py-1.5 rounded-lg transition-colors text-sm border border-rose-200 bg-white shadow-sm shrink-0">登出 👋</button>
-                        </div>
+                        <h1 class="text-2xl md:text-3xl font-black text-rose-500 tracking-wider hidden sm:block">邁向5A10+ 讀書會 🏆</h1>
+                        <h1 class="text-xl font-black text-rose-500 tracking-wider block sm:hidden">邁向5A10+</h1>
                     </div>
-                    
-                    <div class="flex items-center gap-2 md:gap-3 pr-2 overflow-x-auto w-full md:w-auto custom-scrollbar pb-1 md:pb-0 justify-start md:justify-end">
+                    <div class="flex items-center gap-2 md:gap-3 pr-2">
+                        ${isAdmin ? `<button onclick="openAdminPanel()" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-transform text-sm shrink-0 hidden lg:block">👑 管理員面板</button>` : ''}
                         
-                        <button onclick="openPlanModal()" class="font-bold text-blue-700 bg-blue-50 px-2 md:px-3 py-1.5 rounded-lg border border-blue-200 shadow-sm hover:bg-blue-100 transition-colors text-sm flex items-center gap-1 shrink-0 whitespace-nowrap">
-                            🗓️ 我的計畫表
-                        </button>
-
-                        <button onclick="openWeaknessModal()" class="font-bold text-red-700 bg-red-50 px-2 md:px-3 py-1.5 rounded-lg border border-red-200 shadow-sm hover:bg-red-100 transition-colors text-sm flex items-center gap-1 shrink-0 whitespace-nowrap">
-                            🔥 弱點集中營
-                        </button>
-
-                        <button onclick="openProgressModal()" class="font-bold text-orange-700 bg-orange-50 px-2 md:px-3 py-1.5 rounded-lg border border-orange-200 shadow-sm hover:bg-orange-100 transition-colors text-sm flex items-center gap-1 shrink-0 whitespace-nowrap">
-                            📈 進度追蹤
+                        <button onclick="openProgressModal()" class="font-bold text-orange-700 bg-orange-50 px-2 md:px-3 py-1.5 rounded-lg border border-orange-200 shadow-sm hover:bg-orange-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            📈 <span class="hidden md:inline">進度追蹤</span>
                         </button>
                         
-                        <button onclick="openAnalysisModal()" class="font-bold text-indigo-700 bg-indigo-50 px-2 md:px-3 py-1.5 rounded-lg border border-indigo-200 shadow-sm hover:bg-indigo-100 transition-colors text-sm flex items-center gap-1 shrink-0 whitespace-nowrap">
-                            📊 學科分析
+                        <button onclick="openAnalysisModal()" class="font-bold text-indigo-700 bg-indigo-50 px-2 md:px-3 py-1.5 rounded-lg border border-indigo-200 shadow-sm hover:bg-indigo-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            📊 <span class="hidden md:inline">學科分析</span>
                         </button>
                         
-                        <button onclick="openProfileEditModal('${username}')" class="font-bold text-teal-700 bg-teal-50 px-2 md:px-3 py-1.5 rounded-lg border border-teal-200 shadow-sm hover:bg-teal-100 transition-colors text-sm flex items-center gap-1 shrink-0 whitespace-nowrap">
-                            <div class="${getUserColor(username)} w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white">${getAvatarChar(username)}</div>
-                            我的資料卡
+                        <button onclick="openProfileEditModal('${username}')" class="font-bold text-teal-700 bg-teal-50 px-2 md:px-3 py-1.5 rounded-lg border border-teal-200 shadow-sm hover:bg-teal-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            <div class="${getUserColor(username)} w-5 h-5 rounded-full flex items-center justify-center text-[10px]">${getAvatarChar(username)}</div>
+                            <span class="hidden md:inline">我的資料卡</span>
                         </button>
                         
-                        <!-- 手機版顯示的登出 -->
-                        <button onclick="logout()" class="md:hidden text-rose-500 hover:bg-rose-50 font-bold px-2 py-1.5 rounded-lg transition-colors text-sm border border-rose-200 bg-white shadow-sm shrink-0 whitespace-nowrap">登出</button>
+                        <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-2 md:px-3 py-1.5 rounded-lg transition-colors text-sm border border-rose-200 bg-white shadow-sm shrink-0">登出 👋</button>
                     </div>
                 </div>
 
@@ -606,7 +583,7 @@
                     </div>
                 </div>
 
-                <!-- 成績輸入 Modal (包含弱點標記) -->
+                <!-- 成績輸入 Modal (升級版) -->
                 <div id="score-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-opacity duration-200 opacity-0">
                     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 95%; max-height: 95dvh;" id="score-modal-content">
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
@@ -635,20 +612,11 @@
                                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-3" id="sub-subject-selector"></div>
                             </div>
 
-                            <!-- Step 4 & 4.5 -->
+                            <!-- Step 4 -->
                             <div id="step-4-container" class="hidden">
                                 <h3 class="text-rose-800 font-bold mb-3 border-l-4 border-rose-400 pl-2 text-lg shadow-sm bg-white/50 py-1">Step 4: 選擇成績等級</h3>
                                 <div class="grid grid-cols-4 sm:grid-cols-7 gap-2" id="grade-selector">
                                     ${GRADES.map(g => `<button onclick="selectGrade('${g}')" id="btn-grade-${g.replace('+','p').replace('+','p')}" class="py-2.5 rounded-xl border-2 border-rose-200 text-rose-700 font-bold hover:bg-rose-50 transition-all bg-white shadow-sm hover:scale-[1.02]">${g}</button>`).join('')}
-                                </div>
-                                
-                                <!-- Step 4.5: 弱點標記 (動態顯示) -->
-                                <div id="weakness-section" class="hidden mt-4 p-4 bg-orange-50 border border-orange-200 rounded-xl shadow-inner">
-                                    <label class="flex items-center gap-2 cursor-pointer group mb-2">
-                                        <input type="checkbox" id="chk-weakness" onchange="toggleWeaknessNote()" class="w-5 h-5 text-orange-500 rounded border-orange-300 focus:ring-orange-500">
-                                        <span class="font-bold text-orange-800 group-hover:text-orange-600 transition-colors">🔥 標記為考前必複習的弱點</span>
-                                    </label>
-                                    <textarea id="weakness-note" rows="2" placeholder="寫下錯題筆記或不熟的觀念... (選填)" class="hidden w-full px-3 py-2 rounded-lg border border-orange-300 focus:outline-none focus:border-orange-500 text-sm mt-2"></textarea>
                                 </div>
                             </div>
 
@@ -673,57 +641,6 @@
                             <div class="flex-1"></div>
                             <button onclick="closeGlobalModal('score-modal')" class="px-5 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100">取消</button>
                             <button onclick="saveGrade()" class="px-8 py-2.5 rounded-xl font-black text-white bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5">儲存 💾</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 計畫排程 Modal (Drag & Drop) -->
-                <div id="plan-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('plan-modal')">
-                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl overflow-hidden border-4 border-blue-200 transform scale-95 transition-transform duration-200 flex flex-col relative h-[90vh]">
-                        <div class="bg-gradient-to-r from-blue-400 to-cyan-500 p-4 flex justify-between items-center text-white shrink-0">
-                            <h2 class="text-xl font-bold flex items-center gap-2">🗓️ 我的計畫表 (拖曳安排)</h2>
-                            <button onclick="closeGlobalModal('plan-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
-                        </div>
-                        <div class="flex-1 flex flex-col md:flex-row overflow-hidden bg-gray-50">
-                            <!-- 左側：待安排清單 -->
-                            <div class="w-full md:w-1/3 lg:w-1/4 bg-white border-b md:border-b-0 md:border-r border-gray-200 flex flex-col shrink-0 h-[40%] md:h-full">
-                                <div class="p-3 border-b border-gray-100 bg-blue-50/50">
-                                    <select id="plan-subject-select" onchange="renderPlanSidebar()" class="w-full px-3 py-2 rounded-lg border border-blue-200 focus:outline-none focus:border-blue-400 text-sm font-bold text-blue-800 mb-2">
-                                        <option value="">-- 選擇科目 --</option>
-                                        ${SUBJECTS.map(s => `<option value="${s}">${s}</option>`).join('')}
-                                    </select>
-                                    <div id="plan-textbook-select-container" class="hidden"></div>
-                                </div>
-                                <div class="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-2 bg-gray-50/30" id="plan-draggables">
-                                    <div class="text-center text-gray-400 text-sm mt-4 font-bold">請先選擇科目</div>
-                                </div>
-                            </div>
-                            
-                            <!-- 右側：未來14天日曆 -->
-                            <div class="w-full md:w-2/3 lg:w-3/4 flex-1 flex flex-col bg-gray-100/50 h-[60%] md:h-full overflow-hidden">
-                                <div class="p-3 text-center text-gray-500 text-xs font-bold border-b border-gray-200 bg-white shadow-sm shrink-0">
-                                    💡 提示：將左側的章節「拖曳」到右側的日期格子中
-                                </div>
-                                <div class="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar flex" id="plan-board">
-                                    <!-- 日期格子由 JS 生成 -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 弱點集中營 Modal -->
-                <div id="weakness-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('weakness-modal')">
-                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl overflow-hidden border-4 border-red-200 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
-                        <div class="bg-gradient-to-r from-red-500 to-orange-500 p-4 flex justify-between items-center text-white shrink-0">
-                            <h2 class="text-xl font-bold flex items-center gap-2">🔥 弱點集中營 (考前衝刺)</h2>
-                            <button onclick="closeGlobalModal('weakness-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
-                        </div>
-                        <div class="p-4 bg-orange-50 text-orange-800 text-sm font-bold text-center border-b border-orange-100 shadow-sm shrink-0">
-                            這裡收集了你所有被標記為弱點的章節！搞懂後點擊「✅」即可解除危機。
-                        </div>
-                        <div class="p-6 bg-gray-50/50 overflow-y-auto flex-1 custom-scrollbar space-y-4" id="weakness-content">
-                            <!-- 內容由 JS 動態生成 -->
                         </div>
                     </div>
                 </div>
@@ -787,7 +704,7 @@
                     </div>
                 </div>
 
-                <!-- 查看他人成績 Modal -->
+                <!-- 查看他人成績 Modal (z-index 提高，可覆蓋在其他視窗之上) -->
                 <div id="view-score-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[80] p-4 transition-opacity duration-200 opacity-0">
                     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 90%; max-height: 90dvh;">
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
@@ -887,258 +804,6 @@
         };
 
         // ==========================================
-        //  計畫排程 (Plan) 邏輯與 Drag & Drop
-        // ==========================================
-        window.openPlanModal = () => {
-            document.getElementById('plan-subject-select').value = '';
-            document.getElementById('plan-textbook-select-container').classList.add('hidden');
-            document.getElementById('plan-draggables').innerHTML = '<div class="text-center text-gray-400 text-sm mt-4 font-bold">請先選擇科目</div>';
-            renderPlanBoard();
-            openGlobalModal('plan-modal');
-        };
-
-        window.renderPlanSidebar = () => {
-            const sub = document.getElementById('plan-subject-select').value;
-            const tbContainer = document.getElementById('plan-textbook-select-container');
-            const draggablesContainer = document.getElementById('plan-draggables');
-            
-            if(!sub) {
-                tbContainer.classList.add('hidden');
-                draggablesContainer.innerHTML = '<div class="text-center text-gray-400 text-sm mt-4 font-bold">請先選擇科目</div>';
-                return;
-            }
-
-            if (TEXTBOOKS[sub]) {
-                tbContainer.classList.remove('hidden');
-                const options = TEXTBOOKS[sub].map(tb => `<option value="${tb.id}">${tb.name}</option>`).join('');
-                tbContainer.innerHTML = `
-                    <select id="plan-tb-select" onchange="renderPlanDraggables('${sub}')" class="w-full px-3 py-2 rounded-lg border border-blue-200 focus:outline-none focus:border-blue-400 text-sm font-bold text-blue-800">
-                        <option value="">-- 選擇教科書 --</option>
-                        ${options}
-                    </select>
-                `;
-                draggablesContainer.innerHTML = '';
-            } else {
-                tbContainer.classList.add('hidden');
-                renderPlanDraggables(sub);
-            }
-        };
-
-        window.renderPlanDraggables = (sub) => {
-            const draggablesContainer = document.getElementById('plan-draggables');
-            let items = [];
-            
-            if (TEXTBOOKS[sub]) {
-                const tbId = document.getElementById('plan-tb-select')?.value;
-                if(tbId) {
-                    const tbObj = TEXTBOOKS[sub].find(t => t.id === tbId);
-                    if(tbObj) items = tbObj.chapters;
-                }
-            } else if (SUB_SUBJECTS[sub]) {
-                items = SUB_SUBJECTS[sub];
-            } else {
-                items = [sub];
-            }
-
-            if (items.length === 0) {
-                draggablesContainer.innerHTML = '<div class="text-center text-gray-400 text-sm mt-4 font-bold">無章節資料</div>';
-                return;
-            }
-
-            draggablesContainer.innerHTML = items.map(item => `
-                <div draggable="true" ondragstart="handleDragStart(event, '${sub}', '${item}')" class="p-2 bg-white border border-blue-100 rounded-lg shadow-sm text-xs cursor-move hover:shadow-md hover:border-blue-300 transition-all font-bold text-gray-700">
-                    ≡ ${item}
-                </div>
-            `).join('');
-        };
-
-        window.handleDragStart = (e, mainSub, subKey) => {
-            e.dataTransfer.setData('application/json', JSON.stringify({ mainSub, subKey }));
-        };
-
-        window.handleDragOver = (e) => {
-            e.preventDefault(); // 允許 drop
-            e.currentTarget.classList.add('drag-over');
-        };
-
-        window.handleDragLeave = (e) => {
-            e.currentTarget.classList.remove('drag-over');
-        };
-
-        window.handleDrop = async (e, dateStr) => {
-            e.preventDefault();
-            e.currentTarget.classList.remove('drag-over');
-            
-            const dataStr = e.dataTransfer.getData('application/json');
-            if(!dataStr) return;
-            const data = JSON.parse(dataStr);
-            
-            const planDocId = `${username}_${dateStr}_${data.subKey}`;
-            const planRef = doc(db, 'artifacts', appId, 'public', 'data', 'Plans', planDocId);
-            
-            try {
-                await setDoc(planRef, {
-                    user: username,
-                    date: dateStr,
-                    mainSubject: data.mainSub,
-                    subSubject: data.subKey,
-                    completed: false,
-                    createdAt: new Date().toISOString()
-                });
-                // 重新渲染是透過 onSnapshot 自動觸發
-            } catch(err) {
-                console.error(err);
-                alert("排程失敗");
-            }
-        };
-
-        window.deletePlan = async (dateStr, subKey) => {
-            if(!confirm("確定要取消這個排程嗎？")) return;
-            const planDocId = `${username}_${dateStr}_${subKey}`;
-            const planRef = doc(db, 'artifacts', appId, 'public', 'data', 'Plans', planDocId);
-            await deleteDoc(planRef);
-        };
-
-        window.renderPlanBoard = () => {
-            const board = document.getElementById('plan-board');
-            if(!board) return;
-            
-            // 產生未來 14 天
-            let html = '';
-            for(let i=0; i<14; i++) {
-                const d = new Date();
-                d.setDate(d.getDate() + i);
-                const dateStr = formatDate(d);
-                const dayOfWeek = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
-                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                const headerBg = isWeekend ? 'bg-rose-100 text-rose-800' : 'bg-cyan-100 text-cyan-800';
-
-                // 取得當天計畫
-                let planContent = '';
-                if(allPlans[username] && allPlans[username][dateStr]) {
-                    Object.values(allPlans[username][dateStr]).forEach(plan => {
-                        const subColor = getSubjectColor(plan.mainSubject);
-                        let shortName = plan.mainSubject;
-                        if(shortName === '自然合科') shortName = '自然';
-                        if(shortName === '社會合科') shortName = '社會';
-                        if(shortName === '地球科學') shortName = '地科';
-
-                        if(plan.completed) {
-                            planContent += `
-                                <div class="mb-2 p-1.5 bg-gray-50 border border-green-300 rounded shadow-sm relative group text-xs text-gray-500 opacity-60">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <span class="font-black text-green-600">✅ 已完成</span>
-                                    </div>
-                                    <div class="truncate w-full line-through">${plan.subSubject}</div>
-                                </div>
-                            `;
-                        } else {
-                            planContent += `
-                                <div class="mb-2 p-1.5 bg-white border-2 border-dashed ${subColor.border} rounded shadow-sm relative group text-[10px] sm:text-xs">
-                                    <button onclick="deletePlan('${dateStr}', '${plan.subSubject}')" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600 font-bold">×</button>
-                                    <div class="flex items-center gap-1 mb-0.5">
-                                        <span class="${subColor.bg} ${subColor.text} px-1 rounded font-bold">${shortName}</span>
-                                    </div>
-                                    <div class="font-bold text-gray-700 whitespace-pre-line leading-tight truncate w-full" title="${plan.subSubject}">${plan.subSubject}</div>
-                                </div>
-                            `;
-                        }
-                    });
-                }
-
-                html += `
-                    <div class="flex-none w-36 sm:w-44 h-full flex flex-col border-r border-gray-200">
-                        <div class="p-2 ${headerBg} text-center font-black text-sm border-b border-gray-200 shrink-0">
-                            ${d.getMonth()+1}/${d.getDate()} (${dayOfWeek})
-                        </div>
-                        <div class="flex-1 p-2 bg-white/50 overflow-y-auto custom-scrollbar transition-colors" 
-                             ondragover="handleDragOver(event)" 
-                             ondragleave="handleDragLeave(event)"
-                             ondrop="handleDrop(event, '${dateStr}')">
-                            ${planContent}
-                        </div>
-                    </div>
-                `;
-            }
-            board.innerHTML = html;
-        };
-
-        // ==========================================
-        //  弱點集中營 (Weakness) 邏輯
-        // ==========================================
-        window.openWeaknessModal = () => {
-            const container = document.getElementById('weakness-content');
-            if(!container) return;
-            
-            const uGrades = allGrades[username] || {};
-            let weaknesses = [];
-            
-            Object.entries(uGrades).forEach(([dateStr, subjects]) => {
-                Object.entries(subjects).forEach(([subKey, info]) => {
-                    if (info.isWeakness) {
-                        weaknesses.push({ date: dateStr, subject: subKey, ...info });
-                    }
-                });
-            });
-
-            if (weaknesses.length === 0) {
-                container.innerHTML = `<div class="text-center text-gray-400 mt-10 font-bold text-lg"><div class="text-5xl mb-3">🎉</div>目前沒有任何弱點章節，太棒了！</div>`;
-            } else {
-                // 依照科目排序
-                weaknesses.sort((a,b) => a.mainSubject.localeCompare(b.mainSubject));
-                
-                let html = '';
-                weaknesses.forEach(w => {
-                    const subColor = getSubjectColor(w.mainSubject);
-                    html += `
-                        <div class="bg-white p-4 rounded-xl border-2 border-red-200 shadow-sm relative group">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <span class="text-xs font-bold ${subColor.bg} ${subColor.text} px-2 py-1 rounded mr-2 border ${subColor.border}">${w.mainSubject}</span>
-                                    <span class="font-black text-gray-800 text-lg">${w.subject}</span>
-                                </div>
-                                <button onclick="resolveWeakness('${w.date}', '${w.subject}')" class="bg-green-100 text-green-700 border border-green-300 px-3 py-1.5 rounded-lg font-bold text-sm hover:bg-green-200 shadow-sm transition-transform hover:scale-105">我已經搞懂了！✅</button>
-                            </div>
-                            <div class="flex items-center gap-3 text-sm text-gray-500 mb-3">
-                                <span>🗓️ 紀錄日期: ${w.date}</span>
-                                <span>📊 當時成績: <strong class="${subColor.text}">${w.grade}</strong></span>
-                            </div>
-                            ${w.weaknessNote ? `<div class="bg-orange-50 p-3 rounded-lg border border-orange-100 text-orange-800 text-sm font-bold mb-3 shadow-inner">📝 錯題筆記：<br><span class="font-normal text-gray-700">${w.weaknessNote}</span></div>` : ''}
-                            ${w.photo ? `<img src="${w.photo}" class="w-full max-h-60 object-contain rounded-lg border border-gray-200 shadow-sm">` : ''}
-                        </div>
-                    `;
-                });
-                container.innerHTML = html;
-            }
-            openGlobalModal('weakness-modal');
-        };
-
-        window.resolveWeakness = async (dateStr, subKey) => {
-            if(!confirm("太棒了！確定要解除這個弱點標記嗎？")) return;
-            try {
-                const docId = `${username}_${dateStr}_${subKey}`;
-                const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
-                await setDoc(gradeRef, { isWeakness: false }, { merge: true });
-                // onSnapshot 會自動更新並重新渲染弱點 modal
-                setTimeout(() => openWeaknessModal(), 300); 
-            } catch(e) {
-                console.error(e);
-            }
-        };
-
-        window.toggleWeaknessNote = () => {
-            const chk = document.getElementById('chk-weakness');
-            const noteArea = document.getElementById('weakness-note');
-            if(chk.checked) {
-                noteArea.classList.remove('hidden');
-                noteArea.focus();
-            } else {
-                noteArea.classList.add('hidden');
-                noteArea.value = '';
-            }
-        };
-
-        // ==========================================
         //  進度追蹤 Modal 邏輯
         // ==========================================
         window.openProgressModal = () => {
@@ -1159,42 +824,20 @@
                         const w = GRADE_WEIGHT[g] || 0;
                         if(w > bestW) {
                             bestW = w;
-                            bestObj = { grade: g, date: dateStr, isWeakness: dayData[subKey].isWeakness };
+                            bestObj = { grade: g, date: dateStr };
                         }
                     }
                 });
                 return bestObj;
             };
 
-            const renderGradeBadge = (bestObj, subKey) => {
+            const renderGradeBadge = (bestObj) => {
                 if(!bestObj) return `<div class="bg-gray-200 text-gray-400 text-[10px] sm:text-xs py-1.5 px-1 rounded font-bold mx-auto w-full text-center">無紀錄</div>`;
-                
                 const grade = bestObj.grade;
                 const isA = grade.includes('A');
-                let borderColor = isA ? 'border-red-500 text-red-500' : 'border-orange-500 text-orange-500';
-                let bgColor = isA ? 'bg-red-50' : 'bg-orange-50';
-                
-                // 弱點特效
-                let weaknessHtml = '';
-                if(bestObj.isWeakness) {
-                    borderColor = 'border-red-600 text-red-700 ring-2 ring-red-400 shadow-md';
-                    bgColor = 'bg-red-100';
-                    weaknessHtml = `<span class="absolute -top-2 -right-2 text-sm drop-shadow-sm animate-pulse">🔥</span>`;
-                }
-
-                // 達標特效
-                let targetHtml = '';
-                if(allPlans[targetUser] && allPlans[targetUser][bestObj.date] && allPlans[targetUser][bestObj.date][subKey] && allPlans[targetUser][bestObj.date][subKey].completed) {
-                    targetHtml = `<span class="absolute -bottom-2 -right-2 text-sm drop-shadow-sm">🎯</span>`;
-                }
-
-                return `
-                    <div class="${bgColor} ${borderColor} border text-[11px] sm:text-sm py-1.5 px-1 rounded-sm font-black mx-auto w-full text-center shadow-sm relative">
-                        ${grade}
-                        ${weaknessHtml}
-                        ${targetHtml}
-                    </div>
-                `;
+                const borderColor = isA ? 'border-red-500 text-red-500' : 'border-orange-500 text-orange-500';
+                const bgColor = isA ? 'bg-red-50' : 'bg-orange-50';
+                return `<div class="${bgColor} ${borderColor} border text-[11px] sm:text-sm py-1.5 px-1 rounded-sm font-black mx-auto w-full text-center shadow-sm">${grade}</div>`;
             };
 
             const buildHorizontalTable = (title, imgSrc, chapters, subjectKeyFn) => {
@@ -1207,6 +850,7 @@
                     let line2 = '';
                     let line3 = '';
                     
+                    // 智慧拆分章節字串
                     const parts = ch.split(' ');
                     if (parts.length >= 2 && parts[0].startsWith('單元')) {
                         line1 = parts[0];
@@ -1217,6 +861,7 @@
                         line2 = parts.slice(1).join(' ');
                     }
                     
+                    // 根據是否有匹配到主標題來決定渲染三行或單行
                     if (line1) {
                         let html = '';
                         html += `<div class="text-[#DC143C] text-[12px] sm:text-[14px] font-black mb-0.5 leading-tight w-full text-center">${line1}</div>`;
@@ -1246,12 +891,12 @@
                     const clickAttr = bestObj ? `onclick="viewOthersScore(event, '${targetUser}', '${bestObj.date}')"` : '';
                     
                     tableHtml += `
-                            <div ${clickAttr} class="w-24 sm:w-32 flex flex-col items-center justify-start p-2 shrink-0 bg-white transition-colors ${cursorClass} relative">
-                                <div class="w-full h-auto min-h-[4rem] flex flex-col items-center justify-center mb-3 mt-1">
+                            <div ${clickAttr} class="w-24 sm:w-32 flex flex-col items-center justify-start p-2 shrink-0 bg-white transition-colors ${cursorClass}">
+                                <div class="w-full h-auto min-h-[4rem] flex flex-col items-center justify-center mb-2">
                                     ${formatChapterHtml(ch)}
                                 </div>
-                                <div class="w-full mt-auto pb-1 px-1 relative">
-                                    ${renderGradeBadge(bestObj, queryKey)}
+                                <div class="w-full mt-auto pb-1 px-1">
+                                    ${renderGradeBadge(bestObj)}
                                 </div>
                             </div>
                     `;
@@ -1265,15 +910,34 @@
             };
 
             let html = '<div class="space-y-6">';
+            
+            // 國文 (麻辣講義)
             html += buildHorizontalTable('國文\n(麻辣講義)', 'images/c1.jpg', CHINESE_CHAPTERS, (ch) => ch);
+            
+            // 英文 (超會考)
             html += buildHorizontalTable('英文\n(超會考)', 'images/e1.jpg', ENGLISH_CHAPTERS, (ch) => ch);
+
+            // 數學 (麻辣講義)
             html += buildHorizontalTable('數學\n(麻辣講義)', 'images/m1.jpg', MATH_CHAPTERS, (ch) => ch);
+
+            // 生物 (麻辣講義)
             html += buildHorizontalTable('生物\n(麻辣講義)', 'images/b1.jpg', BIO_CHAPTERS, (ch) => ch);
+
+            // 生物 (大滿貫) - 新增
             html += buildHorizontalTable('生物\n(大滿貫)', 'images/b2.jpg', BIO_CHAPTERS_2, (ch) => ch);
+
+            // 理化 (大滿貫)
             html += buildHorizontalTable('理化\n(大滿貫)', 'images/p1.jpg', PHY_CHAPTERS, (ch) => ch);
+
+            // 歷史 (大滿貫)
             html += buildHorizontalTable('歷史\n(大滿貫)', 'images/h1.jpg', HISTORY_CHAPTERS, (ch) => ch);
+
+            // 自然合科
             html += buildHorizontalTable('自然合科', null, SUB_SUBJECTS['自然'], (sub) => sub);
+
+            // 社會合科
             html += buildHorizontalTable('社會合科', null, SUB_SUBJECTS['社會'], (sub) => sub);
+
             html += '</div>';
 
             document.getElementById('progress-content').innerHTML = html;
@@ -1281,10 +945,916 @@
         };
 
         // ==========================================
-        //  輸入成績邏輯 (全面升級版 5 Steps + 弱點)
+        //  學科分析雷達圖邏輯
+        // ==========================================
+        window.openAnalysisModal = () => {
+            const targetUser = viewingUser === 'ALL' ? username : viewingUser;
+            if (!targetUser) return;
+
+            const dispName = usersProfile[targetUser]?.nickname || targetUser;
+            document.getElementById('analysis-user-name').innerText = `👤 ${dispName} 的戰力分析`;
+            
+            // 要求的九大科目
+            const analysisSubjects = ['國文', '英文', '數學', '生物', '理化', '地科', '歷史', '地理', '公民'];
+            
+            const gradeToNum = (g) => {
+                const map = { 'A++': 7, 'A+': 6, 'A': 5, 'B++': 4, 'B+': 3, 'B': 2, 'C': 1 };
+                return map[g] !== undefined ? map[g] : null;
+            };
+
+            const uGrades = allGrades[targetUser] || {};
+            let subjectTotals = {};
+            let subjectCounts = {};
+            let subjectDetails = {};
+
+            analysisSubjects.forEach(sub => {
+                subjectTotals[sub] = 0;
+                subjectCounts[sub] = 0;
+                subjectDetails[sub] = { 'A++':0, 'A+':0, 'A':0, 'B++':0, 'B+':0, 'B':0, 'C':0 };
+            });
+
+            // 抓取各科目「所有」的成績資料並加總
+            Object.keys(uGrades).forEach(dateStr => {
+                Object.keys(uGrades[dateStr]).forEach(subKey => {
+                    const item = uGrades[dateStr][subKey];
+                    // 為了容納超長章節名稱，比對該紀錄的 mainSubject 是否為雷達圖的對象
+                    const actualSub = analysisSubjects.includes(subKey) ? subKey : (analysisSubjects.includes(item.mainSubject) ? item.mainSubject : null);
+                    
+                    if (actualSub && analysisSubjects.includes(actualSub)) {
+                        const grade = item.grade;
+                        const num = gradeToNum(grade);
+                        if (num !== null) {
+                            subjectTotals[actualSub] += num;
+                            subjectCounts[actualSub] += 1;
+                            if(subjectDetails[actualSub][grade] !== undefined) {
+                                subjectDetails[actualSub][grade]++;
+                            }
+                        }
+                    }
+                });
+            });
+
+            const dataPoints = analysisSubjects.map(sub => {
+                if (subjectCounts[sub] === 0) return 0;
+                return parseFloat((subjectTotals[sub] / subjectCounts[sub]).toFixed(2));
+            });
+
+            openGlobalModal('analysis-modal');
+
+            setTimeout(() => {
+                const ctx = document.getElementById('radarChart').getContext('2d');
+                if (radarChartInstance) {
+                    radarChartInstance.destroy();
+                }
+                radarChartInstance = new Chart(ctx, {
+                    type: 'radar',
+                    plugins: [window.ChartDataLabels],
+                    data: {
+                        labels: analysisSubjects,
+                        datasets: [{
+                            label: '平均能力 (滿分 7)',
+                            data: dataPoints,
+                            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                            borderColor: 'rgba(99, 102, 241, 1)',
+                            pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(99, 102, 241, 1)',
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            borderWidth: 2,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: { padding: 40 },
+                        scales: {
+                            r: {
+                                min: 0, max: 7,
+                                angleLines: { color: 'rgba(0,0,0,0.1)' },
+                                grid: { color: 'rgba(0,0,0,0.1)' },
+                                pointLabels: { display: false },
+                                ticks: { stepSize: 1, display: false }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false },
+                            datalabels: {
+                                color: '#4338ca',
+                                font: { family: 'Noto Sans TC', size: 14, weight: 'bold' },
+                                formatter: function(value, context) {
+                                    const sub = context.chart.data.labels[context.dataIndex];
+                                    return sub + '\n' + value + ' 分';
+                                },
+                                textAlign: 'center', align: 'end', anchor: 'end', offset: 5,
+                                listeners: {
+                                    click: function(context) {
+                                        const sub = context.chart.data.labels[context.dataIndex];
+                                        const details = subjectDetails[sub];
+                                        if(!details) return;
+                                        const statsStr = `【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`;
+                                        alert(statsStr);
+                                        return true;
+                                    }
+                                }
+                            }
+                        },
+                        onClick: (e, elements) => {
+                            if (elements.length > 0) {
+                                const idx = elements[0].index;
+                                const sub = analysisSubjects[idx];
+                                const details = subjectDetails[sub];
+                                if(!details) return;
+                                const statsStr = `【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`;
+                                alert(statsStr);
+                            }
+                        }
+                    }
+                });
+            }, 100);
+        };
+
+        // ==========================================
+        //  通用動作邏輯 (設定、登出、聊天等) 
+        // ==========================================
+        window.saveFirebaseConfig = () => {
+            const apiKey = document.getElementById('cfg-apiKey').value.trim();
+            if (!apiKey) return alert("API Key 為必填欄位！");
+            localStorage.setItem('study_group_firebase_config', JSON.stringify({ apiKey }));
+            alert("設定已儲存！系統將重新啟動。");
+            window.location.reload(); 
+        };
+
+        window.logout = () => {
+            username = '';
+            viewingUser = '';
+            isAdmin = false;
+            localStorage.removeItem('study_group_user');
+            
+            if(unsubDates) unsubDates();
+            if(unsubGrades) unsubGrades();
+            if(unsubChat) unsubChat();
+            if(unsubUsers) unsubUsers();
+            if(unsubProfile) unsubProfile();
+            
+            allGrades = {};
+            chatMessages = [];
+            importantDates = [];
+            
+            setupLoginListener();
+            window.renderLogin();
+        };
+
+        window.sendChat = async () => {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            const newMsg = { user: username, text: text, timestamp: new Date().toISOString() };
+            const newChat = [...chatMessages, newMsg];
+            if(newChat.length > 50) newChat.shift();
+            
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), { messages: newChat });
+            input.value = '';
+        };
+
+        document.addEventListener('click', (e) => {
+            const emojiPicker = document.getElementById('emoji-picker');
+            const toggleBtn = document.getElementById('emoji-toggle-btn');
+            if (emojiPicker && !emojiPicker.classList.contains('hidden')) {
+                if (!emojiPicker.contains(e.target) && e.target !== toggleBtn) {
+                    emojiPicker.classList.add('hidden');
+                }
+            }
+        });
+
+        // ==========================================
+        //  登入/註冊/個資 邏輯
+        // ==========================================
+        window.initiateLogin = (name) => {
+            const trimmed = name.trim();
+            if(!trimmed) return alert("請傳入名稱！");
+            
+            if (globalUsers.includes(trimmed) && usersProfile[trimmed]) {
+                document.getElementById('login-pwd-username').value = trimmed;
+                const dispName = usersProfile[trimmed]?.nickname || trimmed;
+                document.getElementById('login-pwd-username-display').innerText = `你好，${dispName}！請輸入密碼以繼續：`;
+                document.getElementById('login-pwd-input').value = '';
+                openGlobalModal('login-pwd-modal');
+                setTimeout(() => document.getElementById('login-pwd-input').focus(), 100);
+            }
+        };
+
+        window.confirmLoginPassword = () => {
+            const name = document.getElementById('login-pwd-username').value;
+            const pwd = document.getElementById('login-pwd-input').value;
+            
+            if (name === 'Nick' && pwd !== '2iligloi') {
+                return alert("Nick 為管理員保留帳號，密碼錯誤！");
+            }
+            if (usersProfile[name] && usersProfile[name].password !== pwd) {
+                return alert("密碼錯誤，請重試！");
+            }
+            
+            closeGlobalModal('login-pwd-modal');
+            doCompleteLogin(name);
+        };
+
+        window.openProfileEditModal = (name = '', isRegister = false) => {
+            const nameInput = document.getElementById('prof-name');
+            nameInput.value = name;
+            
+            if (isRegister && !name) {
+                nameInput.disabled = false;
+                nameInput.classList.remove('bg-gray-100', 'text-gray-500');
+                nameInput.classList.add('bg-white', 'text-gray-700');
+                nameInput.placeholder = "請輸入真實姓名作為登入帳號";
+            } else {
+                nameInput.disabled = true;
+                nameInput.classList.remove('bg-white', 'text-gray-700');
+                nameInput.classList.add('bg-gray-100', 'text-gray-500');
+                nameInput.placeholder = "";
+            }
+            
+            const isNick = (name === 'Nick');
+            const currentPwd = usersProfile[name]?.password || (isNick ? '2iligloi' : '');
+            document.getElementById('prof-pwd').value = currentPwd;
+            document.getElementById('prof-pwd-confirm').value = currentPwd;
+
+            if (isNick && isRegister) {
+                document.getElementById('prof-pwd').disabled = true;
+                document.getElementById('prof-pwd-confirm').disabled = true;
+                document.getElementById('pwd-hint').innerText = "(管理員預設密碼不可修改)";
+            } else {
+                document.getElementById('prof-pwd').disabled = false;
+                document.getElementById('prof-pwd-confirm').disabled = false;
+                document.getElementById('pwd-hint').innerText = "";
+            }
+
+            document.getElementById('prof-nickname').value = usersProfile[name]?.nickname || name;
+            document.getElementById('prof-birthday').value = usersProfile[name]?.birthday || '';
+            document.getElementById('prof-target').value = usersProfile[name]?.target || '';
+            document.getElementById('prof-motto').value = usersProfile[name]?.motto || '';
+            
+            let photo = usersProfile[name]?.photo || '';
+            document.getElementById('prof-photo-upload').dataset.base64 = photo;
+            
+            if (photo) {
+                document.getElementById('prof-photo-preview').src = photo;
+                document.getElementById('prof-photo-preview').classList.remove('hidden');
+                document.getElementById('prof-photo-placeholder').classList.add('hidden');
+            } else {
+                document.getElementById('prof-photo-preview').classList.add('hidden');
+                document.getElementById('prof-photo-placeholder').classList.remove('hidden');
+            }
+
+            document.getElementById('profile-modal-title').innerText = isRegister ? '🚀 歡迎加入！請建立專屬資料卡' : '📝 修改我的資料卡';
+            document.getElementById('profile-modal-close').style.display = isRegister ? 'none' : 'flex'; 
+            
+            openGlobalModal('profile-edit-modal');
+        };
+
+        window.handleProfilePhoto = (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 400; 
+                    const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    const base64 = canvas.toDataURL('image/jpeg', 0.8);
+                    document.getElementById('prof-photo-upload').dataset.base64 = base64;
+                    document.getElementById('prof-photo-preview').src = base64;
+                    document.getElementById('prof-photo-preview').classList.remove('hidden');
+                    document.getElementById('prof-photo-placeholder').classList.add('hidden');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.saveProfile = async () => {
+            const nameInput = document.getElementById('prof-name');
+            const name = nameInput.value.trim();
+            const pwd = document.getElementById('prof-pwd').value.trim();
+            const pwdConfirm = document.getElementById('prof-pwd-confirm').value.trim();
+            const nickname = document.getElementById('prof-nickname').value.trim();
+            
+            if(!name) return alert("請輸入真實姓名作為登入帳號！");
+            if(!pwd) return alert("請務必設定登入密碼！");
+            if(pwd !== pwdConfirm) return alert("兩次輸入的密碼不一致，請重新檢查！");
+            if(!nickname) return alert("請輸入顯示暱稱！");
+
+            const isNewUser = !globalUsers.includes(name);
+
+            if (!nameInput.disabled && !isNewUser) {
+                return alert("此真實姓名已存在，請使用該名稱登入，或輸入另一個姓名！");
+            }
+
+            let assignedColor = usersProfile[name]?.color;
+            if (isNewUser) {
+                const usedColors = Object.values(usersProfile).map(p => p.color).filter(Boolean);
+                const availableColors = USER_COLORS.filter(c => !usedColors.includes(c));
+                if (availableColors.length > 0) {
+                    assignedColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+                } else {
+                    assignedColor = USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)];
+                }
+            }
+
+            let updatedProfiles = JSON.parse(JSON.stringify(usersProfile));
+            updatedProfiles[name] = {
+                password: pwd,
+                nickname: nickname,
+                birthday: document.getElementById('prof-birthday').value,
+                target: document.getElementById('prof-target').value,
+                motto: document.getElementById('prof-motto').value,
+                photo: document.getElementById('prof-photo-upload').dataset.base64 || '',
+                color: assignedColor
+            };
+
+            try {
+                if (isNewUser) {
+                    const newUsers = [...globalUsers, name];
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers }, { merge: true });
+                }
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: updatedProfiles }, { merge: true });
+                
+                closeGlobalModal('profile-edit-modal');
+                
+                if(username !== name) {
+                    doCompleteLogin(name);
+                } else {
+                    alert("資料卡更新成功！");
+                    window.renderMainContent(); 
+                }
+            } catch(e) {
+                console.error(e);
+                alert("儲存失敗！");
+            }
+        };
+
+        const doCompleteLogin = (name) => {
+            username = name;
+            viewingUser = name; 
+            isAdmin = (username === 'Nick'); 
+            localStorage.setItem('study_group_user', username);
+            setupListeners();
+            window.renderMain();
+        };
+
+        window.openPublicProfile = (name) => {
+            const prof = usersProfile[name] || {};
+            document.getElementById('vp-nickname').innerText = prof.nickname || name;
+            document.getElementById('vp-name').innerText = `@${name}`;
+            document.getElementById('vp-target').innerText = prof.target || '未設定';
+            document.getElementById('vp-motto').innerText = prof.motto ? `「${prof.motto}」` : '默默努力中...';
+            document.getElementById('vp-birthday').innerText = prof.birthday ? `🎂 ${prof.birthday}` : '';
+
+            const imgEl = document.getElementById('vp-photo');
+            const fallbackEl = document.getElementById('vp-avatar-fallback');
+            
+            if(prof.photo) {
+                imgEl.src = prof.photo;
+                imgEl.style.display = 'block';
+                fallbackEl.style.display = 'none';
+            } else {
+                imgEl.style.display = 'none';
+                fallbackEl.innerText = getAvatarChar(name);
+                fallbackEl.style.display = 'flex';
+                fallbackEl.className = `w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black mb-3 ${getUserColor(name)}`;
+            }
+
+            openGlobalModal('view-profile-modal');
+        };
+
+        // ==========================================
+        //  管理員面板邏輯
+        // ==========================================
+        window.openAdminPanel = () => {
+            renderAdminDates();
+            renderAdminUsers();
+            switchAdminTab('dates');
+            openGlobalModal('admin-panel-modal');
+        };
+
+        window.switchAdminTab = (tab) => {
+            if(tab === 'dates') {
+                document.getElementById('admin-tab-dates').classList.remove('hidden');
+                document.getElementById('admin-tab-users').classList.add('hidden');
+                document.getElementById('tab-btn-dates').classList.replace('text-gray-500', 'text-amber-600');
+                document.getElementById('tab-btn-dates').classList.replace('border-transparent', 'border-amber-500');
+                document.getElementById('tab-btn-dates').classList.replace('hover:bg-gray-100', 'bg-white');
+                document.getElementById('tab-btn-users').classList.replace('text-amber-600', 'text-gray-500');
+                document.getElementById('tab-btn-users').classList.replace('border-amber-500', 'border-transparent');
+                document.getElementById('tab-btn-users').classList.replace('bg-white', 'hover:bg-gray-100');
+            } else {
+                document.getElementById('admin-tab-dates').classList.add('hidden');
+                document.getElementById('admin-tab-users').classList.remove('hidden');
+                document.getElementById('tab-btn-users').classList.replace('text-gray-500', 'text-amber-600');
+                document.getElementById('tab-btn-users').classList.replace('border-transparent', 'border-amber-500');
+                document.getElementById('tab-btn-users').classList.replace('hover:bg-gray-100', 'bg-white');
+                document.getElementById('tab-btn-dates').classList.replace('text-amber-600', 'text-gray-500');
+                document.getElementById('tab-btn-dates').classList.replace('border-amber-500', 'border-transparent');
+                document.getElementById('tab-btn-dates').classList.replace('bg-white', 'hover:bg-gray-100');
+            }
+        };
+
+        window.renderAdminDates = () => {
+            const container = document.getElementById('admin-dates-list');
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            container.innerHTML = sortedDates.map((item, index) => `
+                <div class="bg-white p-3 rounded-lg border border-gray-200 flex justify-between items-center shadow-sm">
+                    <div>
+                        <div class="font-bold text-gray-800">${item.title}</div>
+                        <div class="text-sm text-gray-500">${item.date}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="adminEditDate(${index})" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded font-bold text-sm hover:bg-blue-100">編輯</button>
+                        <button onclick="adminDeleteDate(${index})" class="px-3 py-1.5 bg-red-50 text-red-600 rounded font-bold text-sm hover:bg-red-100">刪除</button>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.adminAddDate = async () => {
+            const title = document.getElementById('admin-new-date-title').value.trim();
+            const date = document.getElementById('admin-new-date-value').value;
+            if(!title || !date) return alert("請填寫完整");
+            const newDates = [...importantDates, { title, date }];
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+            document.getElementById('admin-new-date-title').value = '';
+            document.getElementById('admin-new-date-value').value = '';
+        };
+
+        window.adminEditDate = (index) => {
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const item = sortedDates[index];
+            const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
+            document.getElementById('edit-date-index').value = realIndex;
+            document.getElementById('edit-date-title').value = item.title;
+            document.getElementById('edit-date-value').value = item.date;
+            openGlobalModal('edit-date-modal');
+        };
+
+        window.saveEditedDate = async () => {
+            const idx = parseInt(document.getElementById('edit-date-index').value);
+            const title = document.getElementById('edit-date-title').value.trim();
+            const date = document.getElementById('edit-date-value').value;
+            if(!title || !date) return alert("不可留空");
+            let newDates = [...importantDates];
+            newDates[idx] = { title, date };
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+            closeGlobalModal('edit-date-modal');
+        };
+
+        window.adminDeleteDate = async (index) => {
+            if(!confirm("確定刪除此日程？")) return;
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const item = sortedDates[index];
+            const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
+            
+            const newDates = [...importantDates];
+            newDates.splice(realIndex, 1);
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+        };
+
+        window.renderAdminUsers = () => {
+            const tbody = document.getElementById('admin-users-list');
+            tbody.innerHTML = globalUsers.map(u => {
+                const prof = usersProfile[u] || {};
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 font-bold text-gray-800">${u}</td>
+                        <td class="p-3 text-gray-600">${prof.nickname || '-'}</td>
+                        <td class="p-3 font-mono text-gray-500">${prof.password || '<span class="text-red-400">未設定</span>'}</td>
+                        <td class="p-3 text-right space-x-1">
+                            <button onclick="openProfileEditModal('${u}')" class="px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded font-bold text-xs hover:bg-blue-100">修改個資/密碼</button>
+                            ${u === 'Nick' ? '' : `<button onclick="adminDeleteUser('${u}')" class="px-2.5 py-1.5 bg-red-50 text-red-600 rounded font-bold text-xs hover:bg-red-100">移除帳號</button>`}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        };
+
+        window.adminDeleteUser = async (userToDelete) => {
+            if(!confirm(`⚠️ 警告！確定要刪除帳號 [${userToDelete}] 嗎？此操作不可逆！`)) return;
+            
+            let transferTarget = null;
+            const others = globalUsers.filter(u => u !== userToDelete);
+            if (others.length > 0) {
+                const ans = prompt(`是否轉移其成績給其他人？\n(若不轉移請留空按確定，將連帶刪除所有成績)\n可選對象: ${others.join(', ')}`);
+                if (ans && others.includes(ans.trim())) {
+                    transferTarget = ans.trim();
+                } else if (ans) {
+                    return alert("輸入的名稱無效，已取消刪除操作。");
+                }
+            }
+
+            try {
+                const newUsers = globalUsers.filter(u => u !== userToDelete);
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers });
+
+                let newProfiles = JSON.parse(JSON.stringify(usersProfile));
+                delete newProfiles[userToDelete];
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: newProfiles });
+
+                if (allGrades[userToDelete]) {
+                    const dates = Object.keys(allGrades[userToDelete]);
+                    for (let i = 0; i < dates.length; i++) {
+                        const dateStr = dates[i];
+                        const subs = Object.keys(allGrades[userToDelete][dateStr]);
+                        for (let j = 0; j < subs.length; j++) {
+                            const sub = subs[j];
+                            const oldDocId = `${userToDelete}_${dateStr}_${sub}`;
+                            const oldRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', oldDocId);
+                            
+                            if (transferTarget) {
+                                const newDocId = `${transferTarget}_${dateStr}_${sub}`;
+                                const newRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', newDocId);
+                                const gradeData = allGrades[userToDelete][dateStr][sub];
+                                await setDoc(newRef, {
+                                    user: transferTarget,
+                                    date: dateStr,
+                                    mainSubject: gradeData.mainSubject || gradeData.subSubject || sub,
+                                    subSubject: sub,
+                                    grade: gradeData.grade,
+                                    photo: gradeData.photo || null,
+                                    updatedAt: gradeData.updatedAt || new Date().toISOString()
+                                });
+                            }
+                            await deleteDoc(oldRef);
+                        }
+                    }
+                }
+
+                alert(`已成功移除使用者 ${userToDelete} ${transferTarget ? '，成績已轉移至 ' + transferTarget : '，成績已連帶刪除'}。`);
+                renderAdminUsers();
+            } catch(e) {
+                console.error(e);
+                alert("移除操作失敗！");
+            }
+        };
+
+        // ==========================================
+        //  UI 渲染函式 - 個別區塊 (月曆/動態/排行)
+        // ==========================================
+        window.renderSidebar = () => {
+            const container = document.getElementById('sidebar-countdowns');
+            if(!container) return;
+            const examDaysLeft = getDaysLeft(EXAM_DATE);
+            let html = `
+                <div class="bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl p-5 text-center shadow-lg text-white mb-4 transform hover:scale-[1.02] transition-transform border border-pink-300 shrink-0 z-10 relative">
+                    <h3 class="text-sm font-bold text-pink-100 mb-1">會考大日子 (2027-05-22)</h3>
+                    <div class="text-5xl font-black drop-shadow-md mb-2">${examDaysLeft >= 0 ? examDaysLeft : 0} <span class="text-xl">天</span></div>
+                    <div class="text-xs bg-black/20 rounded-full inline-block px-3 py-1 font-bold">🎯 決戰時刻</div>
+                </div>
+                <h4 class="font-bold text-teal-700 mb-2 flex items-center gap-2 shrink-0 z-10 relative">🗓️ 重要考試里程碑</h4>
+                <div class="marquee-container flex-1 w-full relative z-0 pb-1">
+                    <div class="marquee-content space-y-3 pt-2">
+            `;
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            sortedDates.forEach((item) => {
+                const days = getDaysLeft(item.date);
+                if (days >= 0) {
+                    html += `
+                        <div class="bg-white p-3 rounded-xl border border-teal-100 shadow-sm flex justify-between items-center relative overflow-hidden group">
+                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-teal-300"></div>
+                            <div class="pl-2">
+                                <div class="text-sm font-bold text-gray-700">${item.title}</div>
+                                <div class="text-xs text-gray-400">${item.date}</div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xl font-black ${days <= 7 ? 'text-rose-500' : 'text-teal-500'}">${days}</span>
+                                <span class="text-xs text-gray-500">天</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            html += `</div></div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderChat = () => {
+            const container = document.getElementById('chat-messages');
+            if(!container) return;
+            container.innerHTML = chatMessages.map(msg => {
+                const isMe = msg.user === username;
+                const displayName = usersProfile[msg.user]?.nickname || msg.user;
+                return `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        <span class="text-[10px] text-gray-400 mb-0.5 px-1">${displayName}</span>
+                        <div class="${isMe ? 'chat-bubble-me border border-blue-100' : 'chat-bubble-other border border-pink-100'} px-3 py-2 text-gray-700 shadow-sm inline-block max-w-[90%] break-words">
+                            ${msg.text}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        };
+
+        window.toggleEmojiPicker = (e) => {
+            if(e) e.stopPropagation();
+            const picker = document.getElementById('emoji-picker');
+            picker.classList.toggle('hidden');
+        };
+
+        window.insertEmoji = (emoji) => {
+            const input = document.getElementById('chatInput');
+            input.value += emoji;
+            input.focus();
+            document.getElementById('emoji-picker').classList.add('hidden');
+        };
+
+        window.changeMonth = (delta) => {
+            currentMonth += delta;
+            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+            if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+            window.renderMainContent();
+        };
+
+        window.changeViewingUser = (user) => {
+            viewingUser = user;
+            window.renderCalendar();
+        };
+
+        window.renderCalendar = () => {
+            const container = document.getElementById('calendar-grid');
+            const headerContainer = document.getElementById('calendar-header-container');
+            if(!container || !headerContainer) return;
+
+            headerContainer.innerHTML = `
+                <h2 class="text-xl md:text-2xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
+                <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-teal-700 bg-teal-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
+                    <option value="ALL" ${viewingUser === 'ALL' ? 'selected' : ''}>🌍 全部進度</option>
+                    ${globalUsers.map(u => {
+                        const dispName = usersProfile[u]?.nickname || u;
+                        return `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>❤️ ${dispName} 的個人進度</option>`;
+                    }).join('')}
+                </select>
+            `;
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const startPad = firstDay === 0 ? 6 : firstDay - 1;
+
+            let html = `<div class="grid grid-cols-7 gap-1 md:gap-2 mb-2 shrink-0">`;
+            ['一', '二', '三', '四', '五', '六', '日'].forEach((d, idx) => {
+                const isWeekend = idx >= 5;
+                html += `<div class="text-center font-bold ${isWeekend ? 'text-rose-500 bg-rose-50' : 'text-teal-700 bg-teal-50'} py-1 md:py-2 text-sm md:text-base rounded-lg md:rounded-xl shadow-sm border border-gray-100">${d}</div>`;
+            });
+            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[100px] md:auto-rows-[120px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
+
+            for(let i=0; i<startPad; i++) {
+                html += `<div class="bg-white/30 rounded-xl md:rounded-2xl border border-transparent"></div>`;
+            }
+
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const isToday = dateStr === formatDate(new Date());
+                const isImportant = importantDates.find(i => i.date === dateStr);
+                
+                let usersWithDataToday = [];
+                Object.entries(allGrades).forEach(([u, dates]) => {
+                    if (dates[dateStr] && Object.keys(dates[dateStr]).length > 0) {
+                        if (viewingUser === 'ALL' || u === viewingUser) {
+                            usersWithDataToday.push(u);
+                        }
+                    }
+                });
+
+                const headerClass = isToday 
+                    ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-white shadow-md' 
+                    : isImportant 
+                        ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md' 
+                        : 'bg-pink-50 text-pink-700';
+
+                const clickAction = (viewingUser === username || viewingUser === 'ALL') 
+                    ? `openScoreModal('${dateStr}')` 
+                    : `viewOthersScore(event, '${viewingUser}', '${dateStr}')`;
+
+                let cellHTML = '';
+
+                if (viewingUser === 'ALL') {
+                    // ALL View: No subjects/grades. Just date on left, 2-col scrollable avatars on right.
+                    const avatarsHtml = usersWithDataToday.map(u => `
+                        <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
+                             class="${getUserColor(u)} w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center text-[9px] md:text-xs font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
+                             title="查看 ${usersProfile[u]?.nickname || u} 的成績">
+                            ${getAvatarChar(u)}
+                        </div>
+                    `).join('');
+
+                    cellHTML = `
+                        <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-1.5 rounded-xl md:rounded-2xl shadow-sm flex flex-row transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
+                            
+                            <div class="flex flex-col items-center shrink-0 w-6 md:w-8">
+                                <span class="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-[11px] md:text-sm font-bold ${headerClass} shrink-0 shadow-sm">${d}</span>
+                                ${isImportant ? `<span class="text-[10px] md:text-xs drop-shadow-sm mt-1 group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
+                            </div>
+
+                            <div class="flex-1 overflow-y-auto custom-scrollbar h-full pl-1">
+                                ${usersWithDataToday.length > 0 ? `
+                                    <div class="grid grid-cols-2 gap-1 justify-items-end md:justify-items-center pb-1 pr-0.5">
+                                        ${avatarsHtml}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Specific User View: Show subject badges.
+                    let cellContent = '';
+                    const userGrades = (allGrades[viewingUser] && allGrades[viewingUser][dateStr]) ? allGrades[viewingUser][dateStr] : null;
+                    if (userGrades && Object.keys(userGrades).length > 0) {
+                        cellContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
+                        Object.entries(userGrades).forEach(([subKey, info]) => {
+                            let mainSub = info.mainSubject || subKey;
+                            let subColor = getSubjectColor(mainSub);
+
+                            let shortName = mainSub;
+                            if(shortName === '自然合科') shortName = '自然';
+                            if(shortName === '社會合科') shortName = '社會';
+                            if(shortName === '地球科學') shortName = '地科';
+
+                            cellContent += `
+                                <div class="text-[9px] md:text-[11px] font-bold ${subColor.bg} ${subColor.text} ${subColor.border} border px-1 py-0.5 rounded flex items-center justify-between shadow-sm">
+                                    <span class="truncate">${shortName} <span class="font-black ml-0.5">${info.grade}</span></span>
+                                    ${info.photo ? '<span class="text-[8px] md:text-[9px] text-purple-500 shrink-0 ml-0.5">📸</span>' : ''}
+                                </div>
+                            `;
+                        });
+                        cellContent += `</div>`;
+                    }
+
+                    cellHTML = `
+                        <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-2 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
+                            <div class="flex justify-between items-start shrink-0 mb-0.5 md:mb-1 w-full">
+                                <span class="w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass} shrink-0">${d}</span>
+                                
+                                <div class="flex flex-wrap justify-end content-start gap-1 flex-1 mx-1 mt-0.5 overflow-y-auto custom-scrollbar max-h-12 md:max-h-14 pr-1">
+                                    ${usersWithDataToday.map(u => `
+                                        <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
+                                             class="${getUserColor(u)} w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center text-[9px] md:text-[11px] font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
+                                             title="查看 ${usersProfile[u]?.nickname || u} 的成績">
+                                            ${getAvatarChar(u)}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                ${isImportant ? `<span class="text-xs md:text-sm drop-shadow-sm group-hover:scale-125 transition-transform shrink-0" title="${isImportant.title}">🔥</span>` : ''}
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                                ${cellContent}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += cellHTML;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderTimeline = () => {
+            const container = document.getElementById('timeline-feed');
+            if(!container) return;
+
+            const feed = [];
+            Object.entries(allGrades).forEach(([u, dates]) => {
+                Object.entries(dates).forEach(([d, subjects]) => {
+                    Object.entries(subjects).forEach(([s, info]) => {
+                        feed.push({ user: u, date: d, subject: s, ...info });
+                    });
+                });
+            });
+
+            feed.sort((a,b) => {
+                const timeA = a.updatedAt ? new Date(a.updatedAt) : new Date(a.date);
+                const timeB = b.updatedAt ? new Date(b.updatedAt) : new Date(b.date);
+                return timeB - timeA;
+            });
+
+            if (feed.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-70"><div class="text-4xl mb-2">🍃</div><div class="text-sm font-bold">尚無戰況紀錄，趕快搶頭香！</div></div>`;
+                return;
+            }
+
+            let html = '';
+            feed.forEach(item => {
+                const isMe = item.user === username;
+                const isA = item.grade.includes('A');
+                const emoji = isA ? '🏆' : '💪';
+                
+                const mainSub = item.mainSubject || item.subject;
+                const subColor = getSubjectColor(mainSub);
+                const displayName = usersProfile[item.user]?.nickname || item.user;
+
+                const mainSubStr = item.mainSubject && item.mainSubject !== item.subject ? `${item.mainSubject} ` : '';
+                const fullSubStr = `${mainSubStr}${item.subject}`;
+
+                html += `
+                    <div class="p-3 rounded-2xl border-2 ${subColor.border} ${subColor.bg} shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" onclick="viewOthersScore(null, '${item.user}', '${item.date}')">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-gray-700 bg-white px-2 py-0.5 rounded shadow-sm text-xs border border-gray-100 flex items-center gap-1.5">
+                                <div class="w-3 h-3 rounded-full flex items-center justify-center text-[8px] ${getUserColor(item.user)}">${getAvatarChar(item.user)}</div>
+                                ${isMe ? '我' : displayName}
+                            </span>
+                            <span class="text-[10px] text-gray-400 font-mono">${item.date}</span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            在 <span class="font-bold text-gray-800" title="${fullSubStr}">${fullSubStr.length > 20 ? fullSubStr.substring(0,18)+'...' : fullSubStr}</span> 獲得 <span class="font-black text-lg mx-1 ${subColor.text}">${item.grade}</span> ${emoji}
+                        </div>
+                        ${item.photo ? `<div class="absolute right-3 bottom-2 text-purple-400 text-lg opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        };
+
+        window.renderLeaderboard = () => {
+            const container = document.getElementById('leaderboard-feed');
+            if(!container) return;
+
+            let userStats = [];
+            globalUsers.forEach(u => {
+                let stats = { user: u, totalScore: 0, totalEntries: 0 };
+                const uGrades = allGrades[u] || {};
+                Object.values(uGrades).forEach(dayGrades => {
+                    Object.values(dayGrades).forEach(item => {
+                        stats.totalEntries++;
+                        stats.totalScore += GRADE_WEIGHT[item.grade] || 0;
+                    });
+                });
+                stats.average = stats.totalEntries > 0 ? (stats.totalScore / stats.totalEntries) : 0;
+                userStats.push(stats);
+            });
+
+            // 依照總平均分數由高到低排名，若平均相同則比較總刷題數
+            userStats.sort((a, b) => b.average - a.average || b.totalEntries - a.totalEntries);
+
+            if (userStats.length === 0 || userStats[0].totalEntries === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 text-sm mt-4 font-bold">目前無人上榜</div>`;
+                return;
+            }
+
+            let html = '';
+            userStats.forEach((stat, index) => {
+                if (stat.totalEntries === 0) return;
+                let rankMedal = '';
+                if (index === 0) rankMedal = '🥇';
+                else if (index === 1) rankMedal = '🥈';
+                else if (index === 2) rankMedal = '🥉';
+                else rankMedal = `<span class="text-teal-700 bg-teal-100 rounded-full w-6 h-6 flex items-center justify-center text-xs font-black shadow-inner">${index + 1}</span>`;
+
+                const displayName = usersProfile[stat.user]?.nickname || stat.user;
+
+                html += `
+                    <div onclick="openPublicProfile('${stat.user}')" class="bg-white rounded-xl p-2.5 border border-teal-100 shadow-sm flex items-center gap-3 relative hover:scale-[1.02] transition-transform cursor-pointer hover:border-teal-300">
+                        <div class="text-2xl w-8 flex justify-center drop-shadow-sm">${rankMedal}</div>
+                        <div class="flex-1 min-w-0 flex items-center gap-2">
+                            <div class="${getUserColor(stat.user)} w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0">
+                                ${getAvatarChar(stat.user)}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-black text-gray-700 text-sm mb-0.5 truncate">${displayName}</div>
+                                <div class="text-[10px] text-gray-500 flex gap-2 items-center mt-1">
+                                    <span class="text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 shadow-sm">平均 ${stat.average.toFixed(2)} 分</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center bg-gray-50 p-1.5 rounded-lg border border-gray-100 shrink-0">
+                            <div class="text-[10px] text-gray-400 font-bold">總刷題</div>
+                            <div class="font-black text-teal-600 text-base leading-none">${stat.totalEntries}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        };
+
+        window.renderMainContent = () => {
+            if(window.renderCalendar) window.renderCalendar();
+            if(window.renderTimeline) window.renderTimeline();
+            if(window.renderLeaderboard) window.renderLeaderboard();
+            if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) window.renderAdminUsers();
+        };
+
+        // ==========================================
+        //  輸入成績邏輯 (全面升級版 5 Steps)
         // ==========================================
         window.openScoreModal = (dateStr) => {
-            modalState = { date: dateStr, mainSubject: '', textbook: '', subSubject: '', grade: '', photoBase64: '', isWeakness: false, weaknessNote: '' };
+            modalState = { date: dateStr, mainSubject: '', textbook: '', subSubject: '', grade: '', photoBase64: '' };
             document.getElementById('modal-date').innerText = dateStr;
             
             // 狀態還原：清除所有強調樣式
@@ -1303,15 +1873,11 @@
                 }
             });
             
-            // 隱藏 2~5 步驟與弱點
+            // 隱藏 2~5 步驟
             document.getElementById('step-2-container').classList.add('hidden');
             document.getElementById('step-3-container').classList.add('hidden');
             document.getElementById('step-4-container').classList.add('hidden');
             document.getElementById('step-5-container').classList.add('hidden');
-            document.getElementById('weakness-section').classList.add('hidden');
-            document.getElementById('chk-weakness').checked = false;
-            document.getElementById('weakness-note').classList.add('hidden');
-            document.getElementById('weakness-note').value = '';
             
             document.getElementById('photo-upload').value = '';
             document.getElementById('photo-preview-container').classList.add('hidden');
@@ -1319,6 +1885,7 @@
             document.getElementById('photo-placeholder').classList.remove('hidden');
             document.getElementById('btn-delete-grade').classList.add('hidden');
 
+            // 復原 Step 5 上傳區域樣式
             const dropzone = document.getElementById('step-5-dropzone');
             if (dropzone) {
                 dropzone.classList.remove('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid');
@@ -1348,7 +1915,7 @@
                 }
             });
 
-            // 清除 Grade 按鈕與弱點
+            // 清除 Grade 按鈕
             GRADES.forEach(g => { 
                 const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
                 if (el) {
@@ -1356,7 +1923,6 @@
                     el.classList.add('bg-white', 'text-rose-700', 'border-rose-200');
                 }
             });
-            document.getElementById('weakness-section').classList.add('hidden');
 
             // 流程控制
             const step2 = document.getElementById('step-2-container');
@@ -1478,6 +2044,7 @@
             
             checkExistingGrade(subItem);
 
+            // 自動平滑滾動到 Step 4
             setTimeout(() => {
                 const step4Container = document.getElementById('step-4-container');
                 if(step4Container) {
@@ -1491,20 +2058,6 @@
 
             if (existing) {
                 window.selectGrade(existing.grade);
-                
-                // 載入弱點狀態
-                const chk = document.getElementById('chk-weakness');
-                const noteArea = document.getElementById('weakness-note');
-                if (existing.isWeakness) {
-                    chk.checked = true;
-                    noteArea.value = existing.weaknessNote || '';
-                    noteArea.classList.remove('hidden');
-                } else {
-                    chk.checked = false;
-                    noteArea.value = '';
-                    noteArea.classList.add('hidden');
-                }
-
                 if (existing.photo) setPhotoPreview(existing.photo);
                 else {
                      modalState.photoBase64 = '';
@@ -1522,11 +2075,6 @@
             } else {
                 modalState.grade = '';
                 modalState.photoBase64 = '';
-                document.getElementById('chk-weakness').checked = false;
-                document.getElementById('weakness-note').value = '';
-                document.getElementById('weakness-note').classList.add('hidden');
-                document.getElementById('weakness-section').classList.add('hidden');
-
                 GRADES.forEach(g => { 
                     const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
                     if (el) {
@@ -1561,17 +2109,6 @@
                     }
                 }
             });
-
-            // 判斷是否開啟弱點標記區塊 (B++, B+, B, C)
-            const weaknessSection = document.getElementById('weakness-section');
-            if (['B++', 'B+', 'B', 'C'].includes(grade)) {
-                weaknessSection.classList.remove('hidden');
-            } else {
-                weaknessSection.classList.add('hidden');
-                document.getElementById('chk-weakness').checked = false;
-                document.getElementById('weakness-note').classList.add('hidden');
-                document.getElementById('weakness-note').value = '';
-            }
         };
 
         window.handlePhotoUpload = (e) => {
@@ -1604,6 +2141,7 @@
             document.getElementById('photo-preview-container').classList.remove('hidden');
             document.getElementById('photo-preview-container').classList.add('flex');
             
+            // 加入明顯的 Step 5 完成狀態框線與底色
             const dropzone = document.getElementById('step-5-dropzone');
             if (dropzone) {
                 dropzone.classList.add('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid');
@@ -1615,10 +2153,8 @@
             if(!modalState.subSubject) return alert("請完整選擇科目與章節細項！");
             if(!modalState.grade) return alert("請選擇您的成績等級！");
 
-            const isWeakness = document.getElementById('chk-weakness').checked;
-            const weaknessNote = document.getElementById('weakness-note').value.trim();
-
             try {
+                // 將成績獨立儲存為一個 Document，ID 命名規則為: 帳號_日期_科目細項
                 const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
                 const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
                 
@@ -1629,16 +2165,8 @@
                     subSubject: modalState.subSubject,
                     grade: modalState.grade,
                     photo: modalState.photoBase64 || null,
-                    isWeakness: isWeakness,
-                    weaknessNote: isWeakness ? weaknessNote : '',
                     updatedAt: new Date().toISOString() 
                 });
-
-                // 自動將排定的計畫設為已完成 (如果這天有排這章節)
-                if (allPlans[username] && allPlans[username][modalState.date] && allPlans[username][modalState.date][modalState.subSubject]) {
-                    const planRef = doc(db, 'artifacts', appId, 'public', 'data', 'Plans', docId);
-                    await setDoc(planRef, { completed: true }, { merge: true });
-                }
                 
                 closeGlobalModal('score-modal');
             } catch(e) {
@@ -1655,12 +2183,6 @@
                 const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
                 const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
                 await deleteDoc(gradeRef);
-
-                // 若刪除成績，對應的計畫要退回未完成狀態
-                if (allPlans[username] && allPlans[username][modalState.date] && allPlans[username][modalState.date][modalState.subSubject]) {
-                    const planRef = doc(db, 'artifacts', appId, 'public', 'data', 'Plans', docId);
-                    await setDoc(planRef, { completed: false }, { merge: true });
-                }
 
                 closeGlobalModal('score-modal');
             } catch(e) { console.error(e); }
@@ -1687,31 +2209,12 @@
             Object.entries(data).forEach(([subKey, item]) => {
                 const mainSub = item.mainSubject || subKey;
                 const subColor = getSubjectColor(mainSub);
-                
-                // 判斷是否為弱點，套用不同 UI
-                let badgeClass = "font-bold text-base md:text-lg whitespace-pre-line leading-tight pt-1";
-                let weaknessIcon = "";
-                let cardClass = `mb-5 bg-white p-4 rounded-2xl shadow-sm border ${subColor.border} ${subColor.bg}`;
-
-                if (item.isWeakness) {
-                    badgeClass = "font-black text-base md:text-lg whitespace-pre-line leading-tight pt-1 text-red-600";
-                    weaknessIcon = "🔥 [弱點]";
-                    cardClass = `mb-5 bg-red-50 p-4 rounded-2xl shadow-md border-2 border-red-300`;
-                }
-
-                // 判斷是否達標計畫
-                let targetIcon = "";
-                if(allPlans[otherUser] && allPlans[otherUser][dateStr] && allPlans[otherUser][dateStr][subKey] && allPlans[otherUser][dateStr][subKey].completed) {
-                    targetIcon = `<span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full border border-green-300 ml-2 shadow-sm font-black align-middle">🎯 計畫達成</span>`;
-                }
-
                 contentHtml += `
-                    <div class="${cardClass}">
+                    <div class="mb-5 bg-white p-4 rounded-2xl shadow-sm border ${subColor.border} ${subColor.bg}">
                         <div class="flex justify-between items-start mb-2 ${subColor.text} gap-2">
-                            <span class="${badgeClass}">📌 [${mainSub}] ${subKey} <span class="text-red-500">${weaknessIcon}</span>${targetIcon}</span>
-                            <span class="font-black text-xl md:text-2xl shrink-0 ${item.isWeakness ? 'text-red-600' : ''}">${item.grade}</span>
+                            <span class="font-bold text-base md:text-lg whitespace-pre-line leading-tight pt-1">📌 [${mainSub}] ${subKey}</span>
+                            <span class="font-black text-xl md:text-2xl shrink-0">${item.grade}</span>
                         </div>
-                        ${item.isWeakness && item.weaknessNote ? `<div class="bg-white p-2 rounded border border-red-200 text-sm font-bold text-red-800 mb-2">📝 筆記：<span class="font-normal text-gray-700">${item.weaknessNote}</span></div>` : ''}
                         ${item.photo ? `<div class="mt-3"><img src="${item.photo}" class="w-full rounded-xl border border-gray-200 shadow-sm" alt="考卷照片"></div>` : '<div class="text-xs text-gray-400 text-center mt-2">（無附照片）</div>'}
                     </div>
                 `;
@@ -1799,27 +2302,6 @@
                 if(username) window.renderChat();
             }, errHandler);
 
-            // 監聽 Plans 集合
-            const plansCol = collection(db, 'artifacts', appId, 'public', 'data', 'Plans');
-            if(unsubPlans) unsubPlans();
-            unsubPlans = onSnapshot(plansCol, (snap) => {
-                let newAllPlans = {};
-                snap.forEach(docSnap => {
-                    const data = docSnap.data();
-                    if(!data.user || !data.date || !data.subSubject) return;
-                    if(!newAllPlans[data.user]) newAllPlans[data.user] = {};
-                    if(!newAllPlans[data.user][data.date]) newAllPlans[data.user][data.date] = {};
-                    newAllPlans[data.user][data.date][data.subSubject] = data;
-                });
-                allPlans = newAllPlans;
-                if(username) {
-                    if(document.getElementById('plan-modal') && !document.getElementById('plan-modal').classList.contains('hidden')) {
-                        renderPlanBoard();
-                    }
-                    window.renderMainContent();
-                }
-            }, errHandler);
-
             const gradesCol = collection(db, 'artifacts', appId, 'public', 'data', 'Grades');
             if(unsubGrades) unsubGrades();
             unsubGrades = onSnapshot(gradesCol, (snap) => {
@@ -1835,18 +2317,11 @@
                         mainSubject: data.mainSubject || '',
                         grade: data.grade,
                         photo: data.photo || null,
-                        isWeakness: data.isWeakness || false,
-                        weaknessNote: data.weaknessNote || '',
                         updatedAt: data.updatedAt || ''
                     };
                 });
                 allGrades = newAllGrades;
-                if(username) {
-                    window.renderMainContent();
-                    if(document.getElementById('weakness-modal') && !document.getElementById('weakness-modal').classList.contains('hidden')) {
-                        openWeaknessModal(); // 更新弱點視窗
-                    }
-                }
+                if(username) window.renderMainContent();
             }, errHandler);
         };
 
