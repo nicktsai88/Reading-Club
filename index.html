@@ -251,6 +251,26 @@
             'default': '#E5E7EB'
         };
 
+        // 為確保在淡色背景上文字清晰，針對各科目產生對比較高的文字用色碼
+        const getSafeTextColor = (sub) => {
+            const map = {
+                '國文': '#CC0000',
+                '英文': '#CC4400',
+                '數學': '#999900', 
+                '生物': '#449900', 
+                '理化': '#008888', 
+                '地科': '#0000AA', 
+                '地球科學': '#0000AA', 
+                '歷史': '#990099', 
+                '地理': '#CC0066', 
+                '公民': '#009900', 
+                '自然合科': '#449900', 
+                '社會合科': '#CC0066', 
+                'default': '#4B5563'
+            };
+            return map[sub] || map['default'];
+        };
+
         const getSubjectColor = (sub) => SUBJECT_COLORS[sub] || SUBJECT_COLORS['default'];
 
         // 20種不重複且亮眼的顏色池
@@ -1015,13 +1035,47 @@
                 });
             });
 
-            // 先依科目名稱排序，再依日期排序 (最新在最上面)
+            const getSubjectOrder = (sub) => {
+                const order = ['國文', '英文', '數學', '生物', '理化', '地科', '地球科學', '歷史', '地理', '公民', '自然合科', '社會合科'];
+                const idx = order.indexOf(sub);
+                return idx !== -1 ? idx : 999;
+            };
+
+            const getUnitOrder = (mainSub, subSub) => {
+                if (TEXTBOOKS[mainSub]) {
+                    for (let i = 0; i < TEXTBOOKS[mainSub].length; i++) {
+                        const idx = TEXTBOOKS[mainSub][i].chapters.indexOf(subSub);
+                        if (idx !== -1) return (i * 100) + idx;
+                    }
+                }
+                if (SUB_SUBJECTS[mainSub]) {
+                    const idx = SUB_SUBJECTS[mainSub].indexOf(subSub);
+                    if (idx !== -1) return idx;
+                }
+                return 999;
+            };
+
+            // 先依科目名稱排序，再依單元順序排序
             weaknesses.sort((a, b) => {
                 const subA = a.mainSubject || a.subSubject;
                 const subB = b.mainSubject || b.subSubject;
+                
                 if (subA !== subB) {
+                    const orderA = getSubjectOrder(subA);
+                    const orderB = getSubjectOrder(subB);
+                    if (orderA !== orderB) return orderA - orderB;
                     return subA.localeCompare(subB, 'zh-TW');
                 }
+
+                // 科目相同時，依單元順序
+                const unitA = getUnitOrder(subA, a.subSubject);
+                const unitB = getUnitOrder(subB, b.subSubject);
+                
+                if (unitA !== unitB) {
+                    return unitA - unitB;
+                }
+
+                // 如果單元也一樣(例如重複紀錄)，則以時間新舊排(新的在上)
                 return new Date(b.date) - new Date(a.date);
             });
 
@@ -1042,14 +1096,13 @@
                     const isMe = targetUser === username;
                     const hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
                     const bgStyle = `background-color: ${hexColor}25; border-color: ${hexColor};`;
-                    const badgeBgStyle = `background-color: #ffffff; color: ${hexColor}; border-color: ${hexColor};`;
+                    
+                    const safeTextColor = getSafeTextColor(mainSub);
+                    const badgeBgStyle = `background-color: #ffffff; color: ${safeTextColor}; border-color: ${hexColor};`;
                     
                     const tbName = getTextbookName(w.mainSubject, w.subSubject);
                     const displaySubject = tbName ? `${mainSub}(${tbName})` : mainSub;
                     const reviews = w.reviews || [false, false, false, false, false];
-                    
-                    // 避免亮黃色字體難以閱讀
-                    const safeTextColor = hexColor === '#EEEE00' ? '#D4D400' : hexColor;
 
                     html += `
                         <div class="rounded-2xl p-4 shadow-sm border-2 relative flex flex-col hover:shadow-md transition-shadow" style="${bgStyle}">
@@ -1861,7 +1914,7 @@
                         Object.entries(userGrades).forEach(([subKey, info]) => {
                             let mainSub = info.mainSubject || subKey;
                             let hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
-                            let safeTextColor = (hexColor === '#EEEE00' || hexColor === '#FFFF77') ? '#B3B300' : hexColor;
+                            let safeTextColor = getSafeTextColor(mainSub);
 
                             let shortName = mainSub;
                             if(shortName === '自然合科') shortName = '自然';
@@ -1939,7 +1992,7 @@
                 
                 const mainSub = item.mainSubject || item.subject;
                 const hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
-                const safeTextColor = hexColor === '#EEEE00' ? '#D4D400' : hexColor;
+                const safeTextColor = getSafeTextColor(mainSub);
                 const displayName = usersProfile[item.user]?.nickname || item.user;
 
                 const mainSubStr = item.mainSubject && item.mainSubject !== item.subject ? `${item.mainSubject} ` : '';
@@ -2429,7 +2482,7 @@
             Object.entries(data).forEach(([subKey, item]) => {
                 const mainSub = item.mainSubject || subKey;
                 const hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
-                const safeTextColor = hexColor === '#EEEE00' ? '#D4D400' : hexColor;
+                const safeTextColor = getSafeTextColor(mainSub);
                 const isWeak = item.isWeakness;
                 const weakIndicator = isWeak ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded border border-red-200 ml-2 shadow-sm whitespace-nowrap">🔥 弱點標記</span>' : '';
                 
