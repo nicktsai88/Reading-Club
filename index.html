@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🎒 邁向5A10+ 國中會考讀書會 ✨</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 載入 Chart.js 與 DataLabels 擴充套件用於繪製雷達圖及數據標籤 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        /* 確保所有瀏覽器都能給予正確的滿版高度 */
         html, body {
             height: 100%; 
             height: -webkit-fill-available;
@@ -46,7 +44,6 @@
         .animate-bounce-slow { animation: bounce 3s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(-5%); } 50% { transform: translateY(0); } }
 
-        /* 垂直跑馬燈效果設定 */
         @keyframes marqueeVertical {
             0% { transform: translateY(100%); }
             100% { transform: translateY(-100%); }
@@ -70,39 +67,29 @@
         .chat-bubble-me { background: #e0f2fe; border-radius: 1rem 1rem 0 1rem; }
         .chat-bubble-other { background: #fce7f3; border-radius: 1rem 1rem 1rem 0; }
         
-        /* Step 3 專屬色彩設定 */
         .text-white .step3-color-unit,
         .text-white .step3-color-book,
-        .text-white .step3-color-desc {
-            color: #ffffff !important;
-        }
+        .text-white .step3-color-desc { color: #ffffff !important; }
         .step3-color-unit { color: #DC143C; }
         .step3-color-book { color: #0066FF; }
         .step3-color-desc { color: #696969; }
         
-        /* 會考模擬試題：紅色文字 + 黃色螢光光暈 */
         .step3-color-exam {
             color: #FF0000 !important;
-            text-shadow: 
-                0 0 5px #FFFF00, 
-                0 0 10px #FFFF00, 
-                0 0 15px #FFFF00 !important;
+            text-shadow: 0 0 5px #FFFF00, 0 0 10px #FFFF00, 0 0 15px #FFFF00 !important;
         }
     </style>
 </head>
 <body class="w-full flex flex-col overflow-hidden">
 
     <div id="app" class="w-full h-full flex flex-col overflow-hidden"></div>
-    <div id="modals-container"></div> <!-- 放置所有動態 Modal 的容器 -->
+    <div id="modals-container"></div> 
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ==========================================
-        //  系統設定與常數
-        // ==========================================
         const BASE_FIREBASE_CONFIG = {
             authDomain: "chinese-learning-47f4d.firebaseapp.com",
             projectId: "chinese-learning-47f4d",
@@ -192,33 +179,20 @@
         ];
 
         const TEXTBOOKS = {
-            '國文': [
-                { id: 'c1', name: '麻辣講義', img: 'images/c1.jpg', chapters: CHINESE_CHAPTERS }
-            ],
-            '英文': [
-                { id: 'e1', name: '超會考', img: 'images/e1.jpg', chapters: ENGLISH_CHAPTERS }
-            ],
-            '數學': [
-                { id: 'm1', name: '麻辣講義', img: 'images/m1.jpg', chapters: MATH_CHAPTERS }
-            ],
+            '國文': [{ id: 'c1', name: '麻辣講義', img: 'images/c1.jpg', chapters: CHINESE_CHAPTERS }],
+            '英文': [{ id: 'e1', name: '超會考', img: 'images/e1.jpg', chapters: ENGLISH_CHAPTERS }],
+            '數學': [{ id: 'm1', name: '麻辣講義', img: 'images/m1.jpg', chapters: MATH_CHAPTERS }],
             '生物': [
                 { id: 'b1', name: '麻辣講義', img: 'images/b1.jpg', chapters: BIO_CHAPTERS },
                 { id: 'b2', name: '大滿貫', img: 'images/b2.jpg', chapters: BIO_CHAPTERS_2 }
             ],
-            '理化': [
-                { id: 'p1', name: '大滿貫', img: 'images/p1.jpg', chapters: PHY_CHAPTERS }
-            ],
-            '歷史': [
-                { id: 'h1', name: '大滿貫', img: 'images/h1.jpg', chapters: HISTORY_CHAPTERS }
-            ]
+            '理化': [{ id: 'p1', name: '大滿貫', img: 'images/p1.jpg', chapters: PHY_CHAPTERS }],
+            '歷史': [{ id: 'h1', name: '大滿貫', img: 'images/h1.jpg', chapters: HISTORY_CHAPTERS }]
         };
 
         const GRADES = ['A++', 'A+', 'A', 'B++', 'B+', 'B', 'C'];
         const GRADE_WEIGHT = {'A++': 7, 'A+': 6, 'A': 5, 'B++': 4, 'B+': 3, 'B': 2, 'C': 1};
 
-        // ==========================================
-        //  色彩計畫系統 (科目與使用者頭像)
-        // ==========================================
         const SUBJECT_COLORS = {
             '國文': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
             '英文': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
@@ -238,43 +212,24 @@
         };
         const getSubjectColor = (sub) => SUBJECT_COLORS[sub] || SUBJECT_COLORS['default'];
 
-        // 20種不重複且亮眼的顏色池
         const USER_COLORS = [
-            'bg-[#FF0000] text-white',
-            'bg-[#FF0088] text-white',
-            'bg-[#FF5511] text-white',
-            'bg-[#FF8800] text-white',
-            'bg-[#FFFF00] text-gray-800',
-            'bg-[#BBFF00] text-gray-800',
-            'bg-[#00FF00] text-gray-800',
-            'bg-[#00FFFF] text-gray-800',
-            'bg-[#00BBFF] text-white',
-            'bg-[#0000FF] text-white',
-            'bg-[#7700FF] text-white',
-            'bg-[#FF00FF] text-white',
-            'bg-[#CC00FF] text-white',
-            'bg-[#009FCC] text-white',
-            'bg-[#FF88C2] text-gray-800',
-            'bg-[#990099] text-white',
-            'bg-[#007799] text-white',
-            'bg-[#E38EFF] text-gray-800',
-            'bg-[#FFB7DD] text-gray-800',
-            'bg-[#99FFFF] text-gray-800'
+            'bg-[#FF0000] text-white', 'bg-[#FF0088] text-white', 'bg-[#FF5511] text-white',
+            'bg-[#FF8800] text-white', 'bg-[#FFFF00] text-gray-800', 'bg-[#BBFF00] text-gray-800',
+            'bg-[#00FF00] text-gray-800', 'bg-[#00FFFF] text-gray-800', 'bg-[#00BBFF] text-white',
+            'bg-[#0000FF] text-white', 'bg-[#7700FF] text-white', 'bg-[#FF00FF] text-white',
+            'bg-[#CC00FF] text-white', 'bg-[#009FCC] text-white', 'bg-[#FF88C2] text-gray-800',
+            'bg-[#990099] text-white', 'bg-[#007799] text-white', 'bg-[#E38EFF] text-gray-800',
+            'bg-[#FFB7DD] text-gray-800', 'bg-[#99FFFF] text-gray-800'
         ];
         
         const getUserColor = (name) => {
             if(!name) return USER_COLORS[0];
-            if(usersProfile[name] && usersProfile[name].color) {
-                return usersProfile[name].color;
-            }
+            if(usersProfile[name] && usersProfile[name].color) return usersProfile[name].color;
             let hash = 0;
-            for (let i = 0; i < name.length; i++) {
-                hash = name.charCodeAt(i) + ((hash << 5) - hash);
-            }
+            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
             return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
         };
 
-        // 資料狀態
         let appInstance, auth, db;
         let currentUser = null;
         let username = '';
@@ -292,21 +247,14 @@
         let currentMonth = new Date().getMonth(); 
         
         let unsubUsers, unsubDates, unsubGrades, unsubChat, unsubProfile;
-        
         let radarChartInstance = null; 
 
-        // ==========================================
-        //  輔助工具函式
-        // ==========================================
         const formatStep3Text = (text) => {
             let formatted = text;
-            
-            // 優先處理「會考模擬試題 *~*冊」
             if (formatted.includes('會考模擬試題')) {
                 formatted = formatted.replace(/(會考模擬試題\s*\d+~\d+\s*冊)/g, '<span class="step3-color-exam">$1</span>');
                 return formatted;
             }
-            
             formatted = formatted.replace(/(單元\d+)/g, '<span class="step3-color-unit">$1</span>');
             formatted = formatted.replace(/(第[一二三四五六七八九十\d]+冊)/g, '<span class="step3-color-book">$1</span>');
             formatted = formatted.replace(/(\(.*?\)|（.*?）)/g, '<span class="step3-color-desc">$1</span>');
@@ -314,6 +262,7 @@
         };
 
         const getDaysLeft = (targetDateStr) => {
+            if(!targetDateStr) return 0;
             const now = new Date();
             now.setHours(0,0,0,0);
             const target = new Date(targetDateStr);
@@ -329,25 +278,16 @@
 
         const getStoredConfig = () => {
             const stored = localStorage.getItem('study_group_firebase_config');
-            if (stored) {
-                try { return JSON.parse(stored); } catch(e) {}
-            }
-            if (typeof __firebase_config !== 'undefined') {
-                try { return JSON.parse(__firebase_config); } catch(e) {}
-            }
+            if (stored) { try { return JSON.parse(stored); } catch(e) {} }
+            if (typeof __firebase_config !== 'undefined') { try { return JSON.parse(__firebase_config); } catch(e) {} }
             return null;
         };
 
         const getAvatarChar = (u) => {
-            if(usersProfile[u] && usersProfile[u].nickname) {
-                return usersProfile[u].nickname.charAt(0);
-            }
+            if(usersProfile[u] && usersProfile[u].nickname) return usersProfile[u].nickname.charAt(0);
             return u ? u.charAt(0) : '?';
         };
 
-        // ==========================================
-        //  UI 渲染函式 - 系統框架與登入
-        // ==========================================
         window.renderApp = () => { 
             document.getElementById('app').innerHTML = `<div id="view-container" class="w-full h-full flex flex-col relative overflow-hidden bg-white/20"></div>`; 
             renderGlobalModals();
@@ -514,7 +454,6 @@
             }
         };
 
-        // 全域 Modals 渲染 (放置於 #modals-container)
         const renderGlobalModals = () => {
             const container = document.getElementById('modals-container');
             container.innerHTML = `
@@ -587,7 +526,7 @@
                     </div>
                 </div>
 
-                <!-- 成績輸入 Modal (升級版) -->
+                <!-- 成績輸入 Modal -->
                 <div id="score-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-opacity duration-200 opacity-0">
                     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 95%; max-height: 95dvh;" id="score-modal-content">
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
@@ -596,7 +535,6 @@
                         </div>
                         <div class="p-6 space-y-6 bg-teal-50/30 overflow-y-auto flex-1 custom-scrollbar">
                             
-                            <!-- Step 1 -->
                             <div id="step-1-container">
                                 <h3 class="text-teal-800 font-bold mb-3 border-l-4 border-teal-400 pl-2 text-lg shadow-sm bg-white/50 py-1">Step 1: 選擇科目</h3>
                                 <div class="grid grid-cols-3 sm:grid-cols-5 gap-2" id="subject-selector">
@@ -604,26 +542,22 @@
                                 </div>
                             </div>
                             
-                            <!-- Step 2 -->
                             <div id="step-2-container" class="hidden">
                                 <h3 class="text-blue-800 font-bold mb-3 border-l-4 border-blue-400 pl-2 text-lg shadow-sm bg-white/50 py-1">Step 2: 選擇教科書</h3>
                                 <div class="flex flex-wrap gap-4" id="textbook-selector"></div>
                             </div>
 
-                            <!-- Step 3 -->
                             <div id="step-3-container" class="hidden">
                                 <h3 class="text-indigo-800 font-bold mb-3 border-l-4 border-indigo-400 pl-2 text-lg shadow-sm bg-white/50 py-1">Step 3: 選擇章節 / 細項</h3>
                                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-3" id="sub-subject-selector"></div>
                             </div>
 
-                            <!-- Step 4 -->
                             <div id="step-4-container" class="hidden">
                                 <h3 class="text-rose-800 font-bold mb-3 border-l-4 border-rose-400 pl-2 text-lg shadow-sm bg-white/50 py-1">Step 4: 選擇成績等級</h3>
                                 <div class="grid grid-cols-4 sm:grid-cols-7 gap-2" id="grade-selector">
                                     ${GRADES.map(g => `<button onclick="selectGrade('${g}')" id="btn-grade-${g.replace('+','p').replace('+','p')}" class="py-2.5 rounded-xl border-2 border-rose-200 text-rose-700 font-bold hover:bg-rose-50 transition-all bg-white shadow-sm hover:scale-[1.02]">${g}</button>`).join('')}
                                 </div>
                                 
-                                <!-- 新增弱點標記區塊 -->
                                 <div id="weakness-container" class="hidden mt-4 bg-red-50 p-4 rounded-xl border border-red-200 shadow-inner">
                                     <label class="flex items-center gap-2 text-red-700 font-bold mb-2 cursor-pointer w-max">
                                         <input type="checkbox" id="weakness-check" class="w-5 h-5 rounded text-red-500 focus:ring-red-400" onchange="document.getElementById('weakness-note').classList.toggle('hidden', !this.checked)">
@@ -633,7 +567,6 @@
                                 </div>
                             </div>
 
-                            <!-- Step 5 -->
                             <div id="step-5-container" class="hidden">
                                 <h3 class="text-purple-800 font-bold mb-3 border-l-4 border-purple-400 pl-2 text-lg shadow-sm bg-white/50 py-1">Step 5: 拍下考卷/成績單 (選填)</h3>
                                 <div id="step-5-dropzone" class="border-2 border-dashed border-purple-300 rounded-2xl p-6 text-center bg-white hover:bg-purple-50 transition-all cursor-pointer relative shadow-inner" onclick="document.getElementById('photo-upload').click()">
@@ -665,22 +598,18 @@
                             <h2 class="text-xl font-bold flex items-center gap-2" id="progress-user-name">📈 闖關進度</h2>
                             <button onclick="closeGlobalModal('progress-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
-                        <div class="p-6 bg-gray-50/50 overflow-y-auto flex-1 custom-scrollbar" id="progress-content">
-                            <!-- 內容由 JS 動態生成 -->
-                        </div>
+                        <div class="p-6 bg-gray-50/50 overflow-y-auto flex-1 custom-scrollbar" id="progress-content"></div>
                     </div>
                 </div>
 
-                <!-- 弱點集中營 Modal (新增) -->
+                <!-- 弱點集中營 Modal -->
                 <div id="weakness-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('weakness-modal')">
                     <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-[95vw] md:max-w-3xl overflow-hidden border-4 border-red-200 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
                         <div class="bg-gradient-to-r from-red-500 to-rose-600 p-4 flex justify-between items-center text-white shrink-0 shadow-sm">
                             <h2 class="text-xl font-bold flex items-center gap-2" id="weakness-modal-title">🔥 弱點集中營</h2>
                             <button onclick="closeGlobalModal('weakness-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
-                        <div class="p-6 bg-red-50/30 overflow-y-auto flex-1 custom-scrollbar" id="weakness-content">
-                            <!-- 內容由 JS 動態生成 -->
-                        </div>
+                        <div class="p-6 bg-red-50/30 overflow-y-auto flex-1 custom-scrollbar" id="weakness-content"></div>
                     </div>
                 </div>
 
@@ -705,12 +634,10 @@
                 <div id="view-profile-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[80] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('view-profile-modal')">
                     <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform duration-200 flex flex-col relative border-4 border-teal-100">
                         <button onclick="closeGlobalModal('view-profile-modal')" class="absolute top-4 right-4 bg-black/20 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold z-10 hover:bg-black/40">✕</button>
-                        
                         <div class="h-32 bg-gradient-to-r from-teal-400 to-emerald-400 w-full relative"></div>
-                        
                         <div class="px-6 pb-6 pt-0 relative flex flex-col items-center mt-[-3rem]">
                             <img id="vp-photo" src="" class="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover bg-teal-50 mb-3" style="display:none;">
-                            <div id="vp-avatar-fallback" class="w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black mb-3 ${getUserColor(name)}">${getAvatarChar(name)}</div>
+                            <div id="vp-avatar-fallback" class="w-24 h-24 rounded-full border-4 border-white shadow-lg items-center justify-center text-3xl font-black mb-3" style="display:none;"></div>
                             
                             <h2 class="text-2xl font-black text-gray-800" id="vp-nickname"></h2>
                             <p class="text-sm text-gray-400 font-bold mb-4" id="vp-name"></p>
@@ -730,7 +657,7 @@
                     </div>
                 </div>
 
-                <!-- 查看他人成績 Modal (z-index 提高，可覆蓋在其他視窗之上) -->
+                <!-- 查看他人成績 Modal -->
                 <div id="view-score-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[80] p-4 transition-opacity duration-200 opacity-0">
                     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 90%; max-height: 90dvh;">
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
@@ -748,14 +675,11 @@
                             <h2 class="text-2xl font-black">👑 管理員面板</h2>
                             <button onclick="closeGlobalModal('admin-panel-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
-                        
                         <div class="flex border-b border-gray-200 shrink-0 bg-gray-50">
                             <button onclick="switchAdminTab('dates')" id="tab-btn-dates" class="flex-1 py-3 font-black text-amber-600 border-b-4 border-amber-500 bg-white">📅 考試日程</button>
                             <button onclick="switchAdminTab('users')" id="tab-btn-users" class="flex-1 py-3 font-bold text-gray-500 border-b-4 border-transparent hover:bg-gray-100">👤 參賽者管理</button>
                         </div>
-                        
                         <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/50 relative">
-                            <!-- 考試日程分頁 -->
                             <div id="admin-tab-dates" class="space-y-4 block">
                                 <div class="bg-white p-4 rounded-xl border border-amber-200 shadow-sm flex flex-col md:flex-row gap-2">
                                     <input type="text" id="admin-new-date-title" placeholder="新增考試名稱" class="flex-1 px-3 py-2 rounded-lg border border-gray-300">
@@ -764,8 +688,6 @@
                                 </div>
                                 <div id="admin-dates-list" class="space-y-2"></div>
                             </div>
-                            
-                            <!-- 參賽者管理分頁 -->
                             <div id="admin-tab-users" class="hidden">
                                 <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
                                     <table class="w-full text-left text-sm whitespace-nowrap">
@@ -809,9 +731,7 @@
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
                 const inner = modal.firstElementChild;
-                if(inner.classList.contains('scale-95')) {
-                    inner.classList.remove('scale-95');
-                }
+                if(inner && inner.classList.contains('scale-95')) inner.classList.remove('scale-95');
             }, 10);
         };
 
@@ -820,18 +740,13 @@
             if(!modal) return;
             modal.classList.add('opacity-0');
             const inner = modal.firstElementChild;
-            if(inner && inner.classList.contains('scale-95') === false) {
-                inner.classList.add('scale-95');
-            }
+            if(inner && inner.classList.contains('scale-95') === false) inner.classList.add('scale-95');
             setTimeout(() => {
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
             }, 200);
         };
 
-        // ==========================================
-        //  進度追蹤 Modal 邏輯
-        // ==========================================
         window.openProgressModal = () => {
             const targetUser = viewingUser === 'ALL' ? username : viewingUser;
             if (!targetUser) return;
@@ -843,14 +758,13 @@
             const getBestGrade = (subKey) => {
                 let bestObj = null;
                 let bestW = 0;
-
                 Object.entries(uGrades).forEach(([dateStr, dayData]) => {
                     if(dayData[subKey]) {
                         const g = dayData[subKey].grade;
                         const w = GRADE_WEIGHT[g] || 0;
                         if(w > bestW) {
                             bestW = w;
-                            bestObj = { grade: g, date: dateStr };
+                            bestObj = { grade: g, date: dateStr, isWeakness: dayData[subKey].isWeakness };
                         }
                     }
                 });
@@ -868,37 +782,21 @@
 
             const buildHorizontalTable = (title, imgSrc, chapters, subjectKeyFn) => {
                 const formatChapterHtml = (ch) => {
-                    if (ch.includes('會考模擬試題')) {
-                        return `<div class="step3-color-exam font-black text-center w-full text-[11px] sm:text-xs leading-tight whitespace-pre-line flex items-center justify-center h-full">${ch.replace(' ', '\n')}</div>`;
-                    }
-                    
-                    let line1 = '';
-                    let line2 = '';
-                    let line3 = '';
-                    
-                    // 智慧拆分章節字串
+                    if (ch.includes('會考模擬試題')) return `<div class="step3-color-exam font-black text-center w-full text-[11px] sm:text-xs leading-tight whitespace-pre-line flex items-center justify-center h-full">${ch.replace(' ', '\n')}</div>`;
+                    let line1 = '', line2 = '', line3 = '';
                     const parts = ch.split(' ');
                     if (parts.length >= 2 && parts[0].startsWith('單元')) {
-                        line1 = parts[0];
-                        line2 = parts[1];
-                        line3 = parts.slice(2).join(' ');
+                        line1 = parts[0]; line2 = parts[1]; line3 = parts.slice(2).join(' ');
                     } else if (parts.length >= 2 && parts[0].includes('會考模擬試題')) {
-                        line1 = parts[0];
-                        line2 = parts.slice(1).join(' ');
+                        line1 = parts[0]; line2 = parts.slice(1).join(' ');
                     }
-                    
-                    // 根據是否有匹配到主標題來決定渲染三行或單行
                     if (line1) {
-                        let html = '';
-                        html += `<div class="text-[#DC143C] text-[12px] sm:text-[14px] font-black mb-0.5 leading-tight w-full text-center">${line1}</div>`;
+                        let html = `<div class="text-[#DC143C] text-[12px] sm:text-[14px] font-black mb-0.5 leading-tight w-full text-center">${line1}</div>`;
                         html += `<div class="text-[#0066FF] text-[11px] sm:text-xs font-black mb-0.5 leading-tight w-full text-center">${line2}</div>`;
-                        if (line3) {
-                            html += `<div class="text-[10px] sm:text-[11px] text-gray-700 font-bold leading-tight whitespace-pre-line w-full text-center">${line3}</div>`;
-                        }
+                        if (line3) html += `<div class="text-[10px] sm:text-[11px] text-gray-700 font-bold leading-tight whitespace-pre-line w-full text-center">${line3}</div>`;
                         return html;
-                    } else {
-                        return `<div class="text-[10px] sm:text-xs text-gray-700 font-bold leading-tight whitespace-pre-line w-full text-center flex items-center justify-center h-full">${ch}</div>`;
                     }
+                    return `<div class="text-[10px] sm:text-xs text-gray-700 font-bold leading-tight whitespace-pre-line w-full text-center flex items-center justify-center h-full">${ch}</div>`;
                 };
 
                 let tableHtml = `
@@ -914,9 +812,7 @@
                     const queryKey = subjectKeyFn(ch);
                     const bestObj = getBestGrade(queryKey);
                     
-                    // 檢查此章節是否有被標記為弱點 (遍歷所有日期紀錄，只要有任一是弱點就算)
                     const isWeakness = Object.values(uGrades).some(dayData => dayData[queryKey] && dayData[queryKey].isWeakness);
-                    
                     const cursorClass = bestObj ? 'cursor-pointer hover:bg-gray-100 hover:shadow-inner' : 'hover:bg-gray-50';
                     const wrapperClass = isWeakness ? 'border-2 border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] relative z-10 scale-[1.02]' : '';
                     const fireBadge = isWeakness ? '<div class="absolute -top-3 -right-2 text-xl drop-shadow-md z-20 animate-bounce-slow" title="弱點！">🔥</div>' : '';
@@ -935,52 +831,26 @@
                             </div>
                     `;
                 });
-                tableHtml += `
-                        </div>
-                    </div>
-                </div>
-                `;
+                tableHtml += `</div></div></div>`;
                 return tableHtml;
             };
 
             let html = '<div class="space-y-6">';
-            
-            // 國文 (麻辣講義)
             html += buildHorizontalTable('國文\n(麻辣講義)', 'images/c1.jpg', CHINESE_CHAPTERS, (ch) => ch);
-            
-            // 英文 (超會考)
             html += buildHorizontalTable('英文\n(超會考)', 'images/e1.jpg', ENGLISH_CHAPTERS, (ch) => ch);
-
-            // 數學 (麻辣講義)
             html += buildHorizontalTable('數學\n(麻辣講義)', 'images/m1.jpg', MATH_CHAPTERS, (ch) => ch);
-
-            // 生物 (麻辣講義)
             html += buildHorizontalTable('生物\n(麻辣講義)', 'images/b1.jpg', BIO_CHAPTERS, (ch) => ch);
-
-            // 生物 (大滿貫) - 新增
             html += buildHorizontalTable('生物\n(大滿貫)', 'images/b2.jpg', BIO_CHAPTERS_2, (ch) => ch);
-
-            // 理化 (大滿貫)
             html += buildHorizontalTable('理化\n(大滿貫)', 'images/p1.jpg', PHY_CHAPTERS, (ch) => ch);
-
-            // 歷史 (大滿貫)
             html += buildHorizontalTable('歷史\n(大滿貫)', 'images/h1.jpg', HISTORY_CHAPTERS, (ch) => ch);
-
-            // 自然合科
             html += buildHorizontalTable('自然合科', null, SUB_SUBJECTS['自然'], (sub) => sub);
-
-            // 社會合科
             html += buildHorizontalTable('社會合科', null, SUB_SUBJECTS['社會'], (sub) => sub);
-
             html += '</div>';
 
             document.getElementById('progress-content').innerHTML = html;
             openGlobalModal('progress-modal');
         };
 
-        // ==========================================
-        //  弱點集中營 Modal 邏輯
-        // ==========================================
         window.openWeaknessModal = () => {
             const userToView = viewingUser === 'ALL' ? username : viewingUser;
             if (!userToView) return;
@@ -993,13 +863,10 @@
             
             Object.entries(uGrades).forEach(([dateStr, subjects]) => {
                 Object.entries(subjects).forEach(([subKey, info]) => {
-                    if (info.isWeakness) {
-                        weaknesses.push({ date: dateStr, subSubject: subKey, ...info });
-                    }
+                    if (info.isWeakness) weaknesses.push({ date: dateStr, subSubject: subKey, ...info });
                 });
             });
 
-            // 以日期降冪排序
             weaknesses.sort((a, b) => new Date(b.date) - new Date(a.date));
 
             const container = document.getElementById('weakness-content');
@@ -1033,7 +900,6 @@
                     `;
                 }).join('');
             }
-
             openGlobalModal('weakness-modal');
         };
 
@@ -1043,10 +909,7 @@
                 const docId = `${username}_${dateStr}_${subKey}`;
                 const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
                 await setDoc(gradeRef, { isWeakness: false }, { merge: true });
-                
                 alert("🎉 恭喜！弱點已成功解除！");
-                
-                // 稍微延遲讓 Firestore 更新後自動重繪畫面
                 setTimeout(() => window.openWeaknessModal(), 300);
             } catch(e) {
                 console.error(e);
@@ -1054,51 +917,37 @@
             }
         };
 
-        // ==========================================
-        //  學科分析雷達圖邏輯
-        // ==========================================
         window.openAnalysisModal = () => {
             const targetUser = viewingUser === 'ALL' ? username : viewingUser;
             if (!targetUser) return;
-
             const dispName = usersProfile[targetUser]?.nickname || targetUser;
             document.getElementById('analysis-user-name').innerText = `👤 ${dispName} 的戰力分析`;
             
-            // 要求的九大科目
             const analysisSubjects = ['國文', '英文', '數學', '生物', '理化', '地科', '歷史', '地理', '公民'];
-            
             const gradeToNum = (g) => {
                 const map = { 'A++': 7, 'A+': 6, 'A': 5, 'B++': 4, 'B+': 3, 'B': 2, 'C': 1 };
                 return map[g] !== undefined ? map[g] : null;
             };
 
             const uGrades = allGrades[targetUser] || {};
-            let subjectTotals = {};
-            let subjectCounts = {};
-            let subjectDetails = {};
+            let subjectTotals = {}; let subjectCounts = {}; let subjectDetails = {};
 
             analysisSubjects.forEach(sub => {
-                subjectTotals[sub] = 0;
-                subjectCounts[sub] = 0;
+                subjectTotals[sub] = 0; subjectCounts[sub] = 0;
                 subjectDetails[sub] = { 'A++':0, 'A+':0, 'A':0, 'B++':0, 'B+':0, 'B':0, 'C':0 };
             });
 
-            // 抓取各科目「所有」的成績資料並加總
             Object.keys(uGrades).forEach(dateStr => {
                 Object.keys(uGrades[dateStr]).forEach(subKey => {
                     const item = uGrades[dateStr][subKey];
-                    // 為了容納超長章節名稱，比對該紀錄的 mainSubject 是否為雷達圖的對象
                     const actualSub = analysisSubjects.includes(subKey) ? subKey : (analysisSubjects.includes(item.mainSubject) ? item.mainSubject : null);
-                    
                     if (actualSub && analysisSubjects.includes(actualSub)) {
                         const grade = item.grade;
                         const num = gradeToNum(grade);
                         if (num !== null) {
                             subjectTotals[actualSub] += num;
                             subjectCounts[actualSub] += 1;
-                            if(subjectDetails[actualSub][grade] !== undefined) {
-                                subjectDetails[actualSub][grade]++;
-                            }
+                            if(subjectDetails[actualSub][grade] !== undefined) subjectDetails[actualSub][grade]++;
                         }
                     }
                 });
@@ -1113,50 +962,35 @@
 
             setTimeout(() => {
                 const ctx = document.getElementById('radarChart').getContext('2d');
-                if (radarChartInstance) {
-                    radarChartInstance.destroy();
-                }
+                if (radarChartInstance) radarChartInstance.destroy();
                 radarChartInstance = new Chart(ctx, {
                     type: 'radar',
                     plugins: [window.ChartDataLabels],
                     data: {
                         labels: analysisSubjects,
                         datasets: [{
-                            label: '平均能力 (滿分 7)',
-                            data: dataPoints,
-                            backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                            borderColor: 'rgba(99, 102, 241, 1)',
-                            pointBackgroundColor: 'rgba(99, 102, 241, 1)',
-                            pointBorderColor: '#fff',
-                            pointHoverBackgroundColor: '#fff',
-                            pointHoverBorderColor: 'rgba(99, 102, 241, 1)',
-                            pointRadius: 6,
-                            pointHoverRadius: 8,
-                            borderWidth: 2,
+                            label: '平均能力 (滿分 7)', data: dataPoints,
+                            backgroundColor: 'rgba(99, 102, 241, 0.2)', borderColor: 'rgba(99, 102, 241, 1)',
+                            pointBackgroundColor: 'rgba(99, 102, 241, 1)', pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff', pointHoverBorderColor: 'rgba(99, 102, 241, 1)',
+                            pointRadius: 6, pointHoverRadius: 8, borderWidth: 2,
                         }]
                     },
                     options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        layout: { padding: 40 },
+                        responsive: true, maintainAspectRatio: false, layout: { padding: 40 },
                         scales: {
                             r: {
-                                min: 0, max: 7,
-                                angleLines: { color: 'rgba(0,0,0,0.1)' },
-                                grid: { color: 'rgba(0,0,0,0.1)' },
-                                pointLabels: { display: false },
+                                min: 0, max: 7, angleLines: { color: 'rgba(0,0,0,0.1)' },
+                                grid: { color: 'rgba(0,0,0,0.1)' }, pointLabels: { display: false },
                                 ticks: { stepSize: 1, display: false }
                             }
                         },
                         plugins: {
-                            legend: { display: false },
-                            tooltip: { enabled: false },
+                            legend: { display: false }, tooltip: { enabled: false },
                             datalabels: {
-                                color: '#4338ca',
-                                font: { family: 'Noto Sans TC', size: 14, weight: 'bold' },
+                                color: '#4338ca', font: { family: 'Noto Sans TC', size: 14, weight: 'bold' },
                                 formatter: function(value, context) {
-                                    const sub = context.chart.data.labels[context.dataIndex];
-                                    return sub + '\n' + value + ' 分';
+                                    return context.chart.data.labels[context.dataIndex] + '\n' + value + ' 分';
                                 },
                                 textAlign: 'center', align: 'end', anchor: 'end', offset: 5,
                                 listeners: {
@@ -1164,8 +998,7 @@
                                         const sub = context.chart.data.labels[context.dataIndex];
                                         const details = subjectDetails[sub];
                                         if(!details) return;
-                                        const statsStr = `【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`;
-                                        alert(statsStr);
+                                        alert(`【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`);
                                         return true;
                                     }
                                 }
@@ -1173,12 +1006,10 @@
                         },
                         onClick: (e, elements) => {
                             if (elements.length > 0) {
-                                const idx = elements[0].index;
-                                const sub = analysisSubjects[idx];
+                                const sub = analysisSubjects[elements[0].index];
                                 const details = subjectDetails[sub];
                                 if(!details) return;
-                                const statsStr = `【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`;
-                                alert(statsStr);
+                                alert(`【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`);
                             }
                         }
                     }
@@ -1186,147 +1017,233 @@
             }, 100);
         };
 
-        // ==========================================
-        //  通用動作邏輯 (設定、登出、聊天等) 
-        // ==========================================
-        window.saveFirebaseConfig = () => {
-            const apiKey = document.getElementById('cfg-apiKey').value.trim();
-            if (!apiKey) return alert("API Key 為必填欄位！");
-            localStorage.setItem('study_group_firebase_config', JSON.stringify({ apiKey }));
-            alert("設定已儲存！系統將重新啟動。");
-            window.location.reload(); 
+        window.openScoreModal = (dateStr) => {
+            modalState = { date: dateStr, mainSubject: '', textbook: '', subSubject: '', grade: '', photoBase64: '' };
+            document.getElementById('modal-date').innerText = dateStr;
+            
+            SUBJECTS.forEach(s => { 
+                const el = document.getElementById(`btn-sub-${s}`);
+                if (el) { el.classList.remove('bg-teal-600', 'text-white', 'shadow-md', 'ring-4', 'ring-teal-200', 'border-teal-600', 'scale-105'); el.classList.add('bg-white', 'text-teal-700', 'border-teal-200'); }
+            });
+            GRADES.forEach(g => { 
+                const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                if (el) { el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110'); el.classList.add('bg-white', 'text-rose-700', 'border-rose-200'); }
+            });
+            
+            document.getElementById('step-2-container').classList.add('hidden');
+            document.getElementById('step-3-container').classList.add('hidden');
+            document.getElementById('step-4-container').classList.add('hidden');
+            document.getElementById('step-5-container').classList.add('hidden');
+            
+            document.getElementById('photo-upload').value = '';
+            document.getElementById('photo-preview-container').classList.add('hidden');
+            document.getElementById('photo-preview-container').classList.remove('flex');
+            document.getElementById('photo-placeholder').classList.remove('hidden');
+            document.getElementById('btn-delete-grade').classList.add('hidden');
+
+            const weaknessContainer = document.getElementById('weakness-container');
+            if(weaknessContainer) {
+                weaknessContainer.classList.add('hidden');
+                document.getElementById('weakness-check').checked = false;
+                document.getElementById('weakness-note').value = '';
+                document.getElementById('weakness-note').classList.add('hidden');
+            }
+
+            const dropzone = document.getElementById('step-5-dropzone');
+            if (dropzone) { dropzone.classList.remove('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid'); dropzone.classList.add('border-dashed', 'bg-white'); }
+            openGlobalModal('score-modal');
         };
 
-        window.logout = () => {
-            username = '';
-            viewingUser = '';
-            isAdmin = false;
-            localStorage.removeItem('study_group_user');
-            
-            if(unsubDates) unsubDates();
-            if(unsubGrades) unsubGrades();
-            if(unsubChat) unsubChat();
-            if(unsubUsers) unsubUsers();
-            if(unsubProfile) unsubProfile();
-            
-            allGrades = {};
-            chatMessages = [];
-            importantDates = [];
-            
-            setupLoginListener();
-            window.renderLogin();
-        };
+        window.selectSubject = (sub) => {
+            modalState.mainSubject = sub;
+            modalState.textbook = ''; modalState.subSubject = ''; modalState.grade = '';
 
-        window.sendChat = async () => {
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            if(!text) return;
-            
-            const newMsg = { user: username, text: text, timestamp: new Date().toISOString() };
-            const newChat = [...chatMessages, newMsg];
-            if(newChat.length > 50) newChat.shift();
-            
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), { messages: newChat });
-            input.value = '';
-        };
-
-        document.addEventListener('click', (e) => {
-            const emojiPicker = document.getElementById('emoji-picker');
-            const toggleBtn = document.getElementById('emoji-toggle-btn');
-            if (emojiPicker && !emojiPicker.classList.contains('hidden')) {
-                if (!emojiPicker.contains(e.target) && e.target !== toggleBtn) {
-                    emojiPicker.classList.add('hidden');
+            SUBJECTS.forEach(s => {
+                const el = document.getElementById(`btn-sub-${s}`);
+                if(el) {
+                    if(s === sub) { el.classList.add('bg-teal-600', 'text-white', 'shadow-md', 'ring-4', 'ring-teal-200', 'border-teal-600', 'scale-105'); el.classList.remove('bg-white', 'text-teal-700', 'border-teal-200'); } 
+                    else { el.classList.remove('bg-teal-600', 'text-white', 'shadow-md', 'ring-4', 'ring-teal-200', 'border-teal-600', 'scale-105'); el.classList.add('bg-white', 'text-teal-700', 'border-teal-200'); }
                 }
-            }
-        });
+            });
+            GRADES.forEach(g => { 
+                const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                if (el) { el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110'); el.classList.add('bg-white', 'text-rose-700', 'border-rose-200'); }
+            });
 
-        // ==========================================
-        //  登入/註冊/個資 邏輯
-        // ==========================================
-        window.initiateLogin = (name) => {
-            const trimmed = name.trim();
-            if(!trimmed) return alert("請傳入名稱！");
-            
-            if (globalUsers.includes(trimmed) && usersProfile[trimmed]) {
-                document.getElementById('login-pwd-username').value = trimmed;
-                const dispName = usersProfile[trimmed]?.nickname || trimmed;
-                document.getElementById('login-pwd-username-display').innerText = `你好，${dispName}！請輸入密碼以繼續：`;
-                document.getElementById('login-pwd-input').value = '';
-                openGlobalModal('login-pwd-modal');
-                setTimeout(() => document.getElementById('login-pwd-input').focus(), 100);
+            document.getElementById('step-2-container').classList.add('hidden');
+            document.getElementById('step-3-container').classList.add('hidden');
+            document.getElementById('step-4-container').classList.add('hidden');
+            document.getElementById('step-5-container').classList.add('hidden');
+
+            const weaknessContainer = document.getElementById('weakness-container');
+            if(weaknessContainer) weaknessContainer.classList.add('hidden');
+
+            if (TEXTBOOKS[sub]) {
+                document.getElementById('step-2-container').classList.remove('hidden');
+                document.getElementById('textbook-selector').innerHTML = TEXTBOOKS[sub].map(tb => `
+                    <div onclick="selectTextbook('${tb.id}')" id="btn-tb-${tb.id}" class="cursor-pointer border-4 border-transparent bg-white hover:border-blue-400 rounded-xl p-2 text-center transition-all shadow-sm w-32 md:w-36 group">
+                        <img src="${tb.img}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2YxZjVmOSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM5Y2EzYWYiPueEoeWcluAHfTwvdGV4dD48L3N2Zz4='" class="w-full h-32 md:h-36 object-cover rounded-lg mb-2 shadow-sm border border-gray-200 pointer-events-none group-hover:shadow-md transition-shadow">
+                        <div class="font-bold text-sm text-gray-700 pointer-events-none">${tb.name}</div>
+                    </div>
+                `).join('');
+            } else if (SUB_SUBJECTS[sub]) {
+                document.getElementById('step-3-container').classList.remove('hidden');
+                document.getElementById('sub-subject-selector').innerHTML = SUB_SUBJECTS[sub].map(sItem => 
+                    `<button onclick="selectSubSubject('${sItem}')" id="btn-subitem-${sItem}" class="block w-full text-left py-3 px-4 rounded-xl border-2 border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-50 transition-all bg-white shadow-sm text-sm md:text-base hover:scale-[1.02] whitespace-nowrap overflow-hidden text-ellipsis">${formatStep3Text(sItem)}</button>`
+                ).join('');
+                
+                let subToSelect = SUB_SUBJECTS[sub][0];
+                for (let sItem of SUB_SUBJECTS[sub]) {
+                    if (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][sItem]) { subToSelect = sItem; break; }
+                }
+                window.selectSubSubject(subToSelect);
+            } else {
+                modalState.subSubject = sub;
+                document.getElementById('step-4-container').classList.remove('hidden');
+                document.getElementById('step-5-container').classList.remove('hidden');
+                checkExistingGrade(sub);
             }
         };
 
-        window.confirmLoginPassword = () => {
-            const name = document.getElementById('login-pwd-username').value;
-            const pwd = document.getElementById('login-pwd-input').value;
+        window.selectTextbook = (tbId) => {
+            modalState.textbook = tbId;
+            modalState.subSubject = '';
             
-            if (name === 'Nick' && pwd !== '2iligloi') {
-                return alert("Nick 為管理員保留帳號，密碼錯誤！");
+            const tbs = TEXTBOOKS[modalState.mainSubject];
+            if(tbs) {
+                tbs.forEach(tb => {
+                    const el = document.getElementById(`btn-tb-${tb.id}`);
+                    if(el) {
+                        if(tb.id === tbId) { el.classList.add('border-blue-500', 'bg-blue-50', 'ring-4', 'ring-blue-200', 'scale-105', 'shadow-md'); el.classList.remove('border-transparent', 'bg-white'); } 
+                        else { el.classList.remove('border-blue-500', 'bg-blue-50', 'ring-4', 'ring-blue-200', 'scale-105', 'shadow-md'); el.classList.add('border-transparent', 'bg-white'); }
+                    }
+                });
             }
-            if (usersProfile[name] && usersProfile[name].password !== pwd) {
-                return alert("密碼錯誤，請重試！");
+
+            document.getElementById('step-3-container').classList.remove('hidden');
+            const tbObj = tbs.find(t => t.id === tbId);
+            if(tbObj && tbObj.chapters) {
+                document.getElementById('sub-subject-selector').innerHTML = tbObj.chapters.map((ch, idx) => 
+                    `<button onclick="selectSubSubject('${ch}', ${idx})" id="btn-subitem-${idx}" class="block w-full text-left py-3 px-4 rounded-xl border-2 border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-50 transition-all bg-white shadow-sm text-sm md:text-base hover:scale-[1.02] whitespace-nowrap overflow-hidden text-ellipsis">${formatStep3Text(ch)}</button>`
+                ).join('');
             }
             
-            closeGlobalModal('login-pwd-modal');
-            doCompleteLogin(name);
+            document.getElementById('step-4-container').classList.add('hidden');
+            document.getElementById('step-5-container').classList.add('hidden');
+            const weaknessContainer = document.getElementById('weakness-container');
+            if(weaknessContainer) weaknessContainer.classList.add('hidden');
         };
 
-        window.openProfileEditModal = (name = '', isRegister = false) => {
-            const nameInput = document.getElementById('prof-name');
-            nameInput.value = name;
-            
-            if (isRegister && !name) {
-                nameInput.disabled = false;
-                nameInput.classList.remove('bg-gray-100', 'text-gray-500');
-                nameInput.classList.add('bg-white', 'text-gray-700');
-                nameInput.placeholder = "請輸入真實姓名作為登入帳號";
-            } else {
-                nameInput.disabled = true;
-                nameInput.classList.remove('bg-white', 'text-gray-700');
-                nameInput.classList.add('bg-gray-100', 'text-gray-500');
-                nameInput.placeholder = "";
-            }
-            
-            const isNick = (name === 'Nick');
-            const currentPwd = usersProfile[name]?.password || (isNick ? '2iligloi' : '');
-            document.getElementById('prof-pwd').value = currentPwd;
-            document.getElementById('prof-pwd-confirm').value = currentPwd;
-
-            if (isNick && isRegister) {
-                document.getElementById('prof-pwd').disabled = true;
-                document.getElementById('prof-pwd-confirm').disabled = true;
-                document.getElementById('pwd-hint').innerText = "(管理員預設密碼不可修改)";
-            } else {
-                document.getElementById('prof-pwd').disabled = false;
-                document.getElementById('prof-pwd-confirm').disabled = false;
-                document.getElementById('pwd-hint').innerText = "";
+        window.selectSubSubject = (subItem, indexId = null) => {
+            modalState.subSubject = subItem;
+            if (TEXTBOOKS[modalState.mainSubject] && indexId !== null) {
+                const tbObj = TEXTBOOKS[modalState.mainSubject].find(t => t.id === modalState.textbook);
+                if (tbObj && tbObj.chapters) {
+                    tbObj.chapters.forEach((_, idx) => {
+                        const el = document.getElementById(`btn-subitem-${idx}`);
+                        if(el) {
+                            if(idx === indexId) { el.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]'); el.classList.remove('bg-white', 'text-indigo-700', 'border-indigo-200'); } 
+                            else { el.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]'); el.classList.add('bg-white', 'text-indigo-700', 'border-indigo-200'); }
+                        }
+                    });
+                }
+            } else if (SUB_SUBJECTS[modalState.mainSubject]) {
+                SUB_SUBJECTS[modalState.mainSubject].forEach(s => {
+                    const el = document.getElementById(`btn-subitem-${s}`);
+                    if (el) {
+                        if(s === subItem) { el.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]'); el.classList.remove('bg-white', 'text-indigo-700', 'border-indigo-200'); } 
+                        else { el.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]'); el.classList.add('bg-white', 'text-indigo-700', 'border-indigo-200'); }
+                    }
+                });
             }
 
-            document.getElementById('prof-nickname').value = usersProfile[name]?.nickname || name;
-            document.getElementById('prof-birthday').value = usersProfile[name]?.birthday || '';
-            document.getElementById('prof-target').value = usersProfile[name]?.target || '';
-            document.getElementById('prof-motto').value = usersProfile[name]?.motto || '';
+            document.getElementById('step-4-container').classList.remove('hidden');
+            document.getElementById('step-5-container').classList.remove('hidden');
             
-            let photo = usersProfile[name]?.photo || '';
-            document.getElementById('prof-photo-upload').dataset.base64 = photo;
-            
-            if (photo) {
-                document.getElementById('prof-photo-preview').src = photo;
-                document.getElementById('prof-photo-preview').classList.remove('hidden');
-                document.getElementById('prof-photo-placeholder').classList.add('hidden');
-            } else {
-                document.getElementById('prof-photo-preview').classList.add('hidden');
-                document.getElementById('prof-photo-placeholder').classList.remove('hidden');
-            }
+            checkExistingGrade(subItem);
 
-            document.getElementById('profile-modal-title').innerText = isRegister ? '🚀 歡迎加入！請建立專屬資料卡' : '📝 修改我的資料卡';
-            document.getElementById('profile-modal-close').style.display = isRegister ? 'none' : 'flex'; 
-            
-            openGlobalModal('profile-edit-modal');
+            setTimeout(() => {
+                const step4Container = document.getElementById('step-4-container');
+                if(step4Container) step4Container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
         };
 
-        window.handleProfilePhoto = (e) => {
+        const checkExistingGrade = (subKey) => {
+            let existing = (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][subKey]) ? allGrades[username][modalState.date][subKey] : null;
+
+            if (existing) {
+                window.selectGrade(existing.grade);
+                if (existing.photo) setPhotoPreview(existing.photo);
+                else {
+                     modalState.photoBase64 = '';
+                     document.getElementById('photo-preview-container').classList.add('hidden');
+                     document.getElementById('photo-preview-container').classList.remove('flex');
+                     document.getElementById('photo-placeholder').classList.remove('hidden');
+                     const dropzone = document.getElementById('step-5-dropzone');
+                     if (dropzone) { dropzone.classList.remove('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid'); dropzone.classList.add('border-dashed', 'bg-white'); }
+                }
+                
+                const weaknessCheck = document.getElementById('weakness-check');
+                const weaknessNote = document.getElementById('weakness-note');
+                if (existing.isWeakness) {
+                    weaknessCheck.checked = true;
+                    weaknessNote.value = existing.weaknessNote || '';
+                    weaknessNote.classList.remove('hidden');
+                } else {
+                    weaknessCheck.checked = false;
+                    weaknessNote.value = '';
+                    weaknessNote.classList.add('hidden');
+                }
+                
+                document.getElementById('btn-delete-grade').classList.remove('hidden');
+            } else {
+                modalState.grade = '';
+                modalState.photoBase64 = '';
+                GRADES.forEach(g => { 
+                    const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                    if (el) { el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110'); el.classList.add('bg-white', 'text-rose-700', 'border-rose-200'); }
+                });
+                
+                const weaknessContainer = document.getElementById('weakness-container');
+                if(weaknessContainer) {
+                    weaknessContainer.classList.add('hidden');
+                    document.getElementById('weakness-check').checked = false;
+                    document.getElementById('weakness-note').value = '';
+                    document.getElementById('weakness-note').classList.add('hidden');
+                }
+                
+                document.getElementById('photo-preview-container').classList.add('hidden');
+                document.getElementById('photo-preview-container').classList.remove('flex');
+                document.getElementById('photo-placeholder').classList.remove('hidden');
+                const dropzone = document.getElementById('step-5-dropzone');
+                if (dropzone) { dropzone.classList.remove('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid'); dropzone.classList.add('border-dashed', 'bg-white'); }
+                document.getElementById('btn-delete-grade').classList.add('hidden');
+            }
+        };
+
+        window.selectGrade = (grade) => {
+            modalState.grade = grade;
+            GRADES.forEach(g => {
+                const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                if(el) {
+                    if(g === grade) { el.classList.add('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110'); el.classList.remove('bg-white', 'text-rose-700', 'border-rose-200'); } 
+                    else { el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110'); el.classList.add('bg-white', 'text-rose-700', 'border-rose-200'); }
+                }
+            });
+
+            // 弱點邏輯連動
+            const weaknessContainer = document.getElementById('weakness-container');
+            if (['B++', 'B+', 'B', 'C'].includes(grade)) {
+                weaknessContainer.classList.remove('hidden');
+            } else {
+                weaknessContainer.classList.add('hidden');
+                document.getElementById('weakness-check').checked = false;
+                document.getElementById('weakness-note').classList.add('hidden');
+                document.getElementById('weakness-note').value = '';
+            }
+        };
+
+        window.handlePhotoUpload = (e) => {
             const file = e.target.files[0];
             if(!file) return;
             const reader = new FileReader();
@@ -1334,313 +1251,73 @@
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 400; 
+                    const MAX_WIDTH = 600; 
                     const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
                     canvas.width = img.width * scale;
                     canvas.height = img.height * scale;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
-                    const base64 = canvas.toDataURL('image/jpeg', 0.8);
-                    document.getElementById('prof-photo-upload').dataset.base64 = base64;
-                    document.getElementById('prof-photo-preview').src = base64;
-                    document.getElementById('prof-photo-preview').classList.remove('hidden');
-                    document.getElementById('prof-photo-placeholder').classList.add('hidden');
+                    const base64 = canvas.toDataURL('image/jpeg', 0.6);
+                    setPhotoPreview(base64);
                 };
                 img.src = event.target.result;
             };
             reader.readAsDataURL(file);
         };
 
-        window.saveProfile = async () => {
-            const nameInput = document.getElementById('prof-name');
-            const name = nameInput.value.trim();
-            const pwd = document.getElementById('prof-pwd').value.trim();
-            const pwdConfirm = document.getElementById('prof-pwd-confirm').value.trim();
-            const nickname = document.getElementById('prof-nickname').value.trim();
+        const setPhotoPreview = (base64) => {
+            modalState.photoBase64 = base64;
+            const preview = document.getElementById('photo-preview');
+            preview.src = base64;
+            document.getElementById('photo-placeholder').classList.add('hidden');
+            document.getElementById('photo-preview-container').classList.remove('hidden');
+            document.getElementById('photo-preview-container').classList.add('flex');
             
-            if(!name) return alert("請輸入真實姓名作為登入帳號！");
-            if(!pwd) return alert("請務必設定登入密碼！");
-            if(pwd !== pwdConfirm) return alert("兩次輸入的密碼不一致，請重新檢查！");
-            if(!nickname) return alert("請輸入顯示暱稱！");
+            const dropzone = document.getElementById('step-5-dropzone');
+            if (dropzone) { dropzone.classList.add('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid'); dropzone.classList.remove('border-dashed', 'bg-white'); }
+        };
 
-            const isNewUser = !globalUsers.includes(name);
-
-            if (!nameInput.disabled && !isNewUser) {
-                return alert("此真實姓名已存在，請使用該名稱登入，或輸入另一個姓名！");
-            }
-
-            let assignedColor = usersProfile[name]?.color;
-            if (isNewUser) {
-                const usedColors = Object.values(usersProfile).map(p => p.color).filter(Boolean);
-                const availableColors = USER_COLORS.filter(c => !usedColors.includes(c));
-                if (availableColors.length > 0) {
-                    assignedColor = availableColors[Math.floor(Math.random() * availableColors.length)];
-                } else {
-                    assignedColor = USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)];
-                }
-            }
-
-            let updatedProfiles = JSON.parse(JSON.stringify(usersProfile));
-            updatedProfiles[name] = {
-                password: pwd,
-                nickname: nickname,
-                birthday: document.getElementById('prof-birthday').value,
-                target: document.getElementById('prof-target').value,
-                motto: document.getElementById('prof-motto').value,
-                photo: document.getElementById('prof-photo-upload').dataset.base64 || '',
-                color: assignedColor
-            };
+        window.saveGrade = async () => {
+            if(!modalState.subSubject) return alert("請完整選擇科目與章節細項！");
+            if(!modalState.grade) return alert("請選擇您的成績等級！");
 
             try {
-                if (isNewUser) {
-                    const newUsers = [...globalUsers, name];
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers }, { merge: true });
-                }
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: updatedProfiles }, { merge: true });
+                const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
+                const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
                 
-                closeGlobalModal('profile-edit-modal');
+                const isWeakness = document.getElementById('weakness-check').checked;
+                const weaknessNote = document.getElementById('weakness-note').value.trim();
                 
-                if(username !== name) {
-                    doCompleteLogin(name);
-                } else {
-                    alert("資料卡更新成功！");
-                    window.renderMainContent(); 
-                }
+                await setDoc(gradeRef, {
+                    user: username,
+                    date: modalState.date,
+                    mainSubject: modalState.mainSubject,
+                    subSubject: modalState.subSubject,
+                    grade: modalState.grade,
+                    photo: modalState.photoBase64 || null,
+                    isWeakness: isWeakness,
+                    weaknessNote: isWeakness ? weaknessNote : '',
+                    updatedAt: new Date().toISOString() 
+                });
+                
+                closeGlobalModal('score-modal');
             } catch(e) {
                 console.error(e);
-                alert("儲存失敗！");
+                alert("儲存失敗，請確認圖片是否過大！");
             }
         };
 
-        const doCompleteLogin = (name) => {
-            username = name;
-            viewingUser = name; 
-            isAdmin = (username === 'Nick'); 
-            localStorage.setItem('study_group_user', username);
-            setupListeners();
-            window.renderMain();
-        };
-
-        window.openPublicProfile = (name) => {
-            const prof = usersProfile[name] || {};
-            document.getElementById('vp-nickname').innerText = prof.nickname || name;
-            document.getElementById('vp-name').innerText = `@${name}`;
-            document.getElementById('vp-target').innerText = prof.target || '未設定';
-            document.getElementById('vp-motto').innerText = prof.motto ? `「${prof.motto}」` : '默默努力中...';
-            document.getElementById('vp-birthday').innerText = prof.birthday ? `🎂 ${prof.birthday}` : '';
-
-            const imgEl = document.getElementById('vp-photo');
-            const fallbackEl = document.getElementById('vp-avatar-fallback');
-            
-            if(prof.photo) {
-                imgEl.src = prof.photo;
-                imgEl.style.display = 'block';
-                fallbackEl.style.display = 'none';
-            } else {
-                imgEl.style.display = 'none';
-                fallbackEl.innerText = getAvatarChar(name);
-                fallbackEl.style.display = 'flex';
-                fallbackEl.className = `w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black mb-3 ${getUserColor(name)}`;
-            }
-
-            openGlobalModal('view-profile-modal');
-        };
-
-        // ==========================================
-        //  管理員面板邏輯
-        // ==========================================
-        window.openAdminPanel = () => {
-            renderAdminDates();
-            renderAdminUsers();
-            switchAdminTab('dates');
-            openGlobalModal('admin-panel-modal');
-        };
-
-        window.switchAdminTab = (tab) => {
-            if(tab === 'dates') {
-                document.getElementById('admin-tab-dates').classList.remove('hidden');
-                document.getElementById('admin-tab-users').classList.add('hidden');
-                document.getElementById('tab-btn-dates').classList.replace('text-gray-500', 'text-amber-600');
-                document.getElementById('tab-btn-dates').classList.replace('border-transparent', 'border-amber-500');
-                document.getElementById('tab-btn-dates').classList.replace('hover:bg-gray-100', 'bg-white');
-                document.getElementById('tab-btn-users').classList.replace('text-amber-600', 'text-gray-500');
-                document.getElementById('tab-btn-users').classList.replace('border-amber-500', 'border-transparent');
-                document.getElementById('tab-btn-users').classList.replace('bg-white', 'hover:bg-gray-100');
-            } else {
-                document.getElementById('admin-tab-dates').classList.add('hidden');
-                document.getElementById('admin-tab-users').classList.remove('hidden');
-                document.getElementById('tab-btn-users').classList.replace('text-gray-500', 'text-amber-600');
-                document.getElementById('tab-btn-users').classList.replace('border-transparent', 'border-amber-500');
-                document.getElementById('tab-btn-users').classList.replace('hover:bg-gray-100', 'bg-white');
-                document.getElementById('tab-btn-dates').classList.replace('text-amber-600', 'text-gray-500');
-                document.getElementById('tab-btn-dates').classList.replace('border-amber-500', 'border-transparent');
-                document.getElementById('tab-btn-dates').classList.replace('bg-white', 'hover:bg-gray-100');
-            }
-        };
-
-        window.renderAdminDates = () => {
-            const container = document.getElementById('admin-dates-list');
-            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
-            container.innerHTML = sortedDates.map((item, index) => `
-                <div class="bg-white p-3 rounded-lg border border-gray-200 flex justify-between items-center shadow-sm">
-                    <div>
-                        <div class="font-bold text-gray-800">${item.title}</div>
-                        <div class="text-sm text-gray-500">${item.date}</div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="adminEditDate(${index})" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded font-bold text-sm hover:bg-blue-100">編輯</button>
-                        <button onclick="adminDeleteDate(${index})" class="px-3 py-1.5 bg-red-50 text-red-600 rounded font-bold text-sm hover:bg-red-100">刪除</button>
-                    </div>
-                </div>
-            `).join('');
-        };
-
-        window.adminAddDate = async () => {
-            const title = document.getElementById('admin-new-date-title').value.trim();
-            const date = document.getElementById('admin-new-date-value').value;
-            if(!title || !date) return alert("請填寫完整");
-            const newDates = [...importantDates, { title, date }];
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
-            document.getElementById('admin-new-date-title').value = '';
-            document.getElementById('admin-new-date-value').value = '';
-        };
-
-        window.adminEditDate = (index) => {
-            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
-            const item = sortedDates[index];
-            const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
-            document.getElementById('edit-date-index').value = realIndex;
-            document.getElementById('edit-date-title').value = item.title;
-            document.getElementById('edit-date-value').value = item.date;
-            openGlobalModal('edit-date-modal');
-        };
-
-        window.saveEditedDate = async () => {
-            const idx = parseInt(document.getElementById('edit-date-index').value);
-            const title = document.getElementById('edit-date-title').value.trim();
-            const date = document.getElementById('edit-date-value').value;
-            if(!title || !date) return alert("不可留空");
-            let newDates = [...importantDates];
-            newDates[idx] = { title, date };
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
-            closeGlobalModal('edit-date-modal');
-        };
-
-        window.adminDeleteDate = async (index) => {
-            if(!confirm("確定刪除此日程？")) return;
-            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
-            const item = sortedDates[index];
-            const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
-            
-            const newDates = [...importantDates];
-            newDates.splice(realIndex, 1);
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
-        };
-
-        window.renderAdminUsers = () => {
-            const tbody = document.getElementById('admin-users-list');
-            tbody.innerHTML = globalUsers.map(u => {
-                const prof = usersProfile[u] || {};
-                return `
-                    <tr class="hover:bg-gray-50">
-                        <td class="p-3 font-bold text-gray-800">${u}</td>
-                        <td class="p-3 text-gray-600">${prof.nickname || '-'}</td>
-                        <td class="p-3 font-mono text-gray-500">${prof.password || '<span class="text-red-400">未設定</span>'}</td>
-                        <td class="p-3 text-right space-x-1">
-                            <button onclick="openProfileEditModal('${u}')" class="px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded font-bold text-xs hover:bg-blue-100">修改個資/密碼</button>
-                            ${u === 'Nick' ? '' : `<button onclick="adminDeleteUser('${u}')" class="px-2.5 py-1.5 bg-red-50 text-red-600 rounded font-bold text-xs hover:bg-red-100">移除帳號</button>`}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        };
-
-        window.adminDeleteUser = async (userToDelete) => {
-            if(!confirm(`⚠️ 警告！確定要刪除帳號 [${userToDelete}] 嗎？此操作不可逆！`)) return;
-            
-            let transferTarget = null;
-            const others = globalUsers.filter(u => u !== userToDelete);
-            if (others.length > 0) {
-                const ans = prompt(`是否轉移其成績給其他人？\n(若不轉移請留空按確定，將連帶刪除所有成績)\n可選對象: ${others.join(', ')}`);
-                if (ans && others.includes(ans.trim())) {
-                    transferTarget = ans.trim();
-                } else if (ans) {
-                    return alert("輸入的名稱無效，已取消刪除操作。");
-                }
-            }
+        window.deleteGradeRecord = async () => {
+            if(!modalState.subSubject) return;
+            if(!confirm(`確定要刪除 ${modalState.date} 的 ${modalState.subSubject} 紀錄嗎？`)) return;
 
             try {
-                const newUsers = globalUsers.filter(u => u !== userToDelete);
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers });
+                const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
+                const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
+                await deleteDoc(gradeRef);
 
-                let newProfiles = JSON.parse(JSON.stringify(usersProfile));
-                delete newProfiles[userToDelete];
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: newProfiles });
-
-                if (allGrades[userToDelete]) {
-                    const dates = Object.keys(allGrades[userToDelete]);
-                    for (let i = 0; i < dates.length; i++) {
-                        const dateStr = dates[i];
-                        const subs = Object.keys(allGrades[userToDelete][dateStr]);
-                        for (let j = 0; j < subs.length; j++) {
-                            const sub = subs[j];
-                            const oldDocId = `${userToDelete}_${dateStr}_${sub}`;
-                            const oldRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', oldDocId);
-                            
-                            if (transferTarget) {
-                                const newDocId = `${transferTarget}_${dateStr}_${sub}`;
-                                const newRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', newDocId);
-                                const gradeData = allGrades[userToDelete][dateStr][sub];
-                                await setDoc(newRef, {
-                                    user: transferTarget,
-                                    date: dateStr,
-                                    mainSubject: gradeData.mainSubject || gradeData.subSubject || sub,
-                                    subSubject: sub,
-                                    grade: gradeData.grade,
-                                    photo: gradeData.photo || null,
-                                    isWeakness: gradeData.isWeakness || false,
-                                    weaknessNote: gradeData.weaknessNote || '',
-                                    updatedAt: gradeData.updatedAt || new Date().toISOString()
-                                });
-                            }
-                            await deleteDoc(oldRef);
-                        }
-                    }
-                }
-
-                alert(`已成功移除使用者 ${userToDelete} ${transferTarget ? '，成績已轉移至 ' + transferTarget : '，成績已連帶刪除'}。`);
-                renderAdminUsers();
-            } catch(e) {
-                console.error(e);
-                alert("移除操作失敗！");
-            }
-        };
-
-        // ==========================================
-        //  Firebase 監聽與初始化
-        // ==========================================
-        const setupLoginListener = () => {
-            if (!currentUser) return;
-            const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
-            unsubUsers = onSnapshot(usersRef, (snap) => {
-                if(snap.exists()) {
-                    globalUsers = snap.data().users || [];
-                } else {
-                    globalUsers = [];
-                }
-                if(!username && window.renderLogin) window.renderLogin();
-            }, (err) => console.warn("登入監聽失敗:", err));
-            
-            const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile');
-            unsubProfile = onSnapshot(profileRef, (snap) => {
-                if(snap.exists()) {
-                    usersProfile = snap.data().profiles || {};
-                } else {
-                    usersProfile = {};
-                }
-                if(!username && window.renderLogin) window.renderLogin();
-            });
+                closeGlobalModal('score-modal');
+            } catch(e) { console.error(e); }
         };
 
         const setupListeners = () => {
@@ -1651,7 +1328,8 @@
             if(unsubUsers) unsubUsers();
             unsubUsers = onSnapshot(usersRef, (snap) => {
                 if(snap.exists()) {
-                    globalUsers = snap.data().users || [];
+                    const data = snap.data().users;
+                    globalUsers = Array.isArray(data) ? data : (data ? Object.values(data) : []);
                 } else {
                     globalUsers = [];
                 }
@@ -1664,11 +1342,8 @@
             const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile');
             if(unsubProfile) unsubProfile();
             unsubProfile = onSnapshot(profileRef, (snap) => {
-                if(snap.exists()) {
-                    usersProfile = snap.data().profiles || {};
-                } else {
-                    usersProfile = {};
-                }
+                if(snap.exists()) usersProfile = snap.data().profiles || {};
+                else usersProfile = {};
                 if(username) window.renderMainContent();
             }, errHandler);
 
@@ -1676,7 +1351,8 @@
             if(unsubDates) unsubDates();
             unsubDates = onSnapshot(datesRef, (snap) => {
                 if(snap.exists()) {
-                    importantDates = snap.data().list || [];
+                    const data = snap.data().list;
+                    importantDates = Array.isArray(data) ? data : (data ? Object.values(data) : []);
                 } else {
                     importantDates = [
                         { date: '2026-09-09', title: '第1次模擬考' },
@@ -1692,7 +1368,12 @@
             const chatRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat');
             if(unsubChat) unsubChat();
             unsubChat = onSnapshot(chatRef, (snap) => {
-                if(snap.exists()) chatMessages = snap.data().messages || [];
+                if(snap.exists()) {
+                    const data = snap.data().messages;
+                    chatMessages = Array.isArray(data) ? data : (data ? Object.values(data) : []);
+                } else {
+                    chatMessages = [];
+                }
                 if(username) window.renderChat();
             }, errHandler);
 
@@ -1719,6 +1400,27 @@
                 allGrades = newAllGrades;
                 if(username) window.renderMainContent();
             }, errHandler);
+        };
+
+        const setupLoginListener = () => {
+            if (!currentUser) return;
+            const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
+            unsubUsers = onSnapshot(usersRef, (snap) => {
+                if(snap.exists()) {
+                    const data = snap.data().users;
+                    globalUsers = Array.isArray(data) ? data : (data ? Object.values(data) : []);
+                } else {
+                    globalUsers = [];
+                }
+                if(!username && window.renderLogin) window.renderLogin();
+            }, (err) => console.warn("登入監聽失敗:", err));
+            
+            const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile');
+            unsubProfile = onSnapshot(profileRef, (snap) => {
+                if(snap.exists()) usersProfile = snap.data().profiles || {};
+                else usersProfile = {};
+                if(!username && window.renderLogin) window.renderLogin();
+            });
         };
 
         const initApp = async () => {
