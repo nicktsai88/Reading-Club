@@ -236,23 +236,6 @@
             '公民': { bg: 'bg-fuchsia-50', text: 'text-fuchsia-700', border: 'border-fuchsia-200' },
             'default': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' }
         };
-
-        const SUBJECT_HEX_COLORS = {
-            '國文': '#FF8888',
-            '英文': '#FFBB66',
-            '數學': '#FFFF77',
-            '生物': '#BBFF66',
-            '理化': '#66FFFF',
-            '地科': '#9999FF',
-            '地球科學': '#9999FF', 
-            '歷史': '#FF77FF',
-            '地理': '#FF88C2',
-            '公民': '#66FF66',
-            '自然合科': '#BBFF66', 
-            '社會合科': '#FF88C2', 
-            'default': '#E5E7EB'
-        };
-
         const getSubjectColor = (sub) => SUBJECT_COLORS[sub] || SUBJECT_COLORS['default'];
 
         // 20種不重複且亮眼的顏色池
@@ -360,14 +343,6 @@
                 return usersProfile[u].nickname.charAt(0);
             }
             return u ? u.charAt(0) : '?';
-        };
-
-        const getTextbookName = (mainSub, subSub) => {
-            if (TEXTBOOKS[mainSub]) {
-                const tb = TEXTBOOKS[mainSub].find(t => t.chapters.includes(subSub));
-                if (tb) return tb.name;
-            }
-            return '';
         };
 
         // ==========================================
@@ -1017,15 +992,8 @@
                 });
             });
 
-            // 先依科目名稱排序，再依日期排序 (最新在最上面)
-            weaknesses.sort((a, b) => {
-                const subA = a.mainSubject || a.subSubject;
-                const subB = b.mainSubject || b.subSubject;
-                if (subA !== subB) {
-                    return subA.localeCompare(subB, 'zh-TW');
-                }
-                return new Date(b.date) - new Date(a.date);
-            });
+            // 依日期排序 (最新在最上面)
+            weaknesses.sort((a, b) => new Date(b.date) - new Date(a.date));
 
             const container = document.getElementById('weakness-content');
             
@@ -1041,32 +1009,23 @@
                 let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
                 weaknesses.forEach(w => {
                     const mainSub = w.mainSubject || w.subSubject;
+                    const subColor = getSubjectColor(mainSub);
                     const isMe = targetUser === username;
-                    const hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
-                    const bgStyle = `background-color: ${hexColor}25; border-color: ${hexColor};`;
-                    const badgeBgStyle = `background-color: #ffffff; color: ${hexColor}; border-color: ${hexColor};`;
                     
-                    const tbName = getTextbookName(w.mainSubject, w.subSubject);
-                    const displaySubject = tbName ? `${mainSub}(${tbName})` : mainSub;
-                    const reviews = w.reviews || [false, false, false, false, false];
-                    
-                    // 避免亮黃色字體難以閱讀
-                    const safeTextColor = hexColor === '#FFFF77' ? '#D4D400' : hexColor;
-
                     html += `
-                        <div class="rounded-2xl p-4 shadow-sm border-2 relative flex flex-col hover:shadow-md transition-shadow" style="${bgStyle}">
+                        <div class="bg-white rounded-2xl p-4 shadow-sm border-2 border-red-200 relative flex flex-col hover:shadow-md transition-shadow">
                             <div class="flex justify-between items-start mb-2">
-                                <span class="font-bold text-sm px-2 py-1 rounded-md border" style="${badgeBgStyle}">📌 [${displaySubject}]</span>
-                                <span class="text-xs text-gray-500 font-mono bg-white/60 px-1 rounded">${w.date}</span>
+                                <span class="font-bold text-sm bg-red-100 text-red-700 px-2 py-1 rounded-md border border-red-200">📌 [${mainSub}]</span>
+                                <span class="text-xs text-gray-400 font-mono">${w.date}</span>
                             </div>
                             <h4 class="font-black text-gray-800 text-md md:text-lg mb-2 leading-tight">${w.subSubject}</h4>
                             <div class="flex items-center gap-2 mb-3">
-                                <span class="text-sm font-bold text-gray-600">上次得分：</span>
-                                <span class="font-black text-xl" style="color: ${safeTextColor}">${w.grade}</span>
+                                <span class="text-sm font-bold text-gray-500">上次得分：</span>
+                                <span class="font-black text-xl ${subColor.text}">${w.grade}</span>
                             </div>
                             ${w.weaknessNote ? `
-                                <div class="bg-white/80 p-3 rounded-xl border border-white mb-3 text-sm text-gray-700 font-medium shadow-sm">
-                                    <div class="text-xs font-bold mb-1" style="color: ${safeTextColor}">📝 錯題筆記：</div>
+                                <div class="bg-yellow-50 p-3 rounded-xl border border-yellow-200 mb-3 text-sm text-gray-700 font-medium">
+                                    <div class="text-xs text-yellow-600 font-bold mb-1">📝 錯題筆記：</div>
                                     ${w.weaknessNote.replace(/\n/g, '<br>')}
                                 </div>
                             ` : ''}
@@ -1074,20 +1033,14 @@
                                 <img src="${w.photo}" class="w-full h-32 object-cover rounded-xl border border-gray-200 mb-3 cursor-pointer hover:opacity-90" onclick="window.open('${w.photo}', '_blank')" alt="考卷照片" title="點擊查看大圖">
                             ` : ''}
                             
-                            <div class="mt-auto pt-2 flex flex-col items-center bg-white/60 p-2 rounded-xl border border-white shadow-sm">
-                                <div class="text-sm font-bold text-gray-600 mb-2">複習進度 (目標 5 次)</div>
-                                <div class="flex gap-3 justify-center w-full">
-                                    ${[0,1,2,3,4].map(idx => `
-                                        <div class="flex flex-col items-center">
-                                            <input type="checkbox" class="w-6 h-6 cursor-pointer rounded-md border-2" 
-                                                style="accent-color: ${safeTextColor}; border-color: ${hexColor}"
-                                                ${reviews[idx] ? 'checked' : ''}
-                                                ${!isMe ? 'disabled' : ''}
-                                                onchange="toggleReview('${w.date}', '${w.subSubject}', ${idx}, this.checked)">
-                                            <span class="text-[10px] text-gray-500 mt-1 font-bold">${idx + 1}</span>
-                                        </div>
-                                    `).join('')}
-                                </div>
+                            <div class="mt-auto pt-2 flex justify-end">
+                                ${isMe ? `
+                                    <button onclick="resolveWeakness('${w.date}', '${w.subSubject}')" class="w-full bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-bold py-2 rounded-xl shadow-sm hover:shadow transition-all hover:-translate-y-0.5">
+                                        我已經搞懂了！✅
+                                    </button>
+                                ` : `
+                                    <div class="w-full text-center bg-gray-100 text-gray-500 font-bold py-2 rounded-xl text-sm">這是 ${usersProfile[targetUser]?.nickname || targetUser} 的待解弱點</div>
+                                `}
                             </div>
                         </div>
                     `;
@@ -1099,27 +1052,26 @@
             openGlobalModal('weakness-modal');
         };
 
-        window.toggleReview = async (dateStr, subSubject, idx, isChecked) => {
+        window.resolveWeakness = async (dateStr, subSubject) => {
+            if (!confirm("確定已經完全搞懂這個章節了嗎？消滅弱點是一件很棒的事！🚀")) return;
+            
             try {
                 const docId = `${username}_${dateStr}_${subSubject}`;
                 const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
                 
-                // Fetch local state
-                const currentData = allGrades[username][dateStr][subSubject];
-                let reviews = currentData.reviews || [false, false, false, false, false];
-                reviews[idx] = isChecked;
-
                 await setDoc(gradeRef, {
-                    reviews: reviews,
+                    isWeakness: false,
                     updatedAt: new Date().toISOString()
                 }, { merge: true });
 
-                // Optimistically update local state to avoid flickers
-                if (!allGrades[username][dateStr][subSubject].reviews) {
-                    allGrades[username][dateStr][subSubject].reviews = [false, false, false, false, false];
-                }
-                allGrades[username][dateStr][subSubject].reviews[idx] = isChecked;
-
+                // 稍微延遲讓 Firestore 更新完成，然後重新渲染畫面
+                setTimeout(() => {
+                    openWeaknessModal(); 
+                    // 如果底下的進度追蹤開著，順便幫它重整
+                    if (!document.getElementById('progress-modal').classList.contains('hidden')) {
+                        openProgressModal(); 
+                    }
+                }, 300);
             } catch (e) {
                 console.error(e);
                 alert("更新失敗！請檢查網路連線。");
@@ -2365,11 +2317,6 @@
             const isWeakness = document.getElementById('is-weakness-check').checked;
             const weaknessNote = document.getElementById('weakness-note').value.trim();
 
-            let existingReviews = [false, false, false, false, false];
-            if (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][modalState.subSubject]) {
-                existingReviews = allGrades[username][modalState.date][modalState.subSubject].reviews || existingReviews;
-            }
-
             try {
                 // 將成績獨立儲存為一個 Document，ID 命名規則為: 帳號_日期_科目細項
                 const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
@@ -2384,9 +2331,8 @@
                     photo: modalState.photoBase64 || null,
                     isWeakness: isWeakness,
                     weaknessNote: weaknessNote,
-                    reviews: existingReviews,
                     updatedAt: new Date().toISOString() 
-                }, { merge: true });
+                });
                 
                 closeGlobalModal('score-modal');
             } catch(e) {
@@ -2548,7 +2494,6 @@
                         photo: data.photo || null,
                         isWeakness: data.isWeakness || false,
                         weaknessNote: data.weaknessNote || '',
-                        reviews: data.reviews || [false, false, false, false, false],
                         updatedAt: data.updatedAt || ''
                     };
                 });
