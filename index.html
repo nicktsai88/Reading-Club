@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🎒 邁向5A10+ 國中會考讀書會 ✨</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 載入 Chart.js 與 DataLabels 擴充套件用於繪製雷達圖及數據標籤 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        /* 確保所有瀏覽器都能給予正確的滿版高度 */
         html, body {
             height: 100%; 
             height: -webkit-fill-available;
@@ -46,7 +44,6 @@
         .animate-bounce-slow { animation: bounce 3s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(-5%); } 50% { transform: translateY(0); } }
 
-        /* 垂直跑馬燈效果設定 */
         @keyframes marqueeVertical {
             0% { transform: translateY(100%); }
             100% { transform: translateY(-100%); }
@@ -70,7 +67,6 @@
         .chat-bubble-me { background: #e0f2fe; border-radius: 1rem 1rem 0 1rem; }
         .chat-bubble-other { background: #fce7f3; border-radius: 1rem 1rem 1rem 0; }
         
-        /* Step 3 專屬色彩設定 */
         .text-white .step3-color-unit,
         .text-white .step3-color-book,
         .text-white .step3-color-desc {
@@ -80,7 +76,6 @@
         .step3-color-book { color: #0066FF; }
         .step3-color-desc { color: #696969; }
         
-        /* 會考模擬試題：紅色文字 + 黃色螢光光暈 */
         .step3-color-exam {
             color: #FF0000 !important;
             text-shadow: 
@@ -88,12 +83,16 @@
                 0 0 10px #FFFF00, 
                 0 0 15px #FFFF00 !important;
         }
+
+        /* 計畫表 Drag & Drop 相關樣式 */
+        .plan-dropzone { transition: all 0.2s ease; }
+        .plan-dropzone.drag-over { background-color: #fce7f3 !important; border: 2px dashed #f472b6 !important; box-shadow: inset 0 0 10px rgba(244, 114, 182, 0.3); }
     </style>
 </head>
 <body class="w-full flex flex-col overflow-hidden">
 
     <div id="app" class="w-full h-full flex flex-col overflow-hidden"></div>
-    <div id="modals-container"></div> <!-- 放置所有動態 Modal 的容器 -->
+    <div id="modals-container"></div> 
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -192,33 +191,20 @@
         ];
 
         const TEXTBOOKS = {
-            '國文': [
-                { id: 'c1', name: '麻辣講義', img: 'images/c1.jpg', chapters: CHINESE_CHAPTERS }
-            ],
-            '英文': [
-                { id: 'e1', name: '超會考', img: 'images/e1.jpg', chapters: ENGLISH_CHAPTERS }
-            ],
-            '數學': [
-                { id: 'm1', name: '麻辣講義', img: 'images/m1.jpg', chapters: MATH_CHAPTERS }
-            ],
+            '國文': [{ id: 'c1', name: '麻辣講義', img: 'images/c1.jpg', chapters: CHINESE_CHAPTERS }],
+            '英文': [{ id: 'e1', name: '超會考', img: 'images/e1.jpg', chapters: ENGLISH_CHAPTERS }],
+            '數學': [{ id: 'm1', name: '麻辣講義', img: 'images/m1.jpg', chapters: MATH_CHAPTERS }],
             '生物': [
                 { id: 'b1', name: '麻辣講義', img: 'images/b1.jpg', chapters: BIO_CHAPTERS },
                 { id: 'b2', name: '大滿貫', img: 'images/b2.jpg', chapters: BIO_CHAPTERS_2 }
             ],
-            '理化': [
-                { id: 'p1', name: '大滿貫', img: 'images/p1.jpg', chapters: PHY_CHAPTERS }
-            ],
-            '歷史': [
-                { id: 'h1', name: '大滿貫', img: 'images/h1.jpg', chapters: HISTORY_CHAPTERS }
-            ]
+            '理化': [{ id: 'p1', name: '大滿貫', img: 'images/p1.jpg', chapters: PHY_CHAPTERS }],
+            '歷史': [{ id: 'h1', name: '大滿貫', img: 'images/h1.jpg', chapters: HISTORY_CHAPTERS }]
         };
 
         const GRADES = ['A++', 'A+', 'A', 'B++', 'B+', 'B', 'C'];
         const GRADE_WEIGHT = {'A++': 7, 'A+': 6, 'A': 5, 'B++': 4, 'B+': 3, 'B': 2, 'C': 1};
 
-        // ==========================================
-        //  色彩計畫系統 (科目與使用者頭像)
-        // ==========================================
         const SUBJECT_COLORS = {
             '國文': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
             '英文': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
@@ -238,39 +224,21 @@
         };
         const getSubjectColor = (sub) => SUBJECT_COLORS[sub] || SUBJECT_COLORS['default'];
 
-        // 20種不重複且亮眼的顏色池
         const USER_COLORS = [
-            'bg-[#FF0000] text-white',
-            'bg-[#FF0088] text-white',
-            'bg-[#FF5511] text-white',
-            'bg-[#FF8800] text-white',
-            'bg-[#FFFF00] text-gray-800',
-            'bg-[#BBFF00] text-gray-800',
-            'bg-[#00FF00] text-gray-800',
-            'bg-[#00FFFF] text-gray-800',
-            'bg-[#00BBFF] text-white',
-            'bg-[#0000FF] text-white',
-            'bg-[#7700FF] text-white',
-            'bg-[#FF00FF] text-white',
-            'bg-[#CC00FF] text-white',
-            'bg-[#009FCC] text-white',
-            'bg-[#FF88C2] text-gray-800',
-            'bg-[#990099] text-white',
-            'bg-[#007799] text-white',
-            'bg-[#E38EFF] text-gray-800',
-            'bg-[#FFB7DD] text-gray-800',
-            'bg-[#99FFFF] text-gray-800'
+            'bg-[#FF0000] text-white', 'bg-[#FF0088] text-white', 'bg-[#FF5511] text-white',
+            'bg-[#FF8800] text-white', 'bg-[#FFFF00] text-gray-800', 'bg-[#BBFF00] text-gray-800',
+            'bg-[#00FF00] text-gray-800', 'bg-[#00FFFF] text-gray-800', 'bg-[#00BBFF] text-white',
+            'bg-[#0000FF] text-white', 'bg-[#7700FF] text-white', 'bg-[#FF00FF] text-white',
+            'bg-[#CC00FF] text-white', 'bg-[#009FCC] text-white', 'bg-[#FF88C2] text-gray-800',
+            'bg-[#990099] text-white', 'bg-[#007799] text-white', 'bg-[#E38EFF] text-gray-800',
+            'bg-[#FFB7DD] text-gray-800', 'bg-[#99FFFF] text-gray-800'
         ];
         
         const getUserColor = (name) => {
             if(!name) return USER_COLORS[0];
-            if(usersProfile[name] && usersProfile[name].color) {
-                return usersProfile[name].color;
-            }
+            if(usersProfile[name] && usersProfile[name].color) return usersProfile[name].color;
             let hash = 0;
-            for (let i = 0; i < name.length; i++) {
-                hash = name.charCodeAt(i) + ((hash << 5) - hash);
-            }
+            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
             return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
         };
 
@@ -284,16 +252,13 @@
         let globalUsers = [];
         let importantDates = [];
         let allGrades = {}; 
-        let allPlans = {}; // 所有使用者的計畫表資料
+        let allPlans = {}; // 新增 Plans 狀態
         let chatMessages = [];
         let usersProfile = {}; 
         
         let modalState = { date: '', mainSubject: '', textbook: '', subSubject: '', grade: '', photoBase64: '' };
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth(); 
-        
-        let planYear = new Date().getFullYear();
-        let planMonth = new Date().getMonth();
         
         let unsubUsers, unsubDates, unsubGrades, unsubPlans, unsubChat, unsubProfile;
         
@@ -304,12 +269,10 @@
         // ==========================================
         const formatStep3Text = (text) => {
             let formatted = text;
-            
             if (formatted.includes('會考模擬試題')) {
                 formatted = formatted.replace(/(會考模擬試題\s*\d+~\d+\s*冊)/g, '<span class="step3-color-exam">$1</span>');
                 return formatted;
             }
-            
             formatted = formatted.replace(/(單元\d+)/g, '<span class="step3-color-unit">$1</span>');
             formatted = formatted.replace(/(第[一二三四五六七八九十\d]+冊)/g, '<span class="step3-color-book">$1</span>');
             formatted = formatted.replace(/(\(.*?\)|（.*?）)/g, '<span class="step3-color-desc">$1</span>');
@@ -332,19 +295,13 @@
 
         const getStoredConfig = () => {
             const stored = localStorage.getItem('study_group_firebase_config');
-            if (stored) {
-                try { return JSON.parse(stored); } catch(e) {}
-            }
-            if (typeof __firebase_config !== 'undefined') {
-                try { return JSON.parse(__firebase_config); } catch(e) {}
-            }
+            if (stored) { try { return JSON.parse(stored); } catch(e) {} }
+            if (typeof __firebase_config !== 'undefined') { try { return JSON.parse(__firebase_config); } catch(e) {} }
             return null;
         };
 
         const getAvatarChar = (u) => {
-            if(usersProfile[u] && usersProfile[u].nickname) {
-                return usersProfile[u].nickname.charAt(0);
-            }
+            if(usersProfile[u] && usersProfile[u].nickname) return usersProfile[u].nickname.charAt(0);
             return u ? u.charAt(0) : '?';
         };
 
@@ -434,20 +391,20 @@
         window.renderMain = () => {
             const container = document.getElementById('view-container');
             container.innerHTML = `
-                <div class="bg-white/80 backdrop-blur-md border-b-2 border-pink-200 p-3 flex justify-between items-center shadow-sm shrink-0 z-20 relative">
-                    <div class="flex items-center gap-4 pl-2">
-                        <div class="flex gap-2">
-                            <img src="school1.jpg" alt="雄中" class="w-full h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-10 bg-rose-50" onerror="this.style.display='none'">
-                            <img src="school2.jpg" alt="雄女" class="w-full h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-0 bg-rose-50" onerror="this.style.display='none'">
+                <div class="bg-white/80 backdrop-blur-md border-b-2 border-pink-200 p-3 flex justify-between items-center shadow-sm shrink-0 z-20 relative overflow-x-auto">
+                    <div class="flex items-center gap-4 pl-2 min-w-max">
+                        <div class="flex gap-2 shrink-0">
+                            <img src="school1.jpg" alt="雄中" class="w-12 h-12 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-10 bg-rose-50" onerror="this.style.display='none'">
+                            <img src="school2.jpg" alt="雄女" class="w-12 h-12 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-0 bg-rose-50" onerror="this.style.display='none'">
                         </div>
-                        <h1 class="text-2xl md:text-3xl font-black text-rose-500 tracking-wider hidden sm:block">邁向5A10+ 讀書會 🏆</h1>
-                        <h1 class="text-xl font-black text-rose-500 tracking-wider block sm:hidden">邁向5A10+</h1>
+                        <h1 class="text-2xl md:text-3xl font-black text-rose-500 tracking-wider hidden sm:block whitespace-nowrap">邁向5A10+ 讀書會 🏆</h1>
+                        <h1 class="text-xl font-black text-rose-500 tracking-wider block sm:hidden whitespace-nowrap">邁向5A10+</h1>
                     </div>
-                    <div class="flex items-center gap-2 md:gap-3 pr-2">
-                        ${isAdmin ? `<button onclick="openAdminPanel()" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-transform text-sm shrink-0 hidden lg:block">👑 管理員面板</button>` : ''}
+                    <div class="flex items-center gap-2 md:gap-3 pr-2 min-w-max ml-4">
+                        ${isAdmin ? `<button onclick="openAdminPanel()" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-transform text-sm shrink-0 hidden lg:block">👑 管理員</button>` : ''}
                         
-                        <button onclick="openPlanModal()" class="font-bold text-blue-700 bg-blue-50 px-2 md:px-3 py-1.5 rounded-lg border border-blue-200 shadow-sm hover:bg-blue-100 transition-colors text-sm flex items-center gap-1 shrink-0">
-                            📅 <span class="hidden md:inline">我的計畫表</span>
+                        <button onclick="openPlanModal()" class="font-bold text-pink-700 bg-pink-50 px-2 md:px-3 py-1.5 rounded-lg border border-pink-300 shadow-sm hover:bg-pink-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            🗓️ <span class="hidden md:inline">我的計畫表</span>
                         </button>
 
                         <button onclick="openProgressModal()" class="font-bold text-orange-700 bg-orange-50 px-2 md:px-3 py-1.5 rounded-lg border border-orange-200 shadow-sm hover:bg-orange-100 transition-colors text-sm flex items-center gap-1 shrink-0">
@@ -518,43 +475,44 @@
         };
 
         // 全域 Modals 渲染 (放置於 #modals-container)
-        // [修復]: 移除了 `${getUserColor(name)}` 等會引發 ReferenceError 的未定義變數
         const renderGlobalModals = () => {
             const container = document.getElementById('modals-container');
             container.innerHTML = `
-                <!-- 我的計畫表 Modal (新增) -->
-                <div id="plan-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[75] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('plan-modal')">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-6xl overflow-hidden border-4 border-indigo-200 transform scale-95 transition-transform duration-200 flex flex-col h-[90vh]">
-                        <div class="bg-gradient-to-r from-indigo-400 to-blue-500 p-4 flex justify-between items-center text-white shrink-0">
-                            <h2 class="text-xl font-bold flex items-center gap-2">🗓️ 我的計畫表 (拖曳安排)</h2>
+                <!-- 我的計畫表 Modal (Drag & Drop) -->
+                <div id="plan-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('plan-modal')">
+                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl overflow-hidden border-4 border-pink-300 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh; height: 85vh;">
+                        <div class="bg-gradient-to-r from-pink-400 to-rose-500 p-4 flex justify-between items-center text-white shrink-0 shadow-sm z-20">
+                            <h2 class="text-xl font-bold flex items-center gap-2">🗓️ 我的計畫表 <span class="text-sm font-normal bg-black/20 px-2 py-0.5 rounded-full ml-2">Drag & Drop 拖曳安排</span></h2>
                             <button onclick="closeGlobalModal('plan-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
-                        <div class="flex flex-col md:flex-row flex-1 overflow-hidden">
-                            <!-- 左側：選擇科目與單元 -->
-                            <div class="w-full md:w-1/3 border-b-2 md:border-b-0 md:border-r-2 border-indigo-100 flex flex-col bg-indigo-50/30">
-                                <div class="p-3 border-b border-indigo-100 shrink-0">
-                                    <h3 class="font-bold text-indigo-800 mb-2">1. 選擇科目</h3>
-                                    <select id="plan-subject-select" onchange="changePlanSubject(this.value)" class="w-full p-2 rounded-xl border border-indigo-200 font-bold text-indigo-700 bg-white">
-                                        <option value="">請選擇科目</option>
-                                    </select>
-                                    <select id="plan-tb-select" onchange="changePlanTextbook(this.value)" class="w-full p-2 rounded-xl border border-indigo-200 mt-2 hidden font-bold text-indigo-700 bg-white">
+                        
+                        <div class="flex-1 flex flex-col md:flex-row overflow-hidden bg-pink-50/30">
+                            <!-- 左側：科目與章節選擇 -->
+                            <div class="w-full md:w-1/3 border-b-2 md:border-b-0 md:border-r-2 border-pink-200 flex flex-col h-1/2 md:h-full shrink-0 bg-white z-10 shadow-[2px_0_10px_rgba(0,0,0,0.05)]">
+                                <div class="p-4 border-b border-pink-100 shrink-0 bg-white">
+                                    <h3 class="font-black text-pink-800 mb-2 flex items-center gap-1"><span>1️⃣</span> 選擇科目</h3>
+                                    <select id="plan-subject-select" onchange="renderPlanChapters(this.value)" class="w-full p-2.5 border-2 border-pink-200 rounded-xl text-sm font-bold text-pink-700 bg-pink-50 outline-none focus:border-pink-400 transition-colors shadow-sm cursor-pointer">
+                                        <option value="">-- 請選擇想讀的科目 --</option>
+                                        ${SUBJECTS.map(s => `<option value="${s}">${s}</option>`).join('')}
                                     </select>
                                 </div>
-                                <div class="flex-1 overflow-y-auto p-3 custom-scrollbar" id="plan-draggable-items">
-                                    <div class="text-gray-400 text-sm text-center mt-10 font-bold">請先選擇科目</div>
+                                <div class="flex-1 overflow-y-auto custom-scrollbar p-3 bg-gray-50/50" id="plan-chapters-container">
+                                    <div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-80">
+                                        <div class="text-4xl mb-2">👆</div>
+                                        <div class="text-sm font-bold text-center">請先選擇上方科目<br>接著將章節拖曳至右側日期</div>
+                                    </div>
                                 </div>
                             </div>
-                            <!-- 右側：橫向日曆 -->
-                            <div class="w-full md:w-2/3 flex flex-col bg-white">
-                                <div class="p-3 border-b border-indigo-100 flex justify-between items-center shrink-0 bg-white shadow-sm">
-                                    <button onclick="changePlanMonth(-1)" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 transition-colors text-indigo-700 rounded-lg font-bold border border-indigo-200 text-sm">◀ 上個月</button>
-                                    <h3 class="font-black text-lg text-indigo-800" id="plan-month-title"></h3>
-                                    <button onclick="changePlanMonth(1)" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 transition-colors text-indigo-700 rounded-lg font-bold border border-indigo-200 text-sm">下個月 ▶</button>
+                            
+                            <!-- 右側：橫向日曆與 Dropzone -->
+                            <div class="flex-1 flex flex-col min-w-0 h-1/2 md:h-full bg-rose-50/20">
+                                <div class="p-3 border-b border-pink-100 flex justify-between items-center bg-white shrink-0 shadow-sm z-10">
+                                    <button onclick="changeMonth(-1); renderPlanHorizontalCalendar();" class="px-3 py-1.5 bg-pink-50 text-pink-600 border border-pink-200 hover:bg-pink-100 rounded-lg font-bold text-sm shadow-sm transition-colors">◀ 上個月</button>
+                                    <h3 class="font-black text-rose-600 text-lg" id="plan-month-title"></h3>
+                                    <button onclick="changeMonth(1); renderPlanHorizontalCalendar();" class="px-3 py-1.5 bg-pink-50 text-pink-600 border border-pink-200 hover:bg-pink-100 rounded-lg font-bold text-sm shadow-sm transition-colors">下個月 ▶</button>
                                 </div>
-                                <div class="flex-1 overflow-x-auto overflow-y-auto p-4 custom-scrollbar bg-gray-50/50" id="plan-calendar-scroll">
-                                    <div class="flex gap-4 min-h-full" id="plan-calendar-container">
-                                        <!-- Days columns generated by JS -->
-                                    </div>
+                                <div class="flex-1 overflow-x-auto custom-scrollbar p-4" id="plan-calendar-container">
+                                    <!-- Horizontal Calendar Grid generated by JS -->
                                 </div>
                             </div>
                         </div>
@@ -638,36 +596,26 @@
                             <button onclick="closeGlobalModal('score-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
                         <div class="p-6 space-y-6 bg-teal-50/30 overflow-y-auto flex-1 custom-scrollbar">
-                            
-                            <!-- Step 1 -->
                             <div id="step-1-container">
                                 <h3 class="text-teal-800 font-bold mb-3 border-l-4 border-teal-400 pl-2 text-lg shadow-sm bg-white/50 py-1">Step 1: 選擇科目</h3>
                                 <div class="grid grid-cols-3 sm:grid-cols-5 gap-2" id="subject-selector">
                                     ${SUBJECTS.map(s => `<button onclick="selectSubject('${s}')" id="btn-sub-${s}" class="py-2.5 rounded-xl border-2 border-teal-200 text-teal-700 font-bold hover:bg-teal-50 transition-all bg-white shadow-sm hover:scale-[1.02]">${s}</button>`).join('')}
                                 </div>
                             </div>
-                            
-                            <!-- Step 2 -->
                             <div id="step-2-container" class="hidden">
                                 <h3 class="text-blue-800 font-bold mb-3 border-l-4 border-blue-400 pl-2 text-lg shadow-sm bg-white/50 py-1">Step 2: 選擇教科書</h3>
                                 <div class="flex flex-wrap gap-4" id="textbook-selector"></div>
                             </div>
-
-                            <!-- Step 3 -->
                             <div id="step-3-container" class="hidden">
                                 <h3 class="text-indigo-800 font-bold mb-3 border-l-4 border-indigo-400 pl-2 text-lg shadow-sm bg-white/50 py-1">Step 3: 選擇章節 / 細項</h3>
                                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-3" id="sub-subject-selector"></div>
                             </div>
-
-                            <!-- Step 4 -->
                             <div id="step-4-container" class="hidden">
                                 <h3 class="text-rose-800 font-bold mb-3 border-l-4 border-rose-400 pl-2 text-lg shadow-sm bg-white/50 py-1">Step 4: 選擇成績等級</h3>
                                 <div class="grid grid-cols-4 sm:grid-cols-7 gap-2" id="grade-selector">
                                     ${GRADES.map(g => `<button onclick="selectGrade('${g}')" id="btn-grade-${g.replace('+','p').replace('+','p')}" class="py-2.5 rounded-xl border-2 border-rose-200 text-rose-700 font-bold hover:bg-rose-50 transition-all bg-white shadow-sm hover:scale-[1.02]">${g}</button>`).join('')}
                                 </div>
                             </div>
-
-                            <!-- Step 5 -->
                             <div id="step-5-container" class="hidden">
                                 <h3 class="text-purple-800 font-bold mb-3 border-l-4 border-purple-400 pl-2 text-lg shadow-sm bg-white/50 py-1">Step 5: 拍下考卷/成績單 (選填)</h3>
                                 <div id="step-5-dropzone" class="border-2 border-dashed border-purple-300 rounded-2xl p-6 text-center bg-white hover:bg-purple-50 transition-all cursor-pointer relative shadow-inner" onclick="document.getElementById('photo-upload').click()">
@@ -726,16 +674,12 @@
                 <div id="view-profile-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[80] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('view-profile-modal')">
                     <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform duration-200 flex flex-col relative border-4 border-teal-100">
                         <button onclick="closeGlobalModal('view-profile-modal')" class="absolute top-4 right-4 bg-black/20 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold z-10 hover:bg-black/40">✕</button>
-                        
                         <div class="h-32 bg-gradient-to-r from-teal-400 to-emerald-400 w-full relative"></div>
-                        
                         <div class="px-6 pb-6 pt-0 relative flex flex-col items-center mt-[-3rem]">
                             <img id="vp-photo" src="" class="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover bg-teal-50 mb-3" style="display:none;">
-                            <div id="vp-avatar-fallback" class="w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black mb-3"></div>
-                            
+                            <div id="vp-avatar-fallback" class="w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black mb-3 ${getUserColor(name)}">${getAvatarChar(name)}</div>
                             <h2 class="text-2xl font-black text-gray-800" id="vp-nickname"></h2>
                             <p class="text-sm text-gray-400 font-bold mb-4" id="vp-name"></p>
-                            
                             <div class="w-full space-y-3 text-sm">
                                 <div class="bg-rose-50 rounded-xl p-3 border border-rose-100 text-center">
                                     <div class="text-xs text-rose-400 font-bold mb-1">🎯 目標志願</div>
@@ -769,14 +713,11 @@
                             <h2 class="text-2xl font-black">👑 管理員面板</h2>
                             <button onclick="closeGlobalModal('admin-panel-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
-                        
                         <div class="flex border-b border-gray-200 shrink-0 bg-gray-50">
                             <button onclick="switchAdminTab('dates')" id="tab-btn-dates" class="flex-1 py-3 font-black text-amber-600 border-b-4 border-amber-500 bg-white">📅 考試日程</button>
                             <button onclick="switchAdminTab('users')" id="tab-btn-users" class="flex-1 py-3 font-bold text-gray-500 border-b-4 border-transparent hover:bg-gray-100">👤 參賽者管理</button>
                         </div>
-                        
                         <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/50 relative">
-                            <!-- 考試日程分頁 -->
                             <div id="admin-tab-dates" class="space-y-4 block">
                                 <div class="bg-white p-4 rounded-xl border border-amber-200 shadow-sm flex flex-col md:flex-row gap-2">
                                     <input type="text" id="admin-new-date-title" placeholder="新增考試名稱" class="flex-1 px-3 py-2 rounded-lg border border-gray-300">
@@ -785,8 +726,6 @@
                                 </div>
                                 <div id="admin-dates-list" class="space-y-2"></div>
                             </div>
-                            
-                            <!-- 參賽者管理分頁 -->
                             <div id="admin-tab-users" class="hidden">
                                 <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
                                     <table class="w-full text-left text-sm whitespace-nowrap">
@@ -830,9 +769,7 @@
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
                 const inner = modal.firstElementChild;
-                if(inner.classList.contains('scale-95')) {
-                    inner.classList.remove('scale-95');
-                }
+                if(inner.classList.contains('scale-95')) inner.classList.remove('scale-95');
             }, 10);
         };
 
@@ -841,9 +778,7 @@
             if(!modal) return;
             modal.classList.add('opacity-0');
             const inner = modal.firstElementChild;
-            if(inner && inner.classList.contains('scale-95') === false) {
-                inner.classList.add('scale-95');
-            }
+            if(inner && inner.classList.contains('scale-95') === false) inner.classList.add('scale-95');
             setTimeout(() => {
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
@@ -851,7 +786,154 @@
         };
 
         // ==========================================
-        //  進度追蹤 Modal 邏輯 (包含🎯 達標標記)
+        //  🗓️ 我的計畫表 (Drag & Drop) 邏輯
+        // ==========================================
+        window.openPlanModal = () => {
+            document.getElementById('plan-subject-select').value = '';
+            document.getElementById('plan-chapters-container').innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-80">
+                    <div class="text-4xl mb-2">👆</div>
+                    <div class="text-sm font-bold text-center">請先選擇上方科目<br>接著將章節拖曳至右側日期</div>
+                </div>
+            `;
+            renderPlanHorizontalCalendar();
+            openGlobalModal('plan-modal');
+        };
+
+        window.renderPlanChapters = (sub) => {
+            const container = document.getElementById('plan-chapters-container');
+            if(!sub) { 
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-80">
+                        <div class="text-4xl mb-2">👆</div>
+                        <div class="text-sm font-bold text-center">請先選擇上方科目<br>接著將章節拖曳至右側日期</div>
+                    </div>
+                `; 
+                return; 
+            }
+            
+            let items = [];
+            if (TEXTBOOKS[sub]) {
+                TEXTBOOKS[sub].forEach(tb => tb.chapters.forEach(ch => items.push({ mainSub: sub, subSub: ch, label: ch })));
+            } else if (SUB_SUBJECTS[sub]) {
+                SUB_SUBJECTS[sub].forEach(s => items.push({ mainSub: sub, subSub: s, label: s }));
+            } else {
+                items.push({ mainSub: sub, subSub: sub, label: sub });
+            }
+            
+            const subColor = getSubjectColor(sub);
+            container.innerHTML = items.map((item, idx) => `
+                <div draggable="true" 
+                     ondragstart="planDragStart(event, '${item.mainSub}', '${item.subSub}')" 
+                     ondragend="planDragEnd(event)"
+                     class="mb-3 p-3 border-2 ${subColor.border} bg-white rounded-xl shadow-sm cursor-grab hover:shadow-md hover:-translate-y-0.5 transition-all text-xs font-bold text-gray-700 active:cursor-grabbing border-l-4">
+                    <div class="${subColor.text} mb-1 border-b border-gray-100 pb-1 flex justify-between items-center">
+                        <span>📌 ${item.mainSub}</span>
+                        <span class="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded-md text-gray-500">拖曳我 ✋</span>
+                    </div>
+                    <div class="leading-relaxed whitespace-pre-line mt-1.5">${formatStep3Text(item.label)}</div>
+                </div>
+            `).join('');
+        };
+
+        window.renderPlanHorizontalCalendar = () => {
+            document.getElementById('plan-month-title').innerText = `${currentYear}年 ${currentMonth+1}月`;
+            const container = document.getElementById('plan-calendar-container');
+            if(!container) return;
+            
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            let html = '<div class="flex gap-4 h-full pb-2">';
+            const todayStr = formatDate(new Date());
+            
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const dateObj = new Date(currentYear, currentMonth, d);
+                const dayOfWeek = ['日','一','二','三','四','五','六'][dateObj.getDay()];
+                const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+                const isToday = dateStr === todayStr;
+                
+                const plannedItems = (allPlans[username] && allPlans[username][dateStr]) ? Object.values(allPlans[username][dateStr]) : [];
+                
+                html += `
+                    <div class="flex flex-col min-w-[150px] w-[150px] border-2 ${isToday ? 'border-rose-400' : 'border-pink-200'} bg-white rounded-2xl shadow-sm shrink-0 overflow-hidden relative">
+                        ${isToday ? '<div class="absolute top-0 right-0 bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold">今天</div>' : ''}
+                        <div class="p-2 text-center border-b border-pink-100 ${isToday ? 'bg-rose-50 text-rose-600' : (isWeekend ? 'bg-pink-100 text-pink-700' : 'bg-gray-50 text-gray-700')}">
+                            <div class="text-xs font-bold">${dayOfWeek}</div>
+                            <div class="text-2xl font-black">${d}</div>
+                        </div>
+                        <div class="flex-1 p-2 plan-dropzone custom-scrollbar overflow-y-auto bg-gray-50/50" 
+                             ondragover="planDragOver(event)" 
+                             ondragleave="planDragLeave(event)" 
+                             ondrop="planDrop(event, '${dateStr}')">
+                            ${plannedItems.length === 0 ? '<div class="text-[10px] text-gray-300 text-center mt-4 font-bold border-2 border-dashed border-gray-200 rounded-lg p-2">拖曳章節至此</div>' : ''}
+                            ${plannedItems.map(item => {
+                                const subColor = getSubjectColor(item.mainSubject);
+                                // Check if achieved
+                                const achieved = allGrades[username] && allGrades[username][dateStr] && allGrades[username][dateStr][item.subSubject];
+                                return `
+                                    <div class="mb-2 p-2 border-2 ${achieved ? 'border-solid border-green-400 bg-green-50' : `border-dashed ${subColor.border} bg-white`} rounded-xl text-[10px] relative group shadow-sm transition-all hover:scale-[1.02]">
+                                        <button onclick="deletePlan('${dateStr}', '${item.subSubject}')" class="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center font-bold text-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-sm">✕</button>
+                                        <div class="font-bold ${achieved ? 'text-green-700' : subColor.text} mb-0.5 flex justify-between items-center">
+                                            <span>📌 ${item.mainSubject}</span>
+                                            ${achieved ? '<span class="text-green-600" title="達標！">🎯</span>' : ''}
+                                        </div>
+                                        <div class="text-gray-600 leading-tight">${formatStep3Text(item.subSubject)}</div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        };
+
+        window.planDragStart = (e, mainSub, subSub) => {
+            e.dataTransfer.setData('application/json', JSON.stringify({ mainSub, subSub }));
+            e.target.classList.add('opacity-50', 'scale-95');
+        };
+        window.planDragEnd = (e) => {
+            e.target.classList.remove('opacity-50', 'scale-95');
+        };
+        window.planDragOver = (e) => {
+            e.preventDefault();
+            const dropzone = e.currentTarget;
+            if(!dropzone.classList.contains('drag-over')) dropzone.classList.add('drag-over');
+        };
+        window.planDragLeave = (e) => {
+            e.currentTarget.classList.remove('drag-over');
+        };
+        window.planDrop = async (e, dateStr) => {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            const dataStr = e.dataTransfer.getData('application/json');
+            if(dataStr) {
+                const data = JSON.parse(dataStr);
+                await savePlan(dateStr, data.mainSub, data.subSub);
+            }
+        };
+
+        window.savePlan = async (dateStr, mainSub, subSub) => {
+            try {
+                const docId = `${username}_${dateStr}_${subSub}`;
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'Plans', docId), {
+                    user: username, date: dateStr, mainSubject: mainSub, subSubject: subSub, createdAt: new Date().toISOString()
+                });
+            } catch(e) { console.error(e); alert("排定計畫失敗"); }
+        };
+
+        window.deletePlan = async (dateStr, subSub) => {
+            if(!confirm('確定要移除此計畫嗎？')) return;
+            try {
+                const docId = `${username}_${dateStr}_${subSub}`;
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'Plans', docId));
+            } catch(e) { console.error(e); }
+        };
+
+
+        // ==========================================
+        //  進度追蹤 Modal 邏輯
         // ==========================================
         window.openProgressModal = () => {
             const targetUser = viewingUser === 'ALL' ? username : viewingUser;
@@ -864,63 +946,54 @@
             const getBestGrade = (subKey) => {
                 let bestObj = null;
                 let bestW = 0;
+                let isAchieved = false;
 
+                // Check all grades for this chapter
                 Object.entries(uGrades).forEach(([dateStr, dayData]) => {
                     if(dayData[subKey]) {
                         const g = dayData[subKey].grade;
                         const w = GRADE_WEIGHT[g] || 0;
                         if(w > bestW) {
                             bestW = w;
-                            // 確認是否曾為當天的計畫任務 (🎯)
-                            const isPlanned = !!(allPlans[targetUser] && allPlans[targetUser][dateStr] && allPlans[targetUser][dateStr][subKey]);
-                            bestObj = { grade: g, date: dateStr, isPlanned: isPlanned };
+                            bestObj = { grade: g, date: dateStr };
+                        }
+                        // 如果有任何一天的成績是符合當天計畫的，就算達標
+                        if(allPlans[targetUser] && allPlans[targetUser][dateStr] && allPlans[targetUser][dateStr][subKey]) {
+                            isAchieved = true;
                         }
                     }
                 });
-                return bestObj;
+                return { bestObj, isAchieved };
             };
 
-            const renderGradeBadge = (bestObj) => {
+            const renderGradeBadge = (bestObj, isAchieved) => {
                 if(!bestObj) return `<div class="bg-gray-200 text-gray-400 text-[10px] sm:text-xs py-1.5 px-1 rounded font-bold mx-auto w-full text-center">無紀錄</div>`;
                 const grade = bestObj.grade;
                 const isA = grade.includes('A');
                 const borderColor = isA ? 'border-red-500 text-red-500' : 'border-orange-500 text-orange-500';
                 const bgColor = isA ? 'bg-red-50' : 'bg-orange-50';
-                const planBadge = bestObj.isPlanned ? '<span class="ml-1" title="達成計畫">🎯</span>' : '';
-                return `<div class="${bgColor} ${borderColor} border text-[11px] sm:text-sm py-1.5 px-1 rounded-sm font-black mx-auto w-full text-center shadow-sm flex items-center justify-center">${grade}${planBadge}</div>`;
+                const targetHtml = isAchieved ? '<div class="absolute -top-2 -right-2 text-[14px] drop-shadow-md z-10 bg-white rounded-full leading-none" title="計畫達標！">🎯</div>' : '';
+                return `<div class="relative ${bgColor} ${borderColor} border text-[11px] sm:text-sm py-1.5 px-1 rounded-sm font-black mx-auto w-full text-center shadow-sm">${targetHtml}${grade}</div>`;
             };
 
             const buildHorizontalTable = (title, imgSrc, chapters, subjectKeyFn) => {
                 const formatChapterHtml = (ch) => {
-                    if (ch.includes('會考模擬試題')) {
-                        return `<div class="step3-color-exam font-black text-center w-full text-[11px] sm:text-xs leading-tight whitespace-pre-line flex items-center justify-center h-full">${ch.replace(' ', '\n')}</div>`;
-                    }
-                    
-                    let line1 = '';
-                    let line2 = '';
-                    let line3 = '';
-                    
+                    if (ch.includes('會考模擬試題')) return `<div class="step3-color-exam font-black text-center w-full text-[11px] sm:text-xs leading-tight whitespace-pre-line flex items-center justify-center h-full">${ch.replace(' ', '\n')}</div>`;
+                    let line1 = '', line2 = '', line3 = '';
                     const parts = ch.split(' ');
                     if (parts.length >= 2 && parts[0].startsWith('單元')) {
-                        line1 = parts[0];
-                        line2 = parts[1];
-                        line3 = parts.slice(2).join(' ');
+                        line1 = parts[0]; line2 = parts[1]; line3 = parts.slice(2).join(' ');
                     } else if (parts.length >= 2 && parts[0].includes('會考模擬試題')) {
-                        line1 = parts[0];
-                        line2 = parts.slice(1).join(' ');
+                        line1 = parts[0]; line2 = parts.slice(1).join(' ');
                     }
-                    
                     if (line1) {
-                        let html = '';
-                        html += `<div class="text-[#DC143C] text-[12px] sm:text-[14px] font-black mb-0.5 leading-tight w-full text-center">${line1}</div>`;
-                        html += `<div class="text-[#0066FF] text-[11px] sm:text-xs font-black mb-0.5 leading-tight w-full text-center">${line2}</div>`;
-                        if (line3) {
-                            html += `<div class="text-[10px] sm:text-[11px] text-gray-700 font-bold leading-tight whitespace-pre-line w-full text-center">${line3}</div>`;
-                        }
-                        return html;
-                    } else {
-                        return `<div class="text-[10px] sm:text-xs text-gray-700 font-bold leading-tight whitespace-pre-line w-full text-center flex items-center justify-center h-full">${ch}</div>`;
+                        return `
+                            <div class="text-[#DC143C] text-[12px] sm:text-[14px] font-black mb-0.5 leading-tight w-full text-center">${line1}</div>
+                            <div class="text-[#0066FF] text-[11px] sm:text-xs font-black mb-0.5 leading-tight w-full text-center">${line2}</div>
+                            ${line3 ? `<div class="text-[10px] sm:text-[11px] text-gray-700 font-bold leading-tight whitespace-pre-line w-full text-center">${line3}</div>` : ''}
+                        `;
                     }
+                    return `<div class="text-[10px] sm:text-xs text-gray-700 font-bold leading-tight whitespace-pre-line w-full text-center flex items-center justify-center h-full">${ch}</div>`;
                 };
 
                 let tableHtml = `
@@ -934,7 +1007,7 @@
                 `;
                 chapters.forEach(ch => {
                     const queryKey = subjectKeyFn(ch);
-                    const bestObj = getBestGrade(queryKey);
+                    const { bestObj, isAchieved } = getBestGrade(queryKey);
                     const cursorClass = bestObj ? 'cursor-pointer hover:bg-gray-100 hover:shadow-inner' : 'hover:bg-gray-50';
                     const clickAttr = bestObj ? `onclick="viewOthersScore(event, '${targetUser}', '${bestObj.date}')"` : '';
                     
@@ -944,16 +1017,12 @@
                                     ${formatChapterHtml(ch)}
                                 </div>
                                 <div class="w-full mt-auto pb-1 px-1">
-                                    ${renderGradeBadge(bestObj)}
+                                    ${renderGradeBadge(bestObj, isAchieved)}
                                 </div>
                             </div>
                     `;
                 });
-                tableHtml += `
-                        </div>
-                    </div>
-                </div>
-                `;
+                tableHtml += `</div></div></div>`;
                 return tableHtml;
             };
 
@@ -974,168 +1043,15 @@
         };
 
         // ==========================================
-        //  我的計畫表邏輯 (Drag & Drop)
-        // ==========================================
-        window.openPlanModal = () => {
-            planYear = currentYear;
-            planMonth = currentMonth;
-            
-            const subjSelect = document.getElementById('plan-subject-select');
-            subjSelect.innerHTML = '<option value="">請選擇科目</option>' + SUBJECTS.map(s => `<option value="${s}">${s}</option>`).join('');
-            document.getElementById('plan-tb-select').classList.add('hidden');
-            document.getElementById('plan-draggable-items').innerHTML = '<div class="text-gray-400 text-sm text-center mt-10 font-bold">請先選擇科目</div>';
-            
-            window.renderPlanCalendar();
-            openGlobalModal('plan-modal');
-        };
-
-        window.changePlanMonth = (delta) => {
-            planMonth += delta;
-            if (planMonth > 11) { planMonth = 0; planYear++; }
-            if (planMonth < 0) { planMonth = 11; planYear--; }
-            window.renderPlanCalendar();
-        };
-
-        window.changePlanSubject = (sub) => {
-            const tbSelect = document.getElementById('plan-tb-select');
-            const itemsContainer = document.getElementById('plan-draggable-items');
-            
-            if(!sub) {
-                tbSelect.classList.add('hidden');
-                itemsContainer.innerHTML = '<div class="text-gray-400 text-sm text-center mt-10 font-bold">請先選擇科目</div>';
-                return;
-            }
-
-            if (TEXTBOOKS[sub]) {
-                tbSelect.classList.remove('hidden');
-                tbSelect.innerHTML = '<option value="">請選擇教科書</option>' + TEXTBOOKS[sub].map(tb => `<option value="${tb.id}">${tb.name}</option>`).join('');
-                itemsContainer.innerHTML = '<div class="text-gray-400 text-sm text-center mt-10 font-bold">請選擇教科書</div>';
-            } else if (SUB_SUBJECTS[sub]) {
-                tbSelect.classList.add('hidden');
-                window.renderDraggableItems(sub, SUB_SUBJECTS[sub]);
-            } else {
-                tbSelect.classList.add('hidden');
-                window.renderDraggableItems(sub, [sub]);
-            }
-        };
-
-        window.changePlanTextbook = (tbId) => {
-            const sub = document.getElementById('plan-subject-select').value;
-            if(!tbId) {
-                document.getElementById('plan-draggable-items').innerHTML = '<div class="text-gray-400 text-sm text-center mt-10 font-bold">請選擇教科書</div>';
-                return;
-            }
-            const tbObj = TEXTBOOKS[sub].find(t => t.id === tbId);
-            if(tbObj) window.renderDraggableItems(sub, tbObj.chapters);
-        };
-
-        window.renderDraggableItems = (mainSub, items) => {
-            const container = document.getElementById('plan-draggable-items');
-            container.innerHTML = items.map(item => `
-                <div draggable="true" ondragstart="handleDragStart(event, '${mainSub}', '${item}')" class="bg-white border-2 border-indigo-200 p-2.5 mb-2.5 rounded-lg cursor-move hover:shadow-md hover:scale-[1.02] hover:border-indigo-400 transition-all shadow-sm text-sm font-bold text-indigo-700 leading-tight">
-                    ${formatStep3Text(item)}
-                </div>
-            `).join('');
-        };
-
-        window.handleDragStart = (e, mainSub, subSub) => {
-            e.dataTransfer.setData('text/plain', JSON.stringify({ mainSubject: mainSub, subSubject: subSub }));
-            e.dataTransfer.effectAllowed = 'copy';
-        };
-
-        window.handleDragOver = (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'copy';
-            e.currentTarget.classList.add('bg-indigo-50', 'border-indigo-300');
-        };
-
-        window.handleDragLeave = (e) => {
-            e.currentTarget.classList.remove('bg-indigo-50', 'border-indigo-300');
-        };
-
-        window.handleDrop = async (e, dateStr) => {
-            e.preventDefault();
-            e.currentTarget.classList.remove('bg-indigo-50', 'border-indigo-300');
-            const dataStr = e.dataTransfer.getData('text/plain');
-            if(!dataStr) return;
-            try {
-                const data = JSON.parse(dataStr);
-                const docId = `${username}_${dateStr}_${data.subSubject}`;
-                const planRef = doc(db, 'artifacts', appId, 'public', 'data', 'Plans', docId);
-                await setDoc(planRef, {
-                    user: username,
-                    date: dateStr,
-                    mainSubject: data.mainSubject,
-                    subSubject: data.subSubject,
-                    updatedAt: new Date().toISOString()
-                });
-            } catch(err) {
-                console.error('Drop error', err);
-            }
-        };
-
-        window.deletePlan = async (dateStr, subSubject) => {
-            if(!confirm("確定要刪除此計畫？")) return;
-            try {
-                const docId = `${username}_${dateStr}_${subSubject}`;
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'Plans', docId));
-            } catch(e) { console.error(e); }
-        };
-
-        window.renderPlanCalendar = () => {
-            document.getElementById('plan-month-title').innerText = `${planYear} 年 ${planMonth + 1} 月`;
-            const container = document.getElementById('plan-calendar-container');
-            const daysInMonth = new Date(planYear, planMonth + 1, 0).getDate();
-            
-            let html = '';
-            for(let d=1; d<=daysInMonth; d++) {
-                const dateStr = `${planYear}-${String(planMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                const isToday = dateStr === formatDate(new Date());
-                const dayOfWeek = new Date(planYear, planMonth, d).getDay();
-                const dayName = ['日','一','二','三','四','五','六'][dayOfWeek];
-                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                
-                const dayPlans = (allPlans[username] && allPlans[username][dateStr]) ? Object.values(allPlans[username][dateStr]) : [];
-                
-                html += `
-                    <div class="flex-shrink-0 w-44 md:w-48 bg-white border-2 border-gray-200 rounded-xl flex flex-col overflow-hidden h-[450px]">
-                        <div class="${isToday ? 'bg-indigo-500 text-white' : (isWeekend ? 'bg-rose-100 text-rose-700' : 'bg-gray-100 text-gray-700')} p-2 text-center font-bold border-b border-gray-200 shrink-0">
-                            ${planMonth + 1}/${d} (${dayName})
-                        </div>
-                        <div class="flex-1 p-2 overflow-y-auto custom-scrollbar border-2 border-transparent transition-colors bg-gray-50/30" 
-                             ondragover="handleDragOver(event)" 
-                             ondragleave="handleDragLeave(event)" 
-                             ondrop="handleDrop(event, '${dateStr}')">
-                            ${dayPlans.length === 0 ? '<div class="text-gray-300 text-xs text-center mt-4 font-bold tracking-widest border-2 border-dashed border-gray-200 py-4 rounded-lg">拖曳至此</div>' : dayPlans.map(p => {
-                                const isCompleted = allGrades[username]?.[dateStr]?.[p.subSubject];
-                                return `
-                                    <div class="p-2 mb-2 rounded-lg border-2 ${isCompleted ? 'border-emerald-400 bg-emerald-50' : 'border-dashed border-indigo-300 bg-indigo-50/50'} text-xs relative group shadow-sm transition-all hover:scale-[1.02]">
-                                        <div class="font-black text-indigo-800 mb-1 truncate">${p.mainSubject}</div>
-                                        <div class="text-gray-600 font-bold leading-tight">${p.subSubject}</div>
-                                        ${isCompleted ? '<div class="absolute -top-2 -right-2 text-lg drop-shadow-sm">🎯</div>' : ''}
-                                        <button onclick="deletePlan('${dateStr}', '${p.subSubject}')" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-red-500 hover:bg-red-100 rounded px-1.5 py-0.5 transition-opacity">✕</button>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-            container.innerHTML = html;
-        };
-
-        // ==========================================
         //  學科分析雷達圖邏輯
         // ==========================================
         window.openAnalysisModal = () => {
             const targetUser = viewingUser === 'ALL' ? username : viewingUser;
             if (!targetUser) return;
-
             const dispName = usersProfile[targetUser]?.nickname || targetUser;
             document.getElementById('analysis-user-name').innerText = `👤 ${dispName} 的戰力分析`;
             
             const analysisSubjects = ['國文', '英文', '數學', '生物', '理化', '地科', '歷史', '地理', '公民'];
-            
             const gradeToNum = (g) => {
                 const map = { 'A++': 7, 'A+': 6, 'A': 5, 'B++': 4, 'B+': 3, 'B': 2, 'C': 1 };
                 return map[g] !== undefined ? map[g] : null;
@@ -1147,8 +1063,7 @@
             let subjectDetails = {};
 
             analysisSubjects.forEach(sub => {
-                subjectTotals[sub] = 0;
-                subjectCounts[sub] = 0;
+                subjectTotals[sub] = 0; subjectCounts[sub] = 0;
                 subjectDetails[sub] = { 'A++':0, 'A+':0, 'A':0, 'B++':0, 'B+':0, 'B':0, 'C':0 };
             });
 
@@ -1156,33 +1071,25 @@
                 Object.keys(uGrades[dateStr]).forEach(subKey => {
                     const item = uGrades[dateStr][subKey];
                     const actualSub = analysisSubjects.includes(subKey) ? subKey : (analysisSubjects.includes(item.mainSubject) ? item.mainSubject : null);
-                    
                     if (actualSub && analysisSubjects.includes(actualSub)) {
                         const grade = item.grade;
                         const num = gradeToNum(grade);
                         if (num !== null) {
                             subjectTotals[actualSub] += num;
                             subjectCounts[actualSub] += 1;
-                            if(subjectDetails[actualSub][grade] !== undefined) {
-                                subjectDetails[actualSub][grade]++;
-                            }
+                            if(subjectDetails[actualSub][grade] !== undefined) subjectDetails[actualSub][grade]++;
                         }
                     }
                 });
             });
 
-            const dataPoints = analysisSubjects.map(sub => {
-                if (subjectCounts[sub] === 0) return 0;
-                return parseFloat((subjectTotals[sub] / subjectCounts[sub]).toFixed(2));
-            });
+            const dataPoints = analysisSubjects.map(sub => subjectCounts[sub] === 0 ? 0 : parseFloat((subjectTotals[sub] / subjectCounts[sub]).toFixed(2)));
 
             openGlobalModal('analysis-modal');
 
             setTimeout(() => {
                 const ctx = document.getElementById('radarChart').getContext('2d');
-                if (radarChartInstance) {
-                    radarChartInstance.destroy();
-                }
+                if (radarChartInstance) radarChartInstance.destroy();
                 radarChartInstance = new Chart(ctx, {
                     type: 'radar',
                     plugins: [window.ChartDataLabels],
@@ -1197,33 +1104,18 @@
                             pointBorderColor: '#fff',
                             pointHoverBackgroundColor: '#fff',
                             pointHoverBorderColor: 'rgba(99, 102, 241, 1)',
-                            pointRadius: 6,
-                            pointHoverRadius: 8,
-                            borderWidth: 2,
+                            pointRadius: 6, pointHoverRadius: 8, borderWidth: 2,
                         }]
                     },
                     options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        layout: { padding: 40 },
-                        scales: {
-                            r: {
-                                min: 0, max: 7,
-                                angleLines: { color: 'rgba(0,0,0,0.1)' },
-                                grid: { color: 'rgba(0,0,0,0.1)' },
-                                pointLabels: { display: false },
-                                ticks: { stepSize: 1, display: false }
-                            }
-                        },
+                        responsive: true, maintainAspectRatio: false, layout: { padding: 40 },
+                        scales: { r: { min: 0, max: 7, angleLines: { color: 'rgba(0,0,0,0.1)' }, grid: { color: 'rgba(0,0,0,0.1)' }, pointLabels: { display: false }, ticks: { stepSize: 1, display: false } } },
                         plugins: {
-                            legend: { display: false },
-                            tooltip: { enabled: false },
+                            legend: { display: false }, tooltip: { enabled: false },
                             datalabels: {
-                                color: '#4338ca',
-                                font: { family: 'Noto Sans TC', size: 14, weight: 'bold' },
+                                color: '#4338ca', font: { family: 'Noto Sans TC', size: 14, weight: 'bold' },
                                 formatter: function(value, context) {
-                                    const sub = context.chart.data.labels[context.dataIndex];
-                                    return sub + '\n' + value + ' 分';
+                                    return context.chart.data.labels[context.dataIndex] + '\n' + value + ' 分';
                                 },
                                 textAlign: 'center', align: 'end', anchor: 'end', offset: 5,
                                 listeners: {
@@ -1231,21 +1123,10 @@
                                         const sub = context.chart.data.labels[context.dataIndex];
                                         const details = subjectDetails[sub];
                                         if(!details) return;
-                                        const statsStr = `【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`;
-                                        alert(statsStr);
+                                        alert(`【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`);
                                         return true;
                                     }
                                 }
-                            }
-                        },
-                        onClick: (e, elements) => {
-                            if (elements.length > 0) {
-                                const idx = elements[0].index;
-                                const sub = analysisSubjects[idx];
-                                const details = subjectDetails[sub];
-                                if(!details) return;
-                                const statsStr = `【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`;
-                                alert(statsStr);
                             }
                         }
                     }
@@ -1254,252 +1135,340 @@
         };
 
         // ==========================================
-        //  UI 渲染函式 - 個別區塊 (月曆/動態/排行)
+        //  通用動作邏輯 (設定、登出、聊天等) 
         // ==========================================
-        window.changeViewingUser = (user) => {
-            viewingUser = user;
-            window.renderCalendar();
+        window.saveFirebaseConfig = () => {
+            const apiKey = document.getElementById('cfg-apiKey').value.trim();
+            if (!apiKey) return alert("API Key 為必填欄位！");
+            localStorage.setItem('study_group_firebase_config', JSON.stringify({ apiKey }));
+            alert("設定已儲存！系統將重新啟動。");
+            window.location.reload(); 
         };
 
-        window.renderCalendar = () => {
-            const container = document.getElementById('calendar-grid');
-            const headerContainer = document.getElementById('calendar-header-container');
-            if(!container || !headerContainer) return;
+        window.logout = () => {
+            username = ''; viewingUser = ''; isAdmin = false;
+            localStorage.removeItem('study_group_user');
+            if(unsubDates) unsubDates(); if(unsubGrades) unsubGrades(); if(unsubChat) unsubChat();
+            if(unsubUsers) unsubUsers(); if(unsubProfile) unsubProfile(); if(unsubPlans) unsubPlans();
+            allGrades = {}; chatMessages = []; importantDates = []; allPlans = {};
+            setupLoginListener(); window.renderLogin();
+        };
 
-            headerContainer.innerHTML = `
-                <h2 class="text-xl md:text-2xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
-                <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-teal-700 bg-teal-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
-                    <option value="ALL" ${viewingUser === 'ALL' ? 'selected' : ''}>🌍 全部進度</option>
-                    ${globalUsers.map(u => {
-                        const dispName = usersProfile[u]?.nickname || u;
-                        return `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>❤️ ${dispName} 的個人進度</option>`;
-                    }).join('')}
-                </select>
-            `;
+        window.sendChat = async () => {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if(!text) return;
+            const newMsg = { user: username, text: text, timestamp: new Date().toISOString() };
+            const newChat = [...chatMessages, newMsg];
+            if(newChat.length > 50) newChat.shift();
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), { messages: newChat });
+            input.value = '';
+        };
 
-            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            const startPad = firstDay === 0 ? 6 : firstDay - 1;
+        document.addEventListener('click', (e) => {
+            const emojiPicker = document.getElementById('emoji-picker');
+            const toggleBtn = document.getElementById('emoji-toggle-btn');
+            if (emojiPicker && !emojiPicker.classList.contains('hidden')) {
+                if (!emojiPicker.contains(e.target) && e.target !== toggleBtn) emojiPicker.classList.add('hidden');
+            }
+        });
 
-            let html = `<div class="grid grid-cols-7 gap-1 md:gap-2 mb-2 shrink-0">`;
-            ['一', '二', '三', '四', '五', '六', '日'].forEach((d, idx) => {
-                const isWeekend = idx >= 5;
-                html += `<div class="text-center font-bold ${isWeekend ? 'text-rose-500 bg-rose-50' : 'text-teal-700 bg-teal-50'} py-1 md:py-2 text-sm md:text-base rounded-lg md:rounded-xl shadow-sm border border-gray-100">${d}</div>`;
-            });
-            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[100px] md:auto-rows-[120px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
+        window.initiateLogin = (name) => {
+            const trimmed = name.trim();
+            if(!trimmed) return alert("請傳入名稱！");
+            if (globalUsers.includes(trimmed) && usersProfile[trimmed]) {
+                document.getElementById('login-pwd-username').value = trimmed;
+                const dispName = usersProfile[trimmed]?.nickname || trimmed;
+                document.getElementById('login-pwd-username-display').innerText = `你好，${dispName}！請輸入密碼以繼續：`;
+                document.getElementById('login-pwd-input').value = '';
+                openGlobalModal('login-pwd-modal');
+                setTimeout(() => document.getElementById('login-pwd-input').focus(), 100);
+            }
+        };
 
-            for(let i=0; i<startPad; i++) {
-                html += `<div class="bg-white/30 rounded-xl md:rounded-2xl border border-transparent"></div>`;
+        window.confirmLoginPassword = () => {
+            const name = document.getElementById('login-pwd-username').value;
+            const pwd = document.getElementById('login-pwd-input').value;
+            if (name === 'Nick' && pwd !== '2iligloi') return alert("Nick 為管理員保留帳號，密碼錯誤！");
+            if (usersProfile[name] && usersProfile[name].password !== pwd) return alert("密碼錯誤，請重試！");
+            closeGlobalModal('login-pwd-modal');
+            doCompleteLogin(name);
+        };
+
+        window.openProfileEditModal = (name = '', isRegister = false) => {
+            const nameInput = document.getElementById('prof-name');
+            nameInput.value = name;
+            
+            if (isRegister && !name) {
+                nameInput.disabled = false;
+                nameInput.classList.remove('bg-gray-100', 'text-gray-500');
+                nameInput.classList.add('bg-white', 'text-gray-700');
+                nameInput.placeholder = "請輸入真實姓名作為登入帳號";
+            } else {
+                nameInput.disabled = true;
+                nameInput.classList.remove('bg-white', 'text-gray-700');
+                nameInput.classList.add('bg-gray-100', 'text-gray-500');
+                nameInput.placeholder = "";
+            }
+            
+            const isNick = (name === 'Nick');
+            const currentPwd = usersProfile[name]?.password || (isNick ? '2iligloi' : '');
+            document.getElementById('prof-pwd').value = currentPwd;
+            document.getElementById('prof-pwd-confirm').value = currentPwd;
+
+            if (isNick && isRegister) {
+                document.getElementById('prof-pwd').disabled = true;
+                document.getElementById('prof-pwd-confirm').disabled = true;
+                document.getElementById('pwd-hint').innerText = "(管理員預設密碼不可修改)";
+            } else {
+                document.getElementById('prof-pwd').disabled = false;
+                document.getElementById('prof-pwd-confirm').disabled = false;
+                document.getElementById('pwd-hint').innerText = "";
             }
 
-            for(let d=1; d<=daysInMonth; d++) {
-                const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                const isToday = dateStr === formatDate(new Date());
-                const isImportant = importantDates.find(i => i.date === dateStr);
-                
-                // 確認今天是否有計畫
-                let hasPlanToday = false;
-                if(allPlans[username] && allPlans[username][dateStr] && Object.keys(allPlans[username][dateStr]).length > 0) {
-                    hasPlanToday = true;
+            document.getElementById('prof-nickname').value = usersProfile[name]?.nickname || name;
+            document.getElementById('prof-birthday').value = usersProfile[name]?.birthday || '';
+            document.getElementById('prof-target').value = usersProfile[name]?.target || '';
+            document.getElementById('prof-motto').value = usersProfile[name]?.motto || '';
+            
+            let photo = usersProfile[name]?.photo || '';
+            document.getElementById('prof-photo-upload').dataset.base64 = photo;
+            
+            if (photo) {
+                document.getElementById('prof-photo-preview').src = photo;
+                document.getElementById('prof-photo-preview').classList.remove('hidden');
+                document.getElementById('prof-photo-placeholder').classList.add('hidden');
+            } else {
+                document.getElementById('prof-photo-preview').classList.add('hidden');
+                document.getElementById('prof-photo-placeholder').classList.remove('hidden');
+            }
+
+            document.getElementById('profile-modal-title').innerText = isRegister ? '🚀 歡迎加入！請建立專屬資料卡' : '📝 修改我的資料卡';
+            document.getElementById('profile-modal-close').style.display = isRegister ? 'none' : 'flex'; 
+            
+            openGlobalModal('profile-edit-modal');
+        };
+
+        window.handleProfilePhoto = (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const scale = img.width > 400 ? 400 / img.width : 1;
+                    canvas.width = img.width * scale; canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const base64 = canvas.toDataURL('image/jpeg', 0.8);
+                    document.getElementById('prof-photo-upload').dataset.base64 = base64;
+                    document.getElementById('prof-photo-preview').src = base64;
+                    document.getElementById('prof-photo-preview').classList.remove('hidden');
+                    document.getElementById('prof-photo-placeholder').classList.add('hidden');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.saveProfile = async () => {
+            const nameInput = document.getElementById('prof-name');
+            const name = nameInput.value.trim();
+            const pwd = document.getElementById('prof-pwd').value.trim();
+            const pwdConfirm = document.getElementById('prof-pwd-confirm').value.trim();
+            const nickname = document.getElementById('prof-nickname').value.trim();
+            
+            if(!name) return alert("請輸入真實姓名作為登入帳號！");
+            if(!pwd) return alert("請務必設定登入密碼！");
+            if(pwd !== pwdConfirm) return alert("兩次輸入的密碼不一致，請重新檢查！");
+            if(!nickname) return alert("請輸入顯示暱稱！");
+
+            const isNewUser = !globalUsers.includes(name);
+            if (!nameInput.disabled && !isNewUser) return alert("此真實姓名已存在，請使用該名稱登入，或輸入另一個姓名！");
+
+            let assignedColor = usersProfile[name]?.color;
+            if (isNewUser) {
+                const usedColors = Object.values(usersProfile).map(p => p.color).filter(Boolean);
+                const availableColors = USER_COLORS.filter(c => !usedColors.includes(c));
+                assignedColor = availableColors.length > 0 ? availableColors[Math.floor(Math.random() * availableColors.length)] : USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)];
+            }
+
+            let updatedProfiles = JSON.parse(JSON.stringify(usersProfile));
+            updatedProfiles[name] = {
+                password: pwd, nickname: nickname, birthday: document.getElementById('prof-birthday').value,
+                target: document.getElementById('prof-target').value, motto: document.getElementById('prof-motto').value,
+                photo: document.getElementById('prof-photo-upload').dataset.base64 || '', color: assignedColor
+            };
+
+            try {
+                if (isNewUser) {
+                    const newUsers = [...globalUsers, name];
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers }, { merge: true });
                 }
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: updatedProfiles }, { merge: true });
                 
-                let usersWithDataToday = [];
-                Object.entries(allGrades).forEach(([u, dates]) => {
-                    if (dates[dateStr] && Object.keys(dates[dateStr]).length > 0) {
-                        if (viewingUser === 'ALL' || u === viewingUser) {
-                            usersWithDataToday.push(u);
+                closeGlobalModal('profile-edit-modal');
+                if(username !== name) doCompleteLogin(name);
+                else { alert("資料卡更新成功！"); window.renderMainContent(); }
+            } catch(e) { console.error(e); alert("儲存失敗！"); }
+        };
+
+        const doCompleteLogin = (name) => {
+            username = name; viewingUser = name; isAdmin = (username === 'Nick'); 
+            localStorage.setItem('study_group_user', username);
+            setupListeners(); window.renderMain();
+        };
+
+        window.openPublicProfile = (name) => {
+            const prof = usersProfile[name] || {};
+            document.getElementById('vp-nickname').innerText = prof.nickname || name;
+            document.getElementById('vp-name').innerText = `@${name}`;
+            document.getElementById('vp-target').innerText = prof.target || '未設定';
+            document.getElementById('vp-motto').innerText = prof.motto ? `「${prof.motto}」` : '默默努力中...';
+            document.getElementById('vp-birthday').innerText = prof.birthday ? `🎂 ${prof.birthday}` : '';
+
+            const imgEl = document.getElementById('vp-photo');
+            const fallbackEl = document.getElementById('vp-avatar-fallback');
+            
+            if(prof.photo) {
+                imgEl.src = prof.photo; imgEl.style.display = 'block'; fallbackEl.style.display = 'none';
+            } else {
+                imgEl.style.display = 'none'; fallbackEl.innerText = getAvatarChar(name); fallbackEl.style.display = 'flex';
+                fallbackEl.className = `w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black mb-3 ${getUserColor(name)}`;
+            }
+            openGlobalModal('view-profile-modal');
+        };
+
+        // ==========================================
+        //  管理員面板邏輯
+        // ==========================================
+        window.openAdminPanel = () => { renderAdminDates(); renderAdminUsers(); switchAdminTab('dates'); openGlobalModal('admin-panel-modal'); };
+        window.switchAdminTab = (tab) => {
+            if(tab === 'dates') {
+                document.getElementById('admin-tab-dates').classList.remove('hidden'); document.getElementById('admin-tab-users').classList.add('hidden');
+                document.getElementById('tab-btn-dates').classList.replace('text-gray-500', 'text-amber-600'); document.getElementById('tab-btn-dates').classList.replace('border-transparent', 'border-amber-500'); document.getElementById('tab-btn-dates').classList.replace('hover:bg-gray-100', 'bg-white');
+                document.getElementById('tab-btn-users').classList.replace('text-amber-600', 'text-gray-500'); document.getElementById('tab-btn-users').classList.replace('border-amber-500', 'border-transparent'); document.getElementById('tab-btn-users').classList.replace('bg-white', 'hover:bg-gray-100');
+            } else {
+                document.getElementById('admin-tab-dates').classList.add('hidden'); document.getElementById('admin-tab-users').classList.remove('hidden');
+                document.getElementById('tab-btn-users').classList.replace('text-gray-500', 'text-amber-600'); document.getElementById('tab-btn-users').classList.replace('border-transparent', 'border-amber-500'); document.getElementById('tab-btn-users').classList.replace('hover:bg-gray-100', 'bg-white');
+                document.getElementById('tab-btn-dates').classList.replace('text-amber-600', 'text-gray-500'); document.getElementById('tab-btn-dates').classList.replace('border-amber-500', 'border-transparent'); document.getElementById('tab-btn-dates').classList.replace('bg-white', 'hover:bg-gray-100');
+            }
+        };
+
+        window.renderAdminDates = () => {
+            const container = document.getElementById('admin-dates-list');
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            container.innerHTML = sortedDates.map((item, index) => `
+                <div class="bg-white p-3 rounded-lg border border-gray-200 flex justify-between items-center shadow-sm">
+                    <div>
+                        <div class="font-bold text-gray-800">${item.title}</div>
+                        <div class="text-sm text-gray-500">${item.date}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="adminEditDate(${index})" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded font-bold text-sm hover:bg-blue-100">編輯</button>
+                        <button onclick="adminDeleteDate(${index})" class="px-3 py-1.5 bg-red-50 text-red-600 rounded font-bold text-sm hover:bg-red-100">刪除</button>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.adminAddDate = async () => {
+            const title = document.getElementById('admin-new-date-title').value.trim();
+            const date = document.getElementById('admin-new-date-value').value;
+            if(!title || !date) return alert("請填寫完整");
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: [...importantDates, { title, date }] });
+            document.getElementById('admin-new-date-title').value = ''; document.getElementById('admin-new-date-value').value = '';
+        };
+
+        window.adminEditDate = (index) => {
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const item = sortedDates[index];
+            const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
+            document.getElementById('edit-date-index').value = realIndex;
+            document.getElementById('edit-date-title').value = item.title; document.getElementById('edit-date-value').value = item.date;
+            openGlobalModal('edit-date-modal');
+        };
+
+        window.saveEditedDate = async () => {
+            const idx = parseInt(document.getElementById('edit-date-index').value);
+            const title = document.getElementById('edit-date-title').value.trim();
+            const date = document.getElementById('edit-date-value').value;
+            if(!title || !date) return alert("不可留空");
+            let newDates = [...importantDates]; newDates[idx] = { title, date };
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+            closeGlobalModal('edit-date-modal');
+        };
+
+        window.adminDeleteDate = async (index) => {
+            if(!confirm("確定刪除此日程？")) return;
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const item = sortedDates[index];
+            const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
+            const newDates = [...importantDates]; newDates.splice(realIndex, 1);
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+        };
+
+        window.renderAdminUsers = () => {
+            const tbody = document.getElementById('admin-users-list');
+            tbody.innerHTML = globalUsers.map(u => {
+                const prof = usersProfile[u] || {};
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 font-bold text-gray-800">${u}</td>
+                        <td class="p-3 text-gray-600">${prof.nickname || '-'}</td>
+                        <td class="p-3 font-mono text-gray-500">${prof.password || '<span class="text-red-400">未設定</span>'}</td>
+                        <td class="p-3 text-right space-x-1">
+                            <button onclick="openProfileEditModal('${u}')" class="px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded font-bold text-xs hover:bg-blue-100">修改個資/密碼</button>
+                            ${u === 'Nick' ? '' : `<button onclick="adminDeleteUser('${u}')" class="px-2.5 py-1.5 bg-red-50 text-red-600 rounded font-bold text-xs hover:bg-red-100">移除帳號</button>`}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        };
+
+        window.adminDeleteUser = async (userToDelete) => {
+            if(!confirm(`⚠️ 警告！確定要刪除帳號 [${userToDelete}] 嗎？此操作不可逆！`)) return;
+            let transferTarget = null;
+            const others = globalUsers.filter(u => u !== userToDelete);
+            if (others.length > 0) {
+                const ans = prompt(`是否轉移其成績給其他人？\n(若不轉移請留空按確定，將連帶刪除所有成績)\n可選對象: ${others.join(', ')}`);
+                if (ans && others.includes(ans.trim())) transferTarget = ans.trim();
+                else if (ans) return alert("輸入的名稱無效，已取消刪除操作。");
+            }
+            try {
+                const newUsers = globalUsers.filter(u => u !== userToDelete);
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers });
+                let newProfiles = JSON.parse(JSON.stringify(usersProfile)); delete newProfiles[userToDelete];
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: newProfiles });
+                if (allGrades[userToDelete]) {
+                    const dates = Object.keys(allGrades[userToDelete]);
+                    for (let i = 0; i < dates.length; i++) {
+                        const dateStr = dates[i];
+                        const subs = Object.keys(allGrades[userToDelete][dateStr]);
+                        for (let j = 0; j < subs.length; j++) {
+                            const sub = subs[j];
+                            const oldRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', `${userToDelete}_${dateStr}_${sub}`);
+                            if (transferTarget) {
+                                const newRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', `${transferTarget}_${dateStr}_${sub}`);
+                                const gradeData = allGrades[userToDelete][dateStr][sub];
+                                await setDoc(newRef, {
+                                    user: transferTarget, date: dateStr, mainSubject: gradeData.mainSubject || gradeData.subSubject || sub, subSubject: sub,
+                                    grade: gradeData.grade, photo: gradeData.photo || null, updatedAt: gradeData.updatedAt || new Date().toISOString()
+                                });
+                            }
+                            await deleteDoc(oldRef);
                         }
                     }
-                });
-
-                const headerClass = isToday 
-                    ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-white shadow-md' 
-                    : isImportant 
-                        ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md' 
-                        : 'bg-pink-50 text-pink-700';
-
-                const clickAction = (viewingUser === username || viewingUser === 'ALL') 
-                    ? `openScoreModal('${dateStr}')` 
-                    : `viewOthersScore(event, '${viewingUser}', '${dateStr}')`;
-
-                let cellHTML = '';
-
-                if (viewingUser === 'ALL') {
-                    const avatarsHtml = usersWithDataToday.map(u => `
-                        <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
-                             class="${getUserColor(u)} w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center text-[9px] md:text-xs font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
-                             title="查看 ${usersProfile[u]?.nickname || u} 的成績">
-                            ${getAvatarChar(u)}
-                        </div>
-                    `).join('');
-
-                    cellHTML = `
-                        <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-1.5 rounded-xl md:rounded-2xl shadow-sm flex flex-row transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
-                            
-                            <div class="flex flex-col items-center shrink-0 w-6 md:w-8">
-                                <span class="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-[11px] md:text-sm font-bold ${headerClass} shrink-0 shadow-sm">${d}</span>
-                                ${isImportant ? `<span class="text-[10px] md:text-xs drop-shadow-sm mt-1 group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
-                                ${hasPlanToday ? `<span class="text-[10px] md:text-xs drop-shadow-sm mt-1 group-hover:scale-125 transition-transform" title="今日有計畫">📝</span>` : ''}
-                            </div>
-
-                            <div class="flex-1 overflow-y-auto custom-scrollbar h-full pl-1">
-                                ${usersWithDataToday.length > 0 ? `
-                                    <div class="grid grid-cols-2 gap-1 justify-items-end md:justify-items-center pb-1 pr-0.5">
-                                        ${avatarsHtml}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    let cellContent = '';
-                    const userGrades = (allGrades[viewingUser] && allGrades[viewingUser][dateStr]) ? allGrades[viewingUser][dateStr] : null;
-                    if (userGrades && Object.keys(userGrades).length > 0) {
-                        cellContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
-                        Object.entries(userGrades).forEach(([subKey, info]) => {
-                            let mainSub = info.mainSubject || subKey;
-                            let subColor = getSubjectColor(mainSub);
-
-                            let shortName = mainSub;
-                            if(shortName === '自然合科') shortName = '自然';
-                            if(shortName === '社會合科') shortName = '社會';
-                            if(shortName === '地球科學') shortName = '地科';
-
-                            cellContent += `
-                                <div class="text-[9px] md:text-[11px] font-bold ${subColor.bg} ${subColor.text} ${subColor.border} border px-1 py-0.5 rounded flex items-center justify-between shadow-sm">
-                                    <span class="truncate">${shortName} <span class="font-black ml-0.5">${info.grade}</span></span>
-                                    ${info.photo ? '<span class="text-[8px] md:text-[9px] text-purple-500 shrink-0 ml-0.5">📸</span>' : ''}
-                                </div>
-                            `;
-                        });
-                        cellContent += `</div>`;
-                    }
-
-                    cellHTML = `
-                        <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-2 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
-                            <div class="flex justify-between items-start shrink-0 mb-0.5 md:mb-1 w-full">
-                                <span class="w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass} shrink-0">${d}</span>
-                                
-                                <div class="flex flex-wrap justify-end content-start gap-1 flex-1 mx-1 mt-0.5 overflow-y-auto custom-scrollbar max-h-12 md:max-h-14 pr-1">
-                                    ${usersWithDataToday.map(u => `
-                                        <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
-                                             class="${getUserColor(u)} w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center text-[9px] md:text-[11px] font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
-                                             title="查看 ${usersProfile[u]?.nickname || u} 的成績">
-                                            ${getAvatarChar(u)}
-                                        </div>
-                                    `).join('')}
-                                </div>
-                                <div class="flex flex-col items-center">
-                                    ${isImportant ? `<span class="text-xs md:text-sm drop-shadow-sm group-hover:scale-125 transition-transform shrink-0" title="${isImportant.title}">🔥</span>` : ''}
-                                    ${hasPlanToday && viewingUser === username ? `<span class="text-[10px] md:text-xs drop-shadow-sm mt-1 group-hover:scale-125 transition-transform" title="今日有計畫">📝</span>` : ''}
-                                </div>
-                            </div>
-                            <div class="flex-1 overflow-y-auto custom-scrollbar">
-                                ${cellContent}
-                            </div>
-                        </div>
-                    `;
                 }
-                html += cellHTML;
-            }
-            html += `</div>`;
-            container.innerHTML = html;
+                alert(`已成功移除使用者 ${userToDelete} ${transferTarget ? '，成績已轉移至 ' + transferTarget : '，成績已連帶刪除'}。`);
+                renderAdminUsers();
+            } catch(e) { console.error(e); alert("移除操作失敗！"); }
         };
 
-        window.renderTimeline = () => {
-            const container = document.getElementById('timeline-feed');
-            if(!container) return;
-
-            const feed = [];
-            
-            // 1. 蒐集所有成績動態
-            Object.entries(allGrades).forEach(([u, dates]) => {
-                Object.entries(dates).forEach(([d, subjects]) => {
-                    Object.entries(subjects).forEach(([s, info]) => {
-                        feed.push({ type: 'grade', user: u, date: d, subject: s, ...info });
-                    });
-                });
-            });
-
-            // 2. 蒐集 ⚠️ 所有的落後進度
-            const todayStr = formatDate(new Date());
-            Object.entries(allPlans).forEach(([u, dates]) => {
-                Object.entries(dates).forEach(([d, subjects]) => {
-                    if (d < todayStr) {
-                        // 檢查該計畫是否已被完成 (是否有相應的 grade)
-                        Object.entries(subjects).forEach(([s, pInfo]) => {
-                            if (!allGrades[u]?.[d]?.[s]) {
-                                feed.push({ type: 'lagging', user: u, date: d, mainSubject: pInfo.mainSubject, subject: s, updatedAt: pInfo.updatedAt });
-                            }
-                        });
-                    }
-                });
-            });
-
-            feed.sort((a,b) => {
-                // 將 Lagging 的預設排序時間設定為當日結束，或依照原本的 updatedAt 排序
-                const timeA = a.type === 'lagging' ? new Date(a.date + 'T23:59:59').getTime() : (a.updatedAt ? new Date(a.updatedAt).getTime() : new Date(a.date).getTime());
-                const timeB = b.type === 'lagging' ? new Date(b.date + 'T23:59:59').getTime() : (b.updatedAt ? new Date(b.updatedAt).getTime() : new Date(b.date).getTime());
-                return timeB - timeA;
-            });
-
-            if (feed.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-70"><div class="text-4xl mb-2">🍃</div><div class="text-sm font-bold">尚無戰況紀錄，趕快搶頭香！</div></div>`;
-                return;
-            }
-
-            let html = '';
-            feed.forEach(item => {
-                const isMe = item.user === username;
-                const displayName = usersProfile[item.user]?.nickname || item.user;
-                const mainSub = item.mainSubject || item.subject;
-                const subColor = getSubjectColor(mainSub);
-                const fullSubStr = mainSub && mainSub !== item.subject ? `${mainSub} ${item.subject}` : item.subject;
-
-                if (item.type === 'lagging') {
-                    // 落後動態 UI
-                    html += `
-                        <div class="p-3 rounded-2xl border-2 border-red-300 bg-red-50 shadow-sm relative group transition-all">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="font-bold text-red-700 bg-white px-2 py-0.5 rounded shadow-sm text-xs border border-red-100 flex items-center gap-1.5">
-                                    <div class="w-3 h-3 rounded-full flex items-center justify-center text-[8px] ${getUserColor(item.user)}">${getAvatarChar(item.user)}</div>
-                                    ${isMe ? '我' : displayName}
-                                </span>
-                                <span class="text-[10px] text-red-400 font-mono">${item.date}</span>
-                            </div>
-                            <div class="text-sm text-red-600 font-bold mt-2">
-                                ⚠️ ${isMe ? '你' : displayName} 落後了！<br>
-                                <span class="text-xs text-red-500 font-normal">計畫的 <span class="font-bold border-b border-red-300">${fullSubStr.length > 20 ? fullSubStr.substring(0,18)+'...' : fullSubStr}</span> 尚未完成</span>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    // 正常成績動態 UI (檢查是否達成計畫)
-                    const isA = item.grade.includes('A');
-                    const emoji = isA ? '🏆' : '💪';
-                    const isPlanAchieved = allPlans[item.user]?.[item.date]?.[item.subject] != null;
-                    const achieveBadge = isPlanAchieved ? '<span class="ml-1 text-sm drop-shadow-sm" title="達成計畫">🎯</span>' : '';
-
-                    html += `
-                        <div class="p-3 rounded-2xl border-2 ${subColor.border} ${subColor.bg} shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" onclick="viewOthersScore(null, '${item.user}', '${item.date}')">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="font-bold text-gray-700 bg-white px-2 py-0.5 rounded shadow-sm text-xs border border-gray-100 flex items-center gap-1.5">
-                                    <div class="w-3 h-3 rounded-full flex items-center justify-center text-[8px] ${getUserColor(item.user)}">${getAvatarChar(item.user)}</div>
-                                    ${isMe ? '我' : displayName}
-                                </span>
-                                <span class="text-[10px] text-gray-400 font-mono">${item.date}</span>
-                            </div>
-                            <div class="text-sm text-gray-600">
-                                在 <span class="font-bold text-gray-800" title="${fullSubStr}">${fullSubStr.length > 20 ? fullSubStr.substring(0,18)+'...' : fullSubStr}</span> 獲得 <span class="font-black text-lg mx-1 ${subColor.text}">${item.grade}</span> ${emoji} ${achieveBadge}
-                            </div>
-                            ${item.photo ? `<div class="absolute right-3 bottom-2 text-purple-400 text-lg opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
-                        </div>
-                    `;
-                }
-            });
-            container.innerHTML = html;
-        };
-
+        // ==========================================
+        //  UI 渲染函式 - 個別區塊 (月曆/動態/排行)
+        // ==========================================
         window.renderSidebar = () => {
             const container = document.getElementById('sidebar-countdowns');
             if(!container) return;
@@ -1534,6 +1503,282 @@
                 }
             });
             html += `</div></div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderChat = () => {
+            const container = document.getElementById('chat-messages');
+            if(!container) return;
+            container.innerHTML = chatMessages.map(msg => {
+                const isMe = msg.user === username;
+                const displayName = usersProfile[msg.user]?.nickname || msg.user;
+                return `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        <span class="text-[10px] text-gray-400 mb-0.5 px-1">${displayName}</span>
+                        <div class="${isMe ? 'chat-bubble-me border border-blue-100' : 'chat-bubble-other border border-pink-100'} px-3 py-2 text-gray-700 shadow-sm inline-block max-w-[90%] break-words">
+                            ${msg.text}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        };
+
+        window.toggleEmojiPicker = (e) => {
+            if(e) e.stopPropagation();
+            document.getElementById('emoji-picker').classList.toggle('hidden');
+        };
+
+        window.insertEmoji = (emoji) => {
+            const input = document.getElementById('chatInput');
+            input.value += emoji; input.focus();
+            document.getElementById('emoji-picker').classList.add('hidden');
+        };
+
+        window.changeMonth = (delta) => {
+            currentMonth += delta;
+            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+            if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+            window.renderMainContent();
+            if(!document.getElementById('plan-modal')?.classList.contains('hidden')) {
+                renderPlanHorizontalCalendar();
+            }
+        };
+
+        window.changeViewingUser = (user) => {
+            viewingUser = user; window.renderCalendar();
+        };
+
+        window.renderCalendar = () => {
+            const container = document.getElementById('calendar-grid');
+            const headerContainer = document.getElementById('calendar-header-container');
+            if(!container || !headerContainer) return;
+
+            headerContainer.innerHTML = `
+                <h2 class="text-xl md:text-2xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
+                <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-teal-700 bg-teal-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
+                    <option value="ALL" ${viewingUser === 'ALL' ? 'selected' : ''}>🌍 全部進度</option>
+                    ${globalUsers.map(u => {
+                        const dispName = usersProfile[u]?.nickname || u;
+                        return `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>❤️ ${dispName} 的個人進度</option>`;
+                    }).join('')}
+                </select>
+            `;
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const startPad = firstDay === 0 ? 6 : firstDay - 1;
+
+            let html = `<div class="grid grid-cols-7 gap-1 md:gap-2 mb-2 shrink-0">`;
+            ['一', '二', '三', '四', '五', '六', '日'].forEach((d, idx) => {
+                const isWeekend = idx >= 5;
+                html += `<div class="text-center font-bold ${isWeekend ? 'text-rose-500 bg-rose-50' : 'text-teal-700 bg-teal-50'} py-1 md:py-2 text-sm md:text-base rounded-lg md:rounded-xl shadow-sm border border-gray-100">${d}</div>`;
+            });
+            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[100px] md:auto-rows-[120px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
+
+            for(let i=0; i<startPad; i++) html += `<div class="bg-white/30 rounded-xl md:rounded-2xl border border-transparent"></div>`;
+
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const isToday = dateStr === formatDate(new Date());
+                const isImportant = importantDates.find(i => i.date === dateStr);
+                
+                let usersWithDataToday = [];
+                Object.entries(allGrades).forEach(([u, dates]) => {
+                    if (dates[dateStr] && Object.keys(dates[dateStr]).length > 0) {
+                        if (viewingUser === 'ALL' || u === viewingUser) usersWithDataToday.push(u);
+                    }
+                });
+
+                // 檢查該日是否有規劃計畫 (為顯示 📝 圖示)
+                let hasPlanToday = false;
+                if (viewingUser === 'ALL') {
+                    hasPlanToday = Object.keys(allPlans).some(u => allPlans[u][dateStr] && Object.keys(allPlans[u][dateStr]).length > 0);
+                } else {
+                    hasPlanToday = allPlans[viewingUser] && allPlans[viewingUser][dateStr] && Object.keys(allPlans[viewingUser][dateStr]).length > 0;
+                }
+
+                const headerClass = isToday 
+                    ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-white shadow-md' 
+                    : isImportant 
+                        ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md' 
+                        : 'bg-pink-50 text-pink-700';
+
+                const clickAction = (viewingUser === username || viewingUser === 'ALL') ? `openScoreModal('${dateStr}')` : `viewOthersScore(event, '${viewingUser}', '${dateStr}')`;
+
+                let cellHTML = '';
+
+                if (viewingUser === 'ALL') {
+                    const avatarsHtml = usersWithDataToday.map(u => `
+                        <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
+                             class="${getUserColor(u)} w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center text-[9px] md:text-xs font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
+                             title="查看 ${usersProfile[u]?.nickname || u} 的成績">
+                            ${getAvatarChar(u)}
+                        </div>
+                    `).join('');
+
+                    cellHTML = `
+                        <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-1.5 rounded-xl md:rounded-2xl shadow-sm flex flex-row transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
+                            <div class="flex flex-col items-center shrink-0 w-6 md:w-8">
+                                <div class="flex items-center gap-0.5 relative">
+                                    <span class="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-[11px] md:text-sm font-bold ${headerClass} shrink-0 shadow-sm">${d}</span>
+                                    ${hasPlanToday ? '<span class="absolute -right-2 -top-1 text-[10px] md:text-xs drop-shadow-sm" title="本日有計畫">📝</span>' : ''}
+                                </div>
+                                ${isImportant ? `<span class="text-[10px] md:text-xs drop-shadow-sm mt-1 group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar h-full pl-2 md:pl-3">
+                                ${usersWithDataToday.length > 0 ? `<div class="grid grid-cols-2 gap-1 justify-items-start pb-1 pr-0.5">${avatarsHtml}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    let cellContent = '';
+                    const userGrades = (allGrades[viewingUser] && allGrades[viewingUser][dateStr]) ? allGrades[viewingUser][dateStr] : null;
+                    if (userGrades && Object.keys(userGrades).length > 0) {
+                        cellContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
+                        Object.entries(userGrades).forEach(([subKey, info]) => {
+                            let mainSub = info.mainSubject || subKey;
+                            let subColor = getSubjectColor(mainSub);
+                            let shortName = mainSub;
+                            if(shortName === '自然合科') shortName = '自然';
+                            if(shortName === '社會合科') shortName = '社會';
+                            if(shortName === '地球科學') shortName = '地科';
+                            
+                            // Check if this was achieved target
+                            const isTargetAchieved = allPlans[viewingUser] && allPlans[viewingUser][dateStr] && allPlans[viewingUser][dateStr][subKey];
+
+                            cellContent += `
+                                <div class="text-[9px] md:text-[11px] font-bold ${subColor.bg} ${subColor.text} ${subColor.border} border px-1 py-0.5 rounded flex items-center justify-between shadow-sm relative">
+                                    ${isTargetAchieved ? '<span class="absolute -top-1 -right-1 text-[10px] leading-none" title="計畫達標">🎯</span>' : ''}
+                                    <span class="truncate">${shortName} <span class="font-black ml-0.5">${info.grade}</span></span>
+                                    ${info.photo ? '<span class="text-[8px] md:text-[9px] text-purple-500 shrink-0 ml-0.5">📸</span>' : ''}
+                                </div>
+                            `;
+                        });
+                        cellContent += `</div>`;
+                    }
+
+                    cellHTML = `
+                        <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-2 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
+                            <div class="flex justify-between items-start shrink-0 mb-0.5 md:mb-1 w-full relative">
+                                <div class="flex items-center gap-0.5">
+                                    <span class="w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass} shrink-0">${d}</span>
+                                    ${hasPlanToday ? '<span class="text-[10px] md:text-xs drop-shadow-sm ml-0.5 z-10" title="本日有計畫">📝</span>' : ''}
+                                </div>
+                                <div class="flex flex-wrap justify-end content-start gap-1 flex-1 mx-1 mt-0.5 overflow-y-auto custom-scrollbar max-h-12 md:max-h-14 pr-1">
+                                    ${usersWithDataToday.map(u => `
+                                        <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
+                                             class="${getUserColor(u)} w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center text-[9px] md:text-[11px] font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
+                                             title="查看 ${usersProfile[u]?.nickname || u} 的成績">
+                                            ${getAvatarChar(u)}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                ${isImportant ? `<span class="text-xs md:text-sm drop-shadow-sm group-hover:scale-125 transition-transform shrink-0" title="${isImportant.title}">🔥</span>` : ''}
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                                ${cellContent}
+                            </div>
+                        </div>
+                    `;
+                }
+                html += cellHTML;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderTimeline = () => {
+            const container = document.getElementById('timeline-feed');
+            if(!container) return;
+
+            const feed = [];
+            const todayStr = formatDate(new Date());
+
+            // 1. 處理已登錄的成績動態
+            Object.entries(allGrades).forEach(([u, dates]) => {
+                Object.entries(dates).forEach(([d, subjects]) => {
+                    Object.entries(subjects).forEach(([s, info]) => {
+                        const isTargetAchieved = allPlans[u] && allPlans[u][d] && allPlans[u][d][s];
+                        feed.push({ type: 'grade', user: u, date: d, subject: s, isTargetAchieved, ...info });
+                    });
+                });
+            });
+
+            // 2. 處理落後的計畫動態 (⚠️ 自動判定)
+            Object.entries(allPlans).forEach(([u, dates]) => {
+                Object.entries(dates).forEach(([d, subjects]) => {
+                    if (d < todayStr) { // 計畫日期小於今天
+                        Object.entries(subjects).forEach(([s, planInfo]) => {
+                            const hasGrade = allGrades[u] && allGrades[u][d] && allGrades[u][d][s];
+                            if (!hasGrade) { // 沒成績 = 落後
+                                feed.push({ type: 'lag', user: u, date: d, subject: s, mainSubject: planInfo.mainSubject, updatedAt: d + 'T23:59:59.000Z' });
+                            }
+                        });
+                    }
+                });
+            });
+
+            // 以更新時間排序
+            feed.sort((a,b) => {
+                const timeA = a.updatedAt ? new Date(a.updatedAt) : new Date(a.date);
+                const timeB = b.updatedAt ? new Date(b.updatedAt) : new Date(b.date);
+                return timeB - timeA;
+            });
+
+            if (feed.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-70"><div class="text-4xl mb-2">🍃</div><div class="text-sm font-bold">尚無戰況紀錄，趕快搶頭香！</div></div>`;
+                return;
+            }
+
+            let html = '';
+            feed.forEach(item => {
+                const isMe = item.user === username;
+                const displayName = usersProfile[item.user]?.nickname || item.user;
+
+                if (item.type === 'lag') {
+                    // 落後動態
+                    html += `
+                        <div class="p-3 rounded-2xl border-2 border-red-300 bg-red-50 shadow-sm relative group mb-3">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-red-700 bg-white px-2 py-0.5 rounded shadow-sm text-xs border border-red-100 flex items-center gap-1.5">
+                                    <div class="w-3 h-3 rounded-full flex items-center justify-center text-[8px] ${getUserColor(item.user)}">${getAvatarChar(item.user)}</div>
+                                    ${isMe ? '我' : displayName}
+                                </span>
+                                <span class="text-[10px] text-red-400 font-mono">${item.date}</span>
+                            </div>
+                            <div class="text-sm text-red-600 font-bold mt-1.5 leading-relaxed">
+                                ⚠️ 你落後了！未完成計畫：<br><span class="text-red-800 bg-white px-1.5 py-0.5 rounded border border-red-200">${item.mainSubject ? item.mainSubject+' ' : ''}${item.subject}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // 成績動態
+                    const isA = item.grade.includes('A');
+                    const emoji = isA ? '🏆' : '💪';
+                    const mainSub = item.mainSubject || item.subject;
+                    const subColor = getSubjectColor(mainSub);
+                    const mainSubStr = item.mainSubject && item.mainSubject !== item.subject ? `${item.mainSubject} ` : '';
+                    const fullSubStr = `${mainSubStr}${item.subject}`;
+                    const targetText = item.isTargetAchieved ? '<span class="bg-green-100 text-green-700 border border-green-300 px-1.5 py-0.5 rounded text-[10px] ml-1 shadow-sm font-black align-middle leading-none">🎯 達標</span>' : '';
+
+                    html += `
+                        <div class="p-3 rounded-2xl border-2 ${subColor.border} ${subColor.bg} shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all mb-3" onclick="viewOthersScore(null, '${item.user}', '${item.date}')">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-gray-700 bg-white px-2 py-0.5 rounded shadow-sm text-xs border border-gray-100 flex items-center gap-1.5">
+                                    <div class="w-3 h-3 rounded-full flex items-center justify-center text-[8px] ${getUserColor(item.user)}">${getAvatarChar(item.user)}</div>
+                                    ${isMe ? '我' : displayName}
+                                </span>
+                                <span class="text-[10px] text-gray-400 font-mono">${item.date}</span>
+                            </div>
+                            <div class="text-sm text-gray-600 leading-relaxed mt-1">
+                                在 <span class="font-bold text-gray-800" title="${fullSubStr}">${fullSubStr.length > 20 ? fullSubStr.substring(0,18)+'...' : fullSubStr}</span> 獲得 <span class="font-black text-lg mx-1 ${subColor.text}">${item.grade}</span> ${emoji} ${targetText}
+                            </div>
+                            ${item.photo ? `<div class="absolute right-3 bottom-2 text-purple-400 text-lg opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
+                        </div>
+                    `;
+                }
+            });
             container.innerHTML = html;
         };
 
@@ -1598,6 +1843,241 @@
             container.innerHTML = html;
         };
 
+        // ==========================================
+        //  輸入成績邏輯 (全面升級版 5 Steps)
+        // ==========================================
+        window.openScoreModal = (dateStr) => {
+            modalState = { date: dateStr, mainSubject: '', textbook: '', subSubject: '', grade: '', photoBase64: '' };
+            document.getElementById('modal-date').innerText = dateStr;
+            
+            // 狀態還原：清除所有強調樣式
+            SUBJECTS.forEach(s => { 
+                const el = document.getElementById(`btn-sub-${s}`);
+                if (el) {
+                    el.classList.remove('bg-teal-600', 'text-white', 'shadow-md', 'ring-4', 'ring-teal-200', 'border-teal-600', 'scale-105');
+                    el.classList.add('bg-white', 'text-teal-700', 'border-teal-200');
+                }
+            });
+            GRADES.forEach(g => { 
+                const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                if (el) {
+                    el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                    el.classList.add('bg-white', 'text-rose-700', 'border-rose-200');
+                }
+            });
+            
+            // 隱藏 2~5 步驟
+            document.getElementById('step-2-container').classList.add('hidden');
+            document.getElementById('step-3-container').classList.add('hidden');
+            document.getElementById('step-4-container').classList.add('hidden');
+            document.getElementById('step-5-container').classList.add('hidden');
+            
+            document.getElementById('photo-upload').value = '';
+            document.getElementById('photo-preview-container').classList.add('hidden');
+            document.getElementById('photo-preview-container').classList.remove('flex');
+            document.getElementById('photo-placeholder').classList.remove('hidden');
+            document.getElementById('btn-delete-grade').classList.add('hidden');
+
+            const dropzone = document.getElementById('step-5-dropzone');
+            if (dropzone) {
+                dropzone.classList.remove('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid');
+                dropzone.classList.add('border-dashed', 'bg-white');
+            }
+            
+            openGlobalModal('score-modal');
+        };
+
+        window.selectSubject = (sub) => {
+            modalState.mainSubject = sub;
+            modalState.textbook = ''; modalState.subSubject = ''; modalState.grade = '';
+
+            SUBJECTS.forEach(s => {
+                const el = document.getElementById(`btn-sub-${s}`);
+                if(el) {
+                    if(s === sub) {
+                        el.classList.add('bg-teal-600', 'text-white', 'shadow-md', 'ring-4', 'ring-teal-200', 'border-teal-600', 'scale-105');
+                        el.classList.remove('bg-white', 'text-teal-700', 'border-teal-200');
+                    } else {
+                        el.classList.remove('bg-teal-600', 'text-white', 'shadow-md', 'ring-4', 'ring-teal-200', 'border-teal-600', 'scale-105');
+                        el.classList.add('bg-white', 'text-teal-700', 'border-teal-200');
+                    }
+                }
+            });
+
+            GRADES.forEach(g => { 
+                const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                if (el) {
+                    el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                    el.classList.add('bg-white', 'text-rose-700', 'border-rose-200');
+                }
+            });
+
+            const step2 = document.getElementById('step-2-container');
+            const step3 = document.getElementById('step-3-container');
+            const step4 = document.getElementById('step-4-container');
+            const step5 = document.getElementById('step-5-container');
+
+            step2.classList.add('hidden'); step3.classList.add('hidden');
+            step4.classList.add('hidden'); step5.classList.add('hidden');
+
+            if (TEXTBOOKS[sub]) {
+                step2.classList.remove('hidden');
+                document.getElementById('textbook-selector').innerHTML = TEXTBOOKS[sub].map(tb => `
+                    <div onclick="selectTextbook('${tb.id}')" id="btn-tb-${tb.id}" class="cursor-pointer border-4 border-transparent bg-white hover:border-blue-400 rounded-xl p-2 text-center transition-all shadow-sm w-32 md:w-36 group">
+                        <img src="${tb.img}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2YxZjVmOSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM5Y2EzYWYiPueEoeWcluAHfTwvdGV4dD48L3N2Zz4='" class="w-full h-32 md:h-36 object-cover rounded-lg mb-2 shadow-sm border border-gray-200 pointer-events-none group-hover:shadow-md transition-shadow">
+                        <div class="font-bold text-sm text-gray-700 pointer-events-none">${tb.name}</div>
+                    </div>
+                `).join('');
+            } else if (SUB_SUBJECTS[sub]) {
+                step3.classList.remove('hidden');
+                document.getElementById('sub-subject-selector').innerHTML = SUB_SUBJECTS[sub].map(sItem => 
+                    `<button onclick="selectSubSubject('${sItem}')" id="btn-subitem-${sItem}" class="block w-full text-left py-3 px-4 rounded-xl border-2 border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-50 transition-all bg-white shadow-sm text-sm md:text-base hover:scale-[1.02] whitespace-nowrap overflow-hidden text-ellipsis">${formatStep3Text(sItem)}</button>`
+                ).join('');
+                
+                let subToSelect = SUB_SUBJECTS[sub][0];
+                for (let sItem of SUB_SUBJECTS[sub]) {
+                    if (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][sItem]) {
+                        subToSelect = sItem; break;
+                    }
+                }
+                window.selectSubSubject(subToSelect);
+            } else {
+                modalState.subSubject = sub;
+                step4.classList.remove('hidden'); step5.classList.remove('hidden');
+                checkExistingGrade(sub);
+            }
+        };
+
+        window.selectTextbook = (tbId) => {
+            modalState.textbook = tbId; modalState.subSubject = '';
+            
+            const tbs = TEXTBOOKS[modalState.mainSubject];
+            if(tbs) {
+                tbs.forEach(tb => {
+                    const el = document.getElementById(`btn-tb-${tb.id}`);
+                    if(el) {
+                        if(tb.id === tbId) {
+                            el.classList.add('border-blue-500', 'bg-blue-50', 'ring-4', 'ring-blue-200', 'scale-105', 'shadow-md');
+                            el.classList.remove('border-transparent', 'bg-white');
+                        } else {
+                            el.classList.remove('border-blue-500', 'bg-blue-50', 'ring-4', 'ring-blue-200', 'scale-105', 'shadow-md');
+                            el.classList.add('border-transparent', 'bg-white');
+                        }
+                    }
+                });
+            }
+
+            document.getElementById('step-3-container').classList.remove('hidden');
+            const tbObj = tbs.find(t => t.id === tbId);
+            if(tbObj && tbObj.chapters) {
+                document.getElementById('sub-subject-selector').innerHTML = tbObj.chapters.map((ch, idx) => 
+                    `<button onclick="selectSubSubject('${ch}', ${idx})" id="btn-subitem-${idx}" class="block w-full text-left py-3 px-4 rounded-xl border-2 border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-50 transition-all bg-white shadow-sm text-sm md:text-base hover:scale-[1.02] whitespace-nowrap overflow-hidden text-ellipsis">${formatStep3Text(ch)}</button>`
+                ).join('');
+            }
+            
+            document.getElementById('step-4-container').classList.add('hidden');
+            document.getElementById('step-5-container').classList.add('hidden');
+        };
+
+        window.selectSubSubject = (subItem, indexId = null) => {
+            modalState.subSubject = subItem;
+            
+            if (TEXTBOOKS[modalState.mainSubject] && indexId !== null) {
+                const tbObj = TEXTBOOKS[modalState.mainSubject].find(t => t.id === modalState.textbook);
+                if (tbObj && tbObj.chapters) {
+                    tbObj.chapters.forEach((_, idx) => {
+                        const el = document.getElementById(`btn-subitem-${idx}`);
+                        if(el) {
+                            if(idx === indexId) {
+                                el.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]');
+                                el.classList.remove('bg-white', 'text-indigo-700', 'border-indigo-200');
+                            } else {
+                                el.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]');
+                                el.classList.add('bg-white', 'text-indigo-700', 'border-indigo-200');
+                            }
+                        }
+                    });
+                }
+            } else if (SUB_SUBJECTS[modalState.mainSubject]) {
+                SUB_SUBJECTS[modalState.mainSubject].forEach(s => {
+                    const el = document.getElementById(`btn-subitem-${s}`);
+                    if (el) {
+                        if(s === subItem) {
+                            el.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]');
+                            el.classList.remove('bg-white', 'text-indigo-700', 'border-indigo-200');
+                        } else {
+                            el.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]');
+                            el.classList.add('bg-white', 'text-indigo-700', 'border-indigo-200');
+                        }
+                    }
+                });
+            }
+
+            document.getElementById('step-4-container').classList.remove('hidden');
+            document.getElementById('step-5-container').classList.remove('hidden');
+            checkExistingGrade(subItem);
+
+            setTimeout(() => {
+                const step4Container = document.getElementById('step-4-container');
+                if(step4Container) step4Container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        };
+
+        const checkExistingGrade = (subKey) => {
+            let existing = (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][subKey]) ? allGrades[username][modalState.date][subKey] : null;
+
+            if (existing) {
+                window.selectGrade(existing.grade);
+                if (existing.photo) setPhotoPreview(existing.photo);
+                else {
+                     modalState.photoBase64 = '';
+                     document.getElementById('photo-preview-container').classList.add('hidden');
+                     document.getElementById('photo-preview-container').classList.remove('flex');
+                     document.getElementById('photo-placeholder').classList.remove('hidden');
+                     const dropzone = document.getElementById('step-5-dropzone');
+                     if (dropzone) {
+                         dropzone.classList.remove('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid');
+                         dropzone.classList.add('border-dashed', 'bg-white');
+                     }
+                }
+                document.getElementById('btn-delete-grade').classList.remove('hidden');
+            } else {
+                modalState.grade = ''; modalState.photoBase64 = '';
+                GRADES.forEach(g => { 
+                    const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                    if (el) {
+                        el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                        el.classList.add('bg-white', 'text-rose-700', 'border-rose-200');
+                    }
+                });
+                document.getElementById('photo-preview-container').classList.add('hidden');
+                document.getElementById('photo-preview-container').classList.remove('flex');
+                document.getElementById('photo-placeholder').classList.remove('hidden');
+                const dropzone = document.getElementById('step-5-dropzone');
+                if (dropzone) {
+                    dropzone.classList.remove('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid');
+                    dropzone.classList.add('border-dashed', 'bg-white');
+                }
+                document.getElementById('btn-delete-grade').classList.add('hidden');
+            }
+        };
+
+        window.selectGrade = (grade) => {
+            modalState.grade = grade;
+            GRADES.forEach(g => {
+                const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                if(el) {
+                    if(g === grade) {
+                        el.classList.add('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                        el.classList.remove('bg-white', 'text-rose-700', 'border-rose-200');
+                    } else {
+                        el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                        el.classList.add('bg-white', 'text-rose-700', 'border-rose-200');
+                    }
+                }
+            });
+        };
+
         window.viewOthersScore = (e, otherUser, dateStr) => {
             if (e) e.stopPropagation(); 
             const data = (allGrades[otherUser] && allGrades[otherUser][dateStr]) ? allGrades[otherUser][dateStr] : null;
@@ -1619,13 +2099,13 @@
             Object.entries(data).forEach(([subKey, item]) => {
                 const mainSub = item.mainSubject || subKey;
                 const subColor = getSubjectColor(mainSub);
-                const isPlanAchieved = allPlans[otherUser]?.[dateStr]?.[subKey] != null;
-                const achieveBadge = isPlanAchieved ? '<span class="ml-2 text-xl drop-shadow-sm" title="達成計畫">🎯</span>' : '';
-
+                const isTargetAchieved = allPlans[otherUser] && allPlans[otherUser][dateStr] && allPlans[otherUser][dateStr][subKey];
+                
                 contentHtml += `
-                    <div class="mb-5 bg-white p-4 rounded-2xl shadow-sm border ${subColor.border} ${subColor.bg}">
+                    <div class="mb-5 bg-white p-4 rounded-2xl shadow-sm border ${subColor.border} ${subColor.bg} relative">
+                        ${isTargetAchieved ? '<span class="absolute -top-3 -right-3 text-2xl drop-shadow-md" title="計畫達標！">🎯</span>' : ''}
                         <div class="flex justify-between items-start mb-2 ${subColor.text} gap-2">
-                            <span class="font-bold text-base md:text-lg whitespace-pre-line leading-tight pt-1">📌 [${mainSub}] ${subKey} ${achieveBadge}</span>
+                            <span class="font-bold text-base md:text-lg whitespace-pre-line leading-tight pt-1">📌 [${mainSub}] ${subKey}</span>
                             <span class="font-black text-xl md:text-2xl shrink-0">${item.grade}</span>
                         </div>
                         ${item.photo ? `<div class="mt-3"><img src="${item.photo}" class="w-full rounded-xl border border-gray-200 shadow-sm" alt="考卷照片"></div>` : '<div class="text-xs text-gray-400 text-center mt-2">（無附照片）</div>'}
@@ -1641,25 +2121,19 @@
         // ==========================================
         const setupLoginListener = () => {
             if (!currentUser) return;
+            const errHandler = (err) => console.warn("Firestore Listener Error:", err);
+            
             const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
             unsubUsers = onSnapshot(usersRef, (snap) => {
-                if(snap.exists()) {
-                    globalUsers = snap.data().users || [];
-                } else {
-                    globalUsers = [];
-                }
+                globalUsers = snap.exists() ? (snap.data().users || []) : [];
                 if(!username && window.renderLogin) window.renderLogin();
-            }, (err) => console.warn("登入監聽失敗:", err));
+            }, errHandler);
             
             const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile');
             unsubProfile = onSnapshot(profileRef, (snap) => {
-                if(snap.exists()) {
-                    usersProfile = snap.data().profiles || {};
-                } else {
-                    usersProfile = {};
-                }
+                usersProfile = snap.exists() ? (snap.data().profiles || {}) : {};
                 if(!username && window.renderLogin) window.renderLogin();
-            });
+            }, errHandler);
         };
 
         const setupListeners = () => {
@@ -1669,11 +2143,7 @@
             const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
             if(unsubUsers) unsubUsers();
             unsubUsers = onSnapshot(usersRef, (snap) => {
-                if(snap.exists()) {
-                    globalUsers = snap.data().users || [];
-                } else {
-                    globalUsers = [];
-                }
+                globalUsers = snap.exists() ? (snap.data().users || []) : [];
                 if (username && !globalUsers.includes(username)) {
                     alert('⚠️ 系統提示：您的帳號已被管理員移除或系統重置，請重新註冊/登入！');
                     window.logout(); 
@@ -1683,11 +2153,7 @@
             const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile');
             if(unsubProfile) unsubProfile();
             unsubProfile = onSnapshot(profileRef, (snap) => {
-                if(snap.exists()) {
-                    usersProfile = snap.data().profiles || {};
-                } else {
-                    usersProfile = {};
-                }
+                usersProfile = snap.exists() ? (snap.data().profiles || {}) : {};
                 if(username) window.renderMainContent();
             }, errHandler);
 
@@ -1715,35 +2181,14 @@
                 if(username) window.renderChat();
             }, errHandler);
 
-            const gradesCol = collection(db, 'artifacts', appId, 'public', 'data', 'Grades');
-            if(unsubGrades) unsubGrades();
-            unsubGrades = onSnapshot(gradesCol, (snap) => {
-                let newAllGrades = {};
-                snap.forEach(docSnap => {
-                    const data = docSnap.data();
-                    if(!data.user || !data.date || !data.subSubject) return; 
-                    
-                    if(!newAllGrades[data.user]) newAllGrades[data.user] = {};
-                    if(!newAllGrades[data.user][data.date]) newAllGrades[data.user][data.date] = {};
-                    
-                    newAllGrades[data.user][data.date][data.subSubject] = {
-                        mainSubject: data.mainSubject || '',
-                        grade: data.grade,
-                        photo: data.photo || null,
-                        updatedAt: data.updatedAt || ''
-                    };
-                });
-                allGrades = newAllGrades;
-                if(username) window.renderMainContent();
-            }, errHandler);
-            
+            // 載入 Plans
             const plansCol = collection(db, 'artifacts', appId, 'public', 'data', 'Plans');
             if(unsubPlans) unsubPlans();
             unsubPlans = onSnapshot(plansCol, (snap) => {
                 let newAllPlans = {};
                 snap.forEach(docSnap => {
                     const data = docSnap.data();
-                    if(!data.user || !data.date || !data.subSubject) return;
+                    if(!data.user || !data.date || !data.subSubject) return; 
                     if(!newAllPlans[data.user]) newAllPlans[data.user] = {};
                     if(!newAllPlans[data.user][data.date]) newAllPlans[data.user][data.date] = {};
                     newAllPlans[data.user][data.date][data.subSubject] = data;
@@ -1751,10 +2196,28 @@
                 allPlans = newAllPlans;
                 if(username) {
                     window.renderMainContent();
-                    if(!document.getElementById('plan-modal').classList.contains('hidden')) {
-                        window.renderPlanCalendar();
+                    if(!document.getElementById('plan-modal')?.classList.contains('hidden')) {
+                        renderPlanHorizontalCalendar();
                     }
                 }
+            }, errHandler);
+
+            // 載入 Grades
+            const gradesCol = collection(db, 'artifacts', appId, 'public', 'data', 'Grades');
+            if(unsubGrades) unsubGrades();
+            unsubGrades = onSnapshot(gradesCol, (snap) => {
+                let newAllGrades = {};
+                snap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if(!data.user || !data.date || !data.subSubject) return; 
+                    if(!newAllGrades[data.user]) newAllGrades[data.user] = {};
+                    if(!newAllGrades[data.user][data.date]) newAllGrades[data.user][data.date] = {};
+                    newAllGrades[data.user][data.date][data.subSubject] = {
+                        mainSubject: data.mainSubject || '', grade: data.grade, photo: data.photo || null, updatedAt: data.updatedAt || ''
+                    };
+                });
+                allGrades = newAllGrades;
+                if(username) window.renderMainContent();
             }, errHandler);
         };
 
@@ -1803,7 +2266,6 @@
         };
 
         initApp();
-
     </script>
 </body>
 </html>
