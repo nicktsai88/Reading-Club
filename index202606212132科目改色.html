@@ -220,34 +220,36 @@
         //  色彩計畫系統 (科目與使用者頭像)
         // ==========================================
         const SUBJECT_COLORS = {
-            '國文': { bg: 'bg-[#FF0000]/10', text: 'text-[#FF0000]', border: 'border-[#FF0000]/30' },
-            '英文': { bg: 'bg-[#FF5511]/10', text: 'text-[#FF5511]', border: 'border-[#FF5511]/30' },
-            '數學': { bg: 'bg-[#EEEE00]/20', text: 'text-[#B3B300]', border: 'border-[#EEEE00]/60' },
-            '生物': { bg: 'bg-[#66DD00]/15', text: 'text-[#4DA600]', border: 'border-[#66DD00]/40' },
-            '理化': { bg: 'bg-[#00DDDD]/15', text: 'text-[#00A3A3]', border: 'border-[#00DDDD]/40' },
-            '地科': { bg: 'bg-[#0000CC]/10', text: 'text-[#0000CC]', border: 'border-[#0000CC]/30' },
-            '地球科學': { bg: 'bg-[#0000CC]/10', text: 'text-[#0000CC]', border: 'border-[#0000CC]/30' },
-            '歷史': { bg: 'bg-[#CC00CC]/10', text: 'text-[#CC00CC]', border: 'border-[#CC00CC]/30' },
-            '地理': { bg: 'bg-[#FF0088]/10', text: 'text-[#FF0088]', border: 'border-[#FF0088]/30' },
-            '公民': { bg: 'bg-[#00DD00]/15', text: 'text-[#00A600]', border: 'border-[#00DD00]/40' },
-            '自然合科': { bg: 'bg-[#66DD00]/15', text: 'text-[#4DA600]', border: 'border-[#66DD00]/40' },
-            '社會合科': { bg: 'bg-[#FF0088]/10', text: 'text-[#FF0088]', border: 'border-[#FF0088]/30' },
-            'default': { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' }
+            '國文': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+            '英文': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+            '數學': { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
+            '自然': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
+            '自然合科': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
+            '生物': { bg: 'bg-lime-50', text: 'text-lime-700', border: 'border-lime-200' },
+            '理化': { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200' },
+            '地科': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+            '地球科學': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+            '社會': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
+            '社會合科': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
+            '歷史': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+            '地理': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
+            '公民': { bg: 'bg-fuchsia-50', text: 'text-fuchsia-700', border: 'border-fuchsia-200' },
+            'default': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' }
         };
 
         const SUBJECT_HEX_COLORS = {
-            '國文': '#FF0000',
-            '英文': '#FF5511',
-            '數學': '#EEEE00',
-            '生物': '#66DD00',
-            '理化': '#00DDDD',
-            '地科': '#0000CC',
-            '地球科學': '#0000CC', 
-            '歷史': '#CC00CC',
-            '地理': '#FF0088',
-            '公民': '#00DD00',
-            '自然合科': '#66DD00', 
-            '社會合科': '#FF0088', 
+            '國文': '#FF8888',
+            '英文': '#FFBB66',
+            '數學': '#FFFF77',
+            '生物': '#BBFF66',
+            '理化': '#66FFFF',
+            '地科': '#9999FF',
+            '地球科學': '#9999FF', 
+            '歷史': '#FF77FF',
+            '地理': '#FF88C2',
+            '公民': '#66FF66',
+            '自然合科': '#BBFF66', 
+            '社會合科': '#FF88C2', 
             'default': '#E5E7EB'
         };
 
@@ -1049,7 +1051,7 @@
                     const reviews = w.reviews || [false, false, false, false, false];
                     
                     // 避免亮黃色字體難以閱讀
-                    const safeTextColor = hexColor === '#EEEE00' ? '#D4D400' : hexColor;
+                    const safeTextColor = hexColor === '#FFFF77' ? '#D4D400' : hexColor;
 
                     html += `
                         <div class="rounded-2xl p-4 shadow-sm border-2 relative flex flex-col hover:shadow-md transition-shadow" style="${bgStyle}">
@@ -1860,8 +1862,7 @@
                         cellContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
                         Object.entries(userGrades).forEach(([subKey, info]) => {
                             let mainSub = info.mainSubject || subKey;
-                            let hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
-                            let safeTextColor = (hexColor === '#EEEE00' || hexColor === '#FFFF77') ? '#B3B300' : hexColor;
+                            let subColor = getSubjectColor(mainSub);
 
                             let shortName = mainSub;
                             if(shortName === '自然合科') shortName = '自然';
@@ -1869,7 +1870,7 @@
                             if(shortName === '地球科學') shortName = '地科';
 
                             cellContent += `
-                                <div class="text-[9px] md:text-[11px] font-bold border px-1 py-0.5 rounded flex items-center justify-between shadow-sm" style="background-color: ${hexColor}20; border-color: ${hexColor}50; color: ${safeTextColor};">
+                                <div class="text-[9px] md:text-[11px] font-bold ${subColor.bg} ${subColor.text} ${subColor.border} border px-1 py-0.5 rounded flex items-center justify-between shadow-sm">
                                     <span class="truncate">${shortName} <span class="font-black ml-0.5">${info.grade}</span></span>
                                     ${info.photo ? '<span class="text-[8px] md:text-[9px] text-purple-500 shrink-0 ml-0.5">📸</span>' : ''}
                                 </div>
@@ -1938,15 +1939,14 @@
                 const emoji = isA ? '🏆' : '💪';
                 
                 const mainSub = item.mainSubject || item.subject;
-                const hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
-                const safeTextColor = hexColor === '#EEEE00' ? '#D4D400' : hexColor;
+                const subColor = getSubjectColor(mainSub);
                 const displayName = usersProfile[item.user]?.nickname || item.user;
 
                 const mainSubStr = item.mainSubject && item.mainSubject !== item.subject ? `${item.mainSubject} ` : '';
                 const fullSubStr = `${mainSubStr}${item.subject}`;
 
                 html += `
-                    <div class="p-3 rounded-2xl border-2 shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" style="background-color: ${hexColor}15; border-color: ${hexColor}50;" onclick="viewOthersScore(null, '${item.user}', '${item.date}')">
+                    <div class="p-3 rounded-2xl border-2 ${subColor.border} ${subColor.bg} shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" onclick="viewOthersScore(null, '${item.user}', '${item.date}')">
                         <div class="flex justify-between items-center mb-1">
                             <span class="font-bold text-gray-700 bg-white px-2 py-0.5 rounded shadow-sm text-xs border border-gray-100 flex items-center gap-1.5">
                                 <div class="w-3 h-3 rounded-full flex items-center justify-center text-[8px] ${getUserColor(item.user)}">${getAvatarChar(item.user)}</div>
@@ -1955,7 +1955,7 @@
                             <span class="text-[10px] text-gray-400 font-mono">${item.date}</span>
                         </div>
                         <div class="text-sm text-gray-600">
-                            在 <span class="font-bold text-gray-800" title="${fullSubStr}">${fullSubStr.length > 20 ? fullSubStr.substring(0,18)+'...' : fullSubStr}</span> 獲得 <span class="font-black text-lg mx-1" style="color: ${safeTextColor}">${item.grade}</span> ${emoji}
+                            在 <span class="font-bold text-gray-800" title="${fullSubStr}">${fullSubStr.length > 20 ? fullSubStr.substring(0,18)+'...' : fullSubStr}</span> 獲得 <span class="font-black text-lg mx-1 ${subColor.text}">${item.grade}</span> ${emoji}
                         </div>
                         ${item.photo ? `<div class="absolute right-3 bottom-2 text-purple-400 text-lg opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
                     </div>
@@ -2428,20 +2428,19 @@
             
             Object.entries(data).forEach(([subKey, item]) => {
                 const mainSub = item.mainSubject || subKey;
-                const hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
-                const safeTextColor = hexColor === '#EEEE00' ? '#D4D400' : hexColor;
+                const subColor = getSubjectColor(mainSub);
                 const isWeak = item.isWeakness;
                 const weakIndicator = isWeak ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded border border-red-200 ml-2 shadow-sm whitespace-nowrap">🔥 弱點標記</span>' : '';
                 
                 contentHtml += `
-                    <div class="mb-5 bg-white p-4 rounded-2xl shadow-sm border-2 relative" style="background-color: ${hexColor}0A; border-color: ${hexColor}50;">
-                        <div class="flex justify-between items-start mb-2 gap-2 flex-wrap" style="color: ${safeTextColor}">
+                    <div class="mb-5 bg-white p-4 rounded-2xl shadow-sm border ${subColor.border} ${subColor.bg} relative">
+                        <div class="flex justify-between items-start mb-2 ${subColor.text} gap-2 flex-wrap">
                             <span class="font-bold text-base md:text-lg whitespace-pre-line leading-tight pt-1 flex items-center flex-wrap">📌 [${mainSub}] ${subKey} ${weakIndicator}</span>
                             <span class="font-black text-xl md:text-2xl shrink-0">${item.grade}</span>
                         </div>
                         ${isWeak && item.weaknessNote ? `
-                            <div class="mt-2 mb-3 bg-white/80 p-2 rounded border border-white text-sm text-gray-700 shadow-sm">
-                                <div class="text-xs font-bold mb-1" style="color: ${safeTextColor}">📝 錯題筆記：</div>
+                            <div class="mt-2 mb-3 bg-yellow-50 p-2 rounded border border-yellow-200 text-sm text-gray-700">
+                                <div class="text-xs font-bold text-yellow-600 mb-1">📝 錯題筆記：</div>
                                 ${item.weaknessNote.replace(/\n/g, '<br>')}
                             </div>
                         ` : ''}
