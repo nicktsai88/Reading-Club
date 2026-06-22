@@ -94,7 +94,7 @@
     <script type="application/json" id="app-data">
     {
       "EXAM_DATE": "2027-05-22T00:00:00",
-      "SUBJECTS": ["國文", "英文", "數學", "生物", "理化", "歷史", "自然", "社會"],
+      "SUBJECTS": ["國文", "英文", "數學", "生物", "理化", "地球科學", "歷史", "地理", "公民", "自然", "社會"],
       "SUB_SUBJECTS": {
         "自然": ["自然合科", "地科"],
         "社會": ["社會合科", "地理", "公民"]
@@ -165,6 +165,12 @@
             "單元18 第六冊 (磁)", "會考模擬試題 5~6冊"
           ]}
         ],
+        "地球科學": [
+          { "id": "earth1", "name": "大滿貫", "img": "images/earth1.jpg", "chapters": [
+            "單元1 第五冊 地表環境與資源", "單元2 第五冊 固體地球的變動", "單元3 第五冊 我們的宇宙",
+            "單元4 第六冊 大氣變化", "單元5 第六冊 永續的地球", "會考模擬試題 5~6冊"
+          ]}
+        ],
         "歷史": [
           { "id": "h1", "name": "大滿貫", "img": "images/h1.jpg", "chapters": [
             "單元1 第一冊 (史前~大航海時代的台灣)", "單元2 第一冊 (清帝國統治下的台灣)", "單元3 第二冊 (日治時期的台灣)",
@@ -175,6 +181,26 @@
             "單元11 第五冊 (多元並立的古代文化)", "單元12 第五冊 (普世宗教與近代歐洲的興起)", "單元13 第五冊 (近代歐洲的變革與現代世界的形成)",
             "單元14 第六冊 (現代國家的誕生與第一次世界大戰)", "單元15 第六冊 (第二次世界大戰與戰後發展)",
             "會考模擬試題 1~6冊"
+          ]}
+        ],
+        "地理": [
+          { "id": "g1", "name": "KO會考", "img": "images/g1.jpg", "chapters": [
+            "單元1 第一冊 臺灣的位置與範圍", "單元2 第一冊 臺灣的地形、海岸與離島", "單元3 第一冊 臺灣的天氣、氣候與水文",
+            "單元4 第二冊 臺灣的人口與文化", "單元5 第二冊 臺灣的產業", "單元6 第二冊 臺灣的聚落、交通與區域發展",
+            "會考模擬試題 1~2冊", "單元7 第三冊 中國的自然環境與人口", "單元8 第三冊 中國的產業、經濟發展與全球關聯",
+            "單元9 第三冊 全球氣候概述、東北亞", "單元10 第四冊 東南亞與南亞", "單元11 第四冊 西亞與北非", "單元12 第四冊 漠南非洲",
+            "會考模擬試題 1~4冊", "單元13 第五冊 歐洲與俄羅斯", "單元14 第五冊 美洲", "單元15 第五冊 大洋洲、兩極與氣候變遷",
+            "單元16 第六冊 臺灣的地名文化、產業與食品安全", "會考模擬試題 1~6冊"
+          ]}
+        ],
+        "公民": [
+          { "id": "ct1", "name": "大滿貫", "img": "images/ct1.jpg", "chapters": [
+            "單元1 第一冊 公民身分、人性尊嚴與性別", "單元2 第一冊 家庭、學校與部落", "單元3 第二冊 文化與社會規範、結社",
+            "單元4 第二冊 公共意見、公平正義與社會福利", "會考模擬試題 1~2冊", "單元5 第三冊 國家、憲法與基本權利",
+            "單元6 第三冊 法治與權力分立、中央政府", "單元7 第三冊 地方政府與政治參與", "單元8 第四冊 民法、刑法與行政法",
+            "單元9 第四冊 權利救濟", "單元10 第四冊 青少年法律", "會考模擬試題 1~4冊", "單元11 第五冊 消費與生產",
+            "單元12 第五冊 市場競爭與勞動參與", "單元13 第五冊 貨幣與國際貿易", "會考模擬試題 1~5冊",
+            "單元14 第六冊 科技發展、全球化與國際參與", "會考模擬試題 1~6冊"
           ]}
         ]
       },
@@ -223,6 +249,9 @@
         const BIO_CHAPTERS_2 = TEXTBOOKS['生物'][1].chapters;
         const PHY_CHAPTERS = TEXTBOOKS['理化'][0].chapters;
         const HISTORY_CHAPTERS = TEXTBOOKS['歷史'][0].chapters;
+        const CITIZEN_CHAPTERS = TEXTBOOKS['公民'][0].chapters;
+        const GEO_CHAPTERS = TEXTBOOKS['地理'][0].chapters;
+        const EARTH_CHAPTERS = TEXTBOOKS['地球科學'][0].chapters;
 
         // ==========================================
         //  色彩計畫系統 (科目與使用者頭像)
@@ -1004,14 +1033,23 @@
             // 生物 (麻辣講義)
             html += buildHorizontalTable('生物\n(麻辣講義)', 'images/b1.jpg', BIO_CHAPTERS, (ch) => ch);
 
-            // 生物 (大滿貫) - 新增
+            // 生物 (大滿貫)
             html += buildHorizontalTable('生物\n(大滿貫)', 'images/b2.jpg', BIO_CHAPTERS_2, (ch) => ch);
 
             // 理化 (大滿貫)
             html += buildHorizontalTable('理化\n(大滿貫)', 'images/p1.jpg', PHY_CHAPTERS, (ch) => ch);
 
+            // 地球科學 (大滿貫)
+            html += buildHorizontalTable('地球科學\n(大滿貫)', 'images/earth1.jpg', EARTH_CHAPTERS, (ch) => ch);
+
             // 歷史 (大滿貫)
             html += buildHorizontalTable('歷史\n(大滿貫)', 'images/h1.jpg', HISTORY_CHAPTERS, (ch) => ch);
+
+            // 地理 (KO會考)
+            html += buildHorizontalTable('地理\n(KO會考)', 'images/g1.jpg', GEO_CHAPTERS, (ch) => ch);
+
+            // 公民 (大滿貫)
+            html += buildHorizontalTable('公民\n(大滿貫)', 'images/ct1.jpg', CITIZEN_CHAPTERS, (ch) => ch);
 
             // 自然合科
             html += buildHorizontalTable('自然合科', null, SUB_SUBJECTS['自然'], (sub) => sub);
@@ -1044,7 +1082,7 @@
             });
 
             const getSubjectOrder = (sub) => {
-                const order = ['國文', '英文', '數學', '生物', '理化', '地科', '地球科學', '歷史', '地理', '公民', '自然合科', '社會合科'];
+                const order = ['國文', '英文', '數學', '生物', '理化', '地球科學', '歷史', '地理', '公民', '自然合科', '社會合科'];
                 const idx = order.indexOf(sub);
                 return idx !== -1 ? idx : 999;
             };
@@ -1196,7 +1234,7 @@
             document.getElementById('analysis-user-name').innerText = `👤 ${dispName} 的戰力分析`;
             
             // 要求的九大科目
-            const analysisSubjects = ['國文', '英文', '數學', '生物', '理化', '地科', '歷史', '地理', '公民'];
+            const analysisSubjects = ['國文', '英文', '數學', '生物', '理化', '地球科學', '歷史', '地理', '公民'];
             
             const gradeToNum = (g) => {
                 const map = { 'A++': 7, 'A+': 6, 'A': 5, 'B++': 4, 'B+': 3, 'B': 2, 'C': 1 };
@@ -1218,10 +1256,18 @@
             Object.keys(uGrades).forEach(dateStr => {
                 Object.keys(uGrades[dateStr]).forEach(subKey => {
                     const item = uGrades[dateStr][subKey];
-                    // 為了容納超長章節名稱，比對該紀錄的 mainSubject 是否為雷達圖的對象
-                    const actualSub = analysisSubjects.includes(subKey) ? subKey : (analysisSubjects.includes(item.mainSubject) ? item.mainSubject : null);
                     
-                    if (actualSub && analysisSubjects.includes(actualSub)) {
+                    // 相容舊有資料可能叫「地科」的問題
+                    let actualSub = null;
+                    if (analysisSubjects.includes(subKey)) {
+                        actualSub = subKey;
+                    } else if (analysisSubjects.includes(item.mainSubject)) {
+                        actualSub = item.mainSubject;
+                    } else if (item.mainSubject === '地科' || subKey === '地科') {
+                        actualSub = '地球科學';
+                    }
+                    
+                    if (actualSub) {
                         const grade = item.grade;
                         const num = gradeToNum(grade);
                         if (num !== null) {
