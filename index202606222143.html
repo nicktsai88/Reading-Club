@@ -388,14 +388,6 @@
             return '';
         };
 
-        const getTextbookImg = (mainSub, subSub) => {
-            if (TEXTBOOKS[mainSub]) {
-                const tb = TEXTBOOKS[mainSub].find(t => t.chapters.includes(subSub));
-                if (tb) return tb.img;
-            }
-            return null;
-        };
-
         // ==========================================
         //  UI 渲染函式 - 系統框架與登入
         // ==========================================
@@ -723,7 +715,7 @@
                 
                 <!-- 弱點集中營 Modal -->
                 <div id="weakness-modal" class="fixed inset-0 bg-gray-900/70 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('weakness-modal')">
-                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-7xl overflow-hidden border-4 border-red-300 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
+                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl overflow-hidden border-4 border-red-300 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
                         <div class="bg-gradient-to-r from-red-500 to-orange-500 p-4 flex justify-between items-center text-white shrink-0">
                             <h2 class="text-xl font-bold flex items-center gap-2">🔥 弱點集中營</h2>
                             <button onclick="closeGlobalModal('weakness-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
@@ -1098,7 +1090,7 @@
                     </div>
                 `;
             } else {
-                let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">';
+                let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
                 weaknesses.forEach(w => {
                     const mainSub = w.mainSubject || w.subSubject;
                     const isMe = targetUser === username;
@@ -1109,18 +1101,14 @@
                     const badgeBgStyle = `background-color: #ffffff; color: ${safeTextColor}; border-color: ${hexColor};`;
                     
                     const tbName = getTextbookName(w.mainSubject, w.subSubject);
-                    const tbImg = getTextbookImg(w.mainSubject, w.subSubject);
                     const displaySubject = tbName ? `${mainSub}(${tbName})` : mainSub;
                     const reviews = w.reviews || [false, false, false, false, false];
 
                     html += `
                         <div class="rounded-2xl p-4 shadow-sm border-2 relative flex flex-col hover:shadow-md transition-shadow" style="${bgStyle}">
-                            <div class="flex justify-between items-start mb-2 gap-2">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="font-bold text-sm px-2 py-1 rounded-md border whitespace-nowrap" style="${badgeBgStyle}">📌 [${displaySubject}]</span>
-                                    ${tbImg ? `<img src="${tbImg}" class="h-7 w-auto object-contain rounded border border-gray-200 shadow-sm bg-white" title="${tbName} 封面">` : ''}
-                                </div>
-                                <span class="text-xs text-gray-500 font-mono bg-white/60 px-1 rounded shrink-0">${w.date}</span>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="font-bold text-sm px-2 py-1 rounded-md border" style="${badgeBgStyle}">📌 [${displaySubject}]</span>
+                                <span class="text-xs text-gray-500 font-mono bg-white/60 px-1 rounded">${w.date}</span>
                             </div>
                             <h4 class="font-black text-gray-800 text-md md:text-lg mb-2 leading-tight">${w.subSubject}</h4>
                             <div class="flex items-center gap-2 mb-3">
@@ -1838,21 +1826,13 @@
             const headerContainer = document.getElementById('calendar-header-container');
             if(!container || !headerContainer) return;
 
-            const circledNumbers = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
-            const extractHex = (cls) => {
-                const match = cls.match(/bg-\[(#[0-9A-Fa-f]{6})\]/);
-                return match ? match[1] : '#0d9488'; // fallback teal
-            };
-
             headerContainer.innerHTML = `
                 <h2 class="text-xl md:text-2xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
                 <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-teal-700 bg-teal-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
                     <option value="ALL" ${viewingUser === 'ALL' ? 'selected' : ''}>🌍 全部進度</option>
-                    ${globalUsers.map((u, index) => {
+                    ${globalUsers.map(u => {
                         const dispName = usersProfile[u]?.nickname || u;
-                        const circleNum = circledNumbers[index] || `(${index+1})`;
-                        const hexColor = extractHex(getUserColor(u));
-                        return `<option value="${u}" style="color: ${hexColor}; font-weight: bold;" ${u === viewingUser ? 'selected' : ''}>${circleNum} ${dispName} 的個人進度</option>`;
+                        return `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>❤️ ${dispName} 的個人進度</option>`;
                     }).join('')}
                 </select>
             `;
@@ -1902,7 +1882,7 @@
                     // ALL View: No subjects/grades. Just date on left, 2-col scrollable avatars on right.
                     const avatarsHtml = usersWithDataToday.map(u => `
                         <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
-                             class="${getUserColor(u)} w-3.5 h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5 rounded-full flex items-center justify-center text-[7px] md:text-[9px] lg:text-[10px] font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
+                             class="${getUserColor(u)} w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center text-[9px] md:text-xs font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
                              title="查看 ${usersProfile[u]?.nickname || u} 的成績">
                             ${getAvatarChar(u)}
                         </div>
@@ -1918,7 +1898,7 @@
 
                             <div class="flex-1 overflow-y-auto custom-scrollbar h-full pl-1">
                                 ${usersWithDataToday.length > 0 ? `
-                                    <div class="flex flex-wrap justify-end content-start gap-0.5 pb-1 pr-0.5">
+                                    <div class="grid grid-cols-2 gap-1 justify-items-end md:justify-items-center pb-1 pr-0.5">
                                         ${avatarsHtml}
                                     </div>
                                 ` : ''}
@@ -1956,10 +1936,10 @@
                             <div class="flex justify-between items-start shrink-0 mb-0.5 md:mb-1 w-full">
                                 <span class="w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass} shrink-0">${d}</span>
                                 
-                                <div class="flex flex-wrap justify-end content-start gap-0.5 flex-1 mx-1 mt-0.5 overflow-y-auto custom-scrollbar max-h-12 md:max-h-14 pr-1">
+                                <div class="flex flex-wrap justify-end content-start gap-1 flex-1 mx-1 mt-0.5 overflow-y-auto custom-scrollbar max-h-12 md:max-h-14 pr-1">
                                     ${usersWithDataToday.map(u => `
                                         <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
-                                             class="${getUserColor(u)} w-3.5 h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4 rounded-full flex items-center justify-center text-[7px] md:text-[8px] font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
+                                             class="${getUserColor(u)} w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center text-[9px] md:text-[11px] font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
                                              title="查看 ${usersProfile[u]?.nickname || u} 的成績">
                                             ${getAvatarChar(u)}
                                         </div>
