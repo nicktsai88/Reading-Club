@@ -222,6 +222,13 @@
         // ==========================================
         //  系統設定與常數
         // ==========================================
+        const BASE_FIREBASE_CONFIG = {
+            authDomain: "chinese-learning-47f4d.firebaseapp.com",
+            projectId: "chinese-learning-47f4d",
+            storageBucket: "chinese-learning-47f4d.firebasestorage.app",
+            messagingSenderId: "76289812052",
+            appId: "1:76289812052:web:898384a916f9f341f62fc1"
+        };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-group-app';
         
         // 從 HTML 解析 JSON 資料
@@ -245,9 +252,6 @@
         const CITIZEN_CHAPTERS = TEXTBOOKS['公民'][0].chapters;
         const GEO_CHAPTERS = TEXTBOOKS['地理'][0].chapters;
         const EARTH_CHAPTERS = TEXTBOOKS['地球科學'][0].chapters;
-
-        // 客製化下拉選單之數字陣列
-        const CIRCLED_NUMBERS = ['➀','➁','➂','➃','➄','➅','➆','➇','➈','➉','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
 
         // ==========================================
         //  色彩計畫系統 (科目與使用者頭像)
@@ -395,6 +399,17 @@
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         };
 
+        const getStoredConfig = () => {
+            const stored = localStorage.getItem('study_group_firebase_config');
+            if (stored) {
+                try { return JSON.parse(stored); } catch(e) {}
+            }
+            if (typeof __firebase_config !== 'undefined') {
+                try { return JSON.parse(__firebase_config); } catch(e) {}
+            }
+            return null;
+        };
+
         const getAvatarChar = (u) => {
             if(usersProfile[u] && usersProfile[u].nickname) {
                 return usersProfile[u].nickname.charAt(0);
@@ -418,6 +433,31 @@
             renderGlobalModals();
         };
 
+        window.renderSetup = () => {
+            const container = document.getElementById('view-container');
+            const currentConfig = getStoredConfig() || {};
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-y-auto">
+                    <div class="glass-panel p-8 md:p-10 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] max-w-[95vw] border-4 border-teal-200 relative overflow-hidden">
+                        <h1 class="text-2xl md:text-3xl font-black text-teal-600 mb-2 drop-shadow-sm text-center">⚙️ 系統資料庫設定</h1>
+                        <p class="text-sm text-gray-500 mb-6 text-center font-bold">請填入您的 Firebase API Key 以啟用雲端同步功能</p>
+                        <div class="space-y-3 bg-white/60 p-6 rounded-2xl border border-teal-100">
+                            <div>
+                                <label class="block text-xs font-bold text-teal-800 mb-1">API Key (必填) *</label>
+                                <input type="text" id="cfg-apiKey" value="${currentConfig.apiKey || ''}" placeholder="AIzaSy..." class="w-full px-3 py-2 rounded-lg border border-teal-200 focus:outline-none focus:border-teal-400 text-sm font-mono">
+                            </div>
+                        </div>
+                        <div class="mt-6 flex gap-3 justify-center">
+                            ${currentConfig.apiKey ? `<button onclick="renderLogin()" class="px-5 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors">取消</button>` : ''}
+                            <button onclick="saveFirebaseConfig()" class="flex-1 bg-gradient-to-r from-teal-400 to-emerald-400 text-white font-bold py-2.5 px-6 rounded-xl shadow-md hover:shadow-lg transition-all">
+                                💾 儲存並啟動系統
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
         window.renderLogin = () => {
             const container = document.getElementById('view-container');
             container.innerHTML = `
@@ -425,14 +465,17 @@
                     <div class="glass-panel p-8 md:p-12 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] max-w-[95vw] text-center border-4 border-pink-200 relative overflow-hidden">
                         <div class="absolute top-4 left-4 text-4xl animate-bounce-slow">✨</div>
                         <div class="absolute bottom-4 right-4 text-4xl animate-bounce-slow" style="animation-delay: 1s;">🎓</div>
+                        <button onclick="renderSetup()" class="absolute top-5 right-5 text-gray-400 hover:text-teal-600 transition-colors bg-white/50 p-2 rounded-full border border-gray-200 hover:bg-white" title="系統設定">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </button>
                         
                         <div class="flex justify-center items-center gap-4 md:gap-6 mb-8 mt-2">
                             <div class="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-1 shadow-lg border-4 border-red-200 overflow-hidden flex justify-center items-center hover:scale-105 transition-transform">
-                                <img src="school1.jpg" alt="雄中" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'">
+                                <img src="school1.jpg" alt="雄中" class="w-full h-full object-contain rounded-full" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2ZmY2RkMiIvPjwvc3ZnPg=='">
                             </div>
                             <div class="text-4xl md:text-5xl font-black text-pink-400">X</div>
                             <div class="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full p-1 shadow-lg border-4 border-red-200 overflow-hidden flex justify-center items-center hover:scale-105 transition-transform">
-                                <img src="school2.jpg" alt="雄女" class="w-full h-full object-contain rounded-full" onerror="this.style.display='none'">
+                                <img src="school2.jpg" alt="雄女" class="w-full h-full object-contain rounded-full" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2ZmY2RkMiIvPjwvc3ZnPg=='">
                             </div>
                         </div>
 
@@ -526,7 +569,7 @@
                     <div class="flex-1 bg-white/30 p-4 flex flex-col relative z-0 min-w-0">
                         <div class="flex justify-between items-center mb-4 bg-white/80 p-3 rounded-2xl border border-pink-100 shadow-sm shrink-0">
                             <button onclick="changeMonth(-1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">◀ 上個月</button>
-                            <div class="flex flex-col items-center flex-1 mx-2 overflow-visible" id="calendar-header-container"></div>
+                            <div class="flex flex-col items-center flex-1 mx-2 overflow-hidden" id="calendar-header-container"></div>
                             <button onclick="changeMonth(1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">下個月 ▶</button>
                         </div>
                         <div id="calendar-grid" class="flex-1 flex flex-col min-h-0"></div>
@@ -766,9 +809,9 @@
                     </div>
                 </div>
 
-                <!-- 查看他人成績 Modal (寬度升級為 max-w-7xl) -->
+                <!-- 查看他人成績 Modal (z-index 提高，可覆蓋在其他視窗之上) -->
                 <div id="view-score-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[80] p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-7xl overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 90%; max-height: 90dvh;">
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 90%; max-height: 90dvh;">
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
                             <h2 class="text-xl font-bold flex items-center gap-2">👀 查看成績 <span id="view-modal-date" class="bg-white/20 px-2 py-1 rounded text-sm font-mono"></span></h2>
                             <button onclick="closeGlobalModal('view-score-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
@@ -1372,15 +1415,6 @@
                     emojiPicker.classList.add('hidden');
                 }
             }
-
-            // 客製化下拉選單防誤觸關閉
-            const userDropdown = document.getElementById('user-filter-dropdown');
-            const dropdownBtn = document.getElementById('dropdown-toggle-btn');
-            if (userDropdown && !userDropdown.classList.contains('hidden')) {
-                if (!userDropdown.contains(e.target) && (!dropdownBtn || !dropdownBtn.contains(e.target))) {
-                    userDropdown.classList.add('hidden');
-                }
-            }
         });
 
         // ==========================================
@@ -1683,7 +1717,6 @@
 
         window.renderAdminUsers = () => {
             const tbody = document.getElementById('admin-users-list');
-            if(!tbody) return;
             tbody.innerHTML = globalUsers.map(u => {
                 const prof = usersProfile[u] || {};
                 return `
@@ -1840,17 +1873,6 @@
         window.changeViewingUser = (user) => {
             viewingUser = user;
             window.renderCalendar();
-            // 切換時自動關閉選單
-            const dropdown = document.getElementById('user-filter-dropdown');
-            if(dropdown) dropdown.classList.add('hidden');
-        };
-
-        window.toggleUserDropdown = (e) => {
-            if(e) e.stopPropagation();
-            const dropdown = document.getElementById('user-filter-dropdown');
-            if(dropdown) {
-                dropdown.classList.toggle('hidden');
-            }
         };
 
         window.renderCalendar = () => {
@@ -1858,49 +1880,15 @@
             const headerContainer = document.getElementById('calendar-header-container');
             if(!container || !headerContainer) return;
 
-            // 客製化下拉選單建立
-            let selectedHtml = '🌍 全部進度';
-            if (viewingUser !== 'ALL') {
-                const uIdx = globalUsers.indexOf(viewingUser);
-                const numChar = CIRCLED_NUMBERS[uIdx] || (uIdx + 1);
-                const dispName = usersProfile[viewingUser]?.nickname || viewingUser;
-                const userColorClasses = getUserColor(viewingUser).split(' ');
-                const bgColorClass = userColorClasses.find(c => c.startsWith('bg-['));
-                const textColorHex = bgColorClass ? bgColorClass.replace('bg-[', '').replace(']', '') : '#14b8a6';
-                
-                selectedHtml = `<span style="color: ${textColorHex};" class="font-black text-lg mr-1.5 leading-none drop-shadow-sm shrink-0">${numChar}</span> <span class="truncate">${dispName} 的進度</span>`;
-            }
-
-            let dropdownOptions = `<div onclick="changeViewingUser('ALL')" class="px-5 py-3 hover:bg-teal-50 cursor-pointer flex items-center gap-3 font-bold text-teal-700 transition-colors text-sm md:text-base border-b border-gray-50">🌍 全部進度</div>`;
-            
-            globalUsers.forEach((u, idx) => {
-                const dispName = usersProfile[u]?.nickname || u;
-                const numChar = CIRCLED_NUMBERS[idx] || (idx + 1);
-                const userColorClasses = getUserColor(u).split(' ');
-                const bgColorClass = userColorClasses.find(c => c.startsWith('bg-['));
-                const textColorHex = bgColorClass ? bgColorClass.replace('bg-[', '').replace(']', '') : '#14b8a6';
-                
-                dropdownOptions += `
-                    <div onclick="changeViewingUser('${u}')" class="px-5 py-3 hover:bg-gray-50 cursor-pointer flex items-center gap-3 font-bold text-gray-700 transition-colors border-b border-gray-50 text-sm md:text-base">
-                        <span style="color: ${textColorHex};" class="font-black text-xl leading-none drop-shadow-sm shrink-0">${numChar}</span>
-                        <span class="truncate">${dispName}</span>
-                    </div>
-                `;
-            });
-
             headerContainer.innerHTML = `
-                <h2 class="text-xl md:text-2xl font-black text-rose-500 tracking-wide mb-1">${currentYear} 年 ${currentMonth + 1} 月</h2>
-                <div class="relative w-full max-w-[220px] md:max-w-[260px] z-30">
-                    <button id="dropdown-toggle-btn" onclick="toggleUserDropdown(event)" class="w-full text-xs md:text-sm font-bold text-teal-800 bg-teal-50 border-2 border-teal-200 px-3 py-1.5 rounded-full shadow-sm hover:border-teal-400 hover:shadow-md transition-all flex items-center justify-between focus:outline-none">
-                        <div class="flex items-center truncate">${selectedHtml}</div>
-                        <span class="text-[10px] ml-2 opacity-60 shrink-0">▼</span>
-                    </button>
-                    <div id="user-filter-dropdown" class="hidden absolute top-full left-0 right-0 mt-1.5 bg-white rounded-2xl shadow-xl border border-teal-100 overflow-hidden transform transition-all origin-top">
-                        <div class="max-h-60 overflow-y-auto custom-scrollbar flex flex-col">
-                            ${dropdownOptions}
-                        </div>
-                    </div>
-                </div>
+                <h2 class="text-xl md:text-2xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
+                <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-teal-700 bg-teal-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
+                    <option value="ALL" ${viewingUser === 'ALL' ? 'selected' : ''}>🌍 全部進度</option>
+                    ${globalUsers.map(u => {
+                        const dispName = usersProfile[u]?.nickname || u;
+                        return `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>❤️ ${dispName} 的個人進度</option>`;
+                    }).join('')}
+                </select>
             `;
 
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -1948,7 +1936,7 @@
                     // ALL View: No subjects/grades. Just date on left, 2-col scrollable avatars on right.
                     const avatarsHtml = usersWithDataToday.map(u => `
                         <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
-                             class="${getUserColor(u)} w-3.5 h-3.5 md:w-4 md:h-4 rounded-full flex items-center justify-center text-[8px] md:text-[9px] font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
+                             class="${getUserColor(u)} w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center text-[9px] md:text-xs font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
                              title="查看 ${usersProfile[u]?.nickname || u} 的成績">
                             ${getAvatarChar(u)}
                         </div>
@@ -1964,7 +1952,7 @@
 
                             <div class="flex-1 overflow-y-auto custom-scrollbar h-full pl-1">
                                 ${usersWithDataToday.length > 0 ? `
-                                    <div class="grid grid-cols-2 gap-0.5 justify-items-end md:justify-items-center pb-1 pr-0.5">
+                                    <div class="grid grid-cols-2 gap-1 justify-items-end md:justify-items-center pb-1 pr-0.5">
                                         ${avatarsHtml}
                                     </div>
                                 ` : ''}
@@ -2002,10 +1990,10 @@
                             <div class="flex justify-between items-start shrink-0 mb-0.5 md:mb-1 w-full">
                                 <span class="w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass} shrink-0">${d}</span>
                                 
-                                <div class="flex flex-wrap justify-end content-start gap-0.5 flex-1 mx-1 mt-0.5 overflow-y-auto custom-scrollbar max-h-12 md:max-h-14 pr-1">
+                                <div class="flex flex-wrap justify-end content-start gap-1 flex-1 mx-1 mt-0.5 overflow-y-auto custom-scrollbar max-h-12 md:max-h-14 pr-1">
                                     ${usersWithDataToday.map(u => `
                                         <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
-                                             class="${getUserColor(u)} w-3.5 h-3.5 md:w-4 md:h-4 rounded-full flex items-center justify-center text-[8px] md:text-[9px] font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
+                                             class="${getUserColor(u)} w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center text-[9px] md:text-[11px] font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
                                              title="查看 ${usersProfile[u]?.nickname || u} 的成績">
                                             ${getAvatarChar(u)}
                                         </div>
@@ -2542,8 +2530,7 @@
                         ${getAvatarChar(otherUser)}
                     </div>
                     <h3 class="font-black text-xl text-teal-800">${usersProfile[otherUser]?.nickname || otherUser} 的戰果</h3>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    </div>
             `;
             
             Object.entries(data).forEach(([subKey, item]) => {
@@ -2551,44 +2538,24 @@
                 const hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
                 const safeTextColor = getSafeTextColor(mainSub);
                 const isWeak = item.isWeakness;
-                const weakIndicator = isWeak ? '<span class="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded border border-red-200 ml-1 shadow-sm whitespace-nowrap mt-1">🔥 弱點</span>' : '';
+                const weakIndicator = isWeak ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded border border-red-200 ml-2 shadow-sm whitespace-nowrap">🔥 弱點標記</span>' : '';
                 
-                // 自動尋找並嵌入該科目的專屬教科書封面縮圖
-                let bookImg = '';
-                if (TEXTBOOKS[mainSub]) {
-                    const tb = TEXTBOOKS[mainSub].find(t => t.chapters.includes(subKey));
-                    if (tb) bookImg = tb.img;
-                    else if (TEXTBOOKS[mainSub].length > 0) bookImg = TEXTBOOKS[mainSub][0].img;
-                }
-
-                const imgHtml = bookImg ? `<img src="${bookImg}" class="w-12 h-16 md:w-14 md:h-20 object-cover rounded shadow-sm border border-gray-200 shrink-0" onerror="this.style.display='none'">` : '';
-
                 contentHtml += `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border-2 flex flex-col h-full hover:shadow-md transition-shadow relative" style="background-color: ${hexColor}0A; border-color: ${hexColor}50;">
-                        <div class="flex gap-3 items-start mb-3">
-                            ${imgHtml}
-                            <div class="flex-1 min-w-0">
-                                <div class="flex justify-between items-start gap-1 flex-wrap" style="color: ${safeTextColor}">
-                                    <span class="font-bold text-sm md:text-base leading-tight pt-1 break-words">📌 [${mainSub}]<br>${subKey} ${weakIndicator}</span>
-                                </div>
-                                <div class="mt-2 text-right">
-                                    <span class="font-black text-2xl md:text-3xl" style="color: ${safeTextColor}">${item.grade}</span>
-                                </div>
+                    <div class="mb-5 bg-white p-4 rounded-2xl shadow-sm border-2 relative" style="background-color: ${hexColor}0A; border-color: ${hexColor}50;">
+                        <div class="flex justify-between items-start mb-2 gap-2 flex-wrap" style="color: ${safeTextColor}">
+                            <span class="font-bold text-base md:text-lg whitespace-pre-line leading-tight pt-1 flex items-center flex-wrap">📌 [${mainSub}] ${subKey} ${weakIndicator}</span>
+                            <span class="font-black text-xl md:text-2xl shrink-0">${item.grade}</span>
+                        </div>
+                        ${isWeak && item.weaknessNote ? `
+                            <div class="mt-2 mb-3 bg-white/80 p-2 rounded border border-white text-sm text-gray-700 shadow-sm">
+                                <div class="text-xs font-bold mb-1" style="color: ${safeTextColor}">📝 錯題筆記：</div>
+                                ${item.weaknessNote.replace(/\n/g, '<br>')}
                             </div>
-                        </div>
-                        <div class="mt-auto">
-                            ${isWeak && item.weaknessNote ? `
-                                <div class="mt-2 mb-2 bg-white/80 p-2 rounded border border-white text-xs text-gray-700 shadow-sm">
-                                    <div class="font-bold mb-0.5" style="color: ${safeTextColor}">📝 錯題筆記：</div>
-                                    ${item.weaknessNote.replace(/\n/g, '<br>')}
-                                </div>
-                            ` : ''}
-                            ${item.photo ? `<img src="${item.photo}" class="w-full h-24 object-cover rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-90 mt-2" onclick="window.open('${item.photo}', '_blank')" alt="考卷照片" title="點擊查看大圖">` : '<div class="text-[10px] text-gray-400 text-center mt-2 border-t border-gray-100 pt-2">（無附照片）</div>'}
-                        </div>
+                        ` : ''}
+                        ${item.photo ? `<div class="mt-3"><img src="${item.photo}" class="w-full rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-90" onclick="window.open('${item.photo}', '_blank')" alt="考卷照片" title="點擊查看大圖"></div>` : '<div class="text-xs text-gray-400 text-center mt-2">（無附照片）</div>'}
                     </div>
                 `;
             });
-            contentHtml += `</div>`;
             document.getElementById('view-score-content').innerHTML = contentHtml;
             openGlobalModal('view-score-modal');
         };
@@ -2698,28 +2665,15 @@
             }, errHandler);
         };
 
-        const getStoredConfig = () => {
-            if (typeof __firebase_config !== 'undefined') {
-                try { return JSON.parse(__firebase_config); } catch(e) {}
-            }
-            const stored = localStorage.getItem('study_group_firebase_config');
-            if (stored) {
-                try { return JSON.parse(stored); } catch(e) {}
-            }
-            return null;
-        };
-
         const initApp = async () => {
             window.renderApp();
-            
             const config = getStoredConfig();
-            const fullConfig = config || BASE_FIREBASE_CONFIG;
-            
-            if (!fullConfig.apiKey) {
+            if (!config || !config.apiKey) {
                 window.renderSetup();
                 return;
             }
 
+            const fullConfig = { ...BASE_FIREBASE_CONFIG, apiKey: config.apiKey };
             try {
                 if (!appInstance) {
                     appInstance = initializeApp(fullConfig);
@@ -2750,6 +2704,7 @@
                 });
             } catch (error) {
                 console.error("Firebase 連線失敗:", error);
+                alert("Firebase 連線失敗，請檢查系統設定參數是否正確！");
                 window.renderSetup();
             }
         };
