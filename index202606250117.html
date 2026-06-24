@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🎒 邁向5A10+ 國中會考讀書會 ✨</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入 Chart.js 與 DataLabels 擴充套件用於繪製雷達圖及數據標籤 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
+        /* 確保所有瀏覽器都能給予正確的滿版高度 */
         html, body {
             height: 100%; 
             height: -webkit-fill-available;
@@ -16,6 +18,7 @@
             margin: 0;
             padding: 0;
         }
+
         body {
             font-family: 'Varela Round', 'Noto Sans TC', sans-serif;
             background-color: #fdfbfb;
@@ -43,6 +46,7 @@
         .animate-bounce-slow { animation: bounce 3s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(-5%); } 50% { transform: translateY(0); } }
 
+        /* 垂直跑馬燈效果設定 */
         @keyframes marqueeVertical {
             0% { transform: translateY(100%); }
             100% { transform: translateY(-100%); }
@@ -66,6 +70,7 @@
         .chat-bubble-me { background: #e0f2fe; border-radius: 1rem 1rem 0 1rem; }
         .chat-bubble-other { background: #fce7f3; border-radius: 1rem 1rem 1rem 0; }
         
+        /* Step 3 專屬色彩設定 */
         .text-white .step3-color-unit,
         .text-white .step3-color-book,
         .text-white .step3-color-desc {
@@ -75,12 +80,17 @@
         .step3-color-book { color: #0066FF; }
         .step3-color-desc { color: #696969; }
         
+        /* 會考模擬試題：紅色文字 + 黃色螢光光暈 */
         .step3-color-exam {
             color: #FF0000 !important;
-            text-shadow: 0 0 5px #FFFF00, 0 0 10px #FFFF00, 0 0 15px #FFFF00 !important;
+            text-shadow: 
+                0 0 5px #FFFF00, 
+                0 0 10px #FFFF00, 
+                0 0 15px #FFFF00 !important;
         }
     </style>
 
+    <!-- 集中管理靜態資料的 JSON 區塊，將資料與邏輯完全分離 -->
     <script type="application/json" id="app-data">
     {
       "EXAM_DATE": "2027-05-22T00:00:00",
@@ -202,7 +212,7 @@
 <body class="w-full flex flex-col overflow-hidden">
 
     <div id="app" class="w-full h-full flex flex-col overflow-hidden"></div>
-    <div id="modals-container"></div> 
+    <div id="modals-container"></div> <!-- 放置所有動態 Modal 的容器 -->
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -221,6 +231,7 @@
         };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-group-app';
         
+        // 從 HTML 解析 JSON 資料
         const appData = JSON.parse(document.getElementById('app-data').textContent);
         
         const EXAM_DATE = new Date(appData.EXAM_DATE);
@@ -230,6 +241,7 @@
         const GRADES = appData.GRADES;
         const GRADE_WEIGHT = appData.GRADE_WEIGHT;
         
+        // 為了相容下方的進度追蹤區塊，將章節資料提取出來
         const CHINESE_CHAPTERS = TEXTBOOKS['國文'][0].chapters;
         const ENGLISH_CHAPTERS = TEXTBOOKS['英文'][0].chapters;
         const MATH_CHAPTERS = TEXTBOOKS['數學'][0].chapters;
@@ -242,7 +254,7 @@
         const EARTH_CHAPTERS = TEXTBOOKS['地球科學'][0].chapters;
 
         // ==========================================
-        //  色彩計畫系統 
+        //  色彩計畫系統 (科目與使用者頭像)
         // ==========================================
         const SUBJECT_COLORS = {
             '國文': { bg: 'bg-[#FF0000]/10', text: 'text-[#FF0000]', border: 'border-[#FF0000]/30' },
@@ -276,32 +288,61 @@
             'default': '#E5E7EB'
         };
 
+        // 為確保在淡色背景上文字清晰，針對各科目產生對比較高的文字用色碼
         const getSafeTextColor = (sub) => {
             const map = {
-                '國文': '#CC0000', '英文': '#CC4400', '數學': '#999900', 
-                '生物': '#449900', '理化': '#008888', '地科': '#0000AA', 
-                '地球科學': '#0000AA', '歷史': '#990099', '地理': '#CC0066', 
-                '公民': '#009900', '自然合科': '#449900', '社會合科': '#CC0066', 
+                '國文': '#CC0000',
+                '英文': '#CC4400',
+                '數學': '#999900', 
+                '生物': '#449900', 
+                '理化': '#008888', 
+                '地科': '#0000AA', 
+                '地球科學': '#0000AA', 
+                '歷史': '#990099', 
+                '地理': '#CC0066', 
+                '公民': '#009900', 
+                '自然合科': '#449900', 
+                '社會合科': '#CC0066', 
                 'default': '#4B5563'
             };
             return map[sub] || map['default'];
         };
 
+        const getSubjectColor = (sub) => SUBJECT_COLORS[sub] || SUBJECT_COLORS['default'];
+
+        // 20種不重複且亮眼的顏色池
         const USER_COLORS = [
-            'bg-[#FF0000] text-white', 'bg-[#FF0088] text-white', 'bg-[#FF5511] text-white',
-            'bg-[#FF8800] text-white', 'bg-[#FFFF00] text-gray-800', 'bg-[#BBFF00] text-gray-800',
-            'bg-[#00FF00] text-gray-800', 'bg-[#00FFFF] text-gray-800', 'bg-[#00BBFF] text-white',
-            'bg-[#0000FF] text-white', 'bg-[#7700FF] text-white', 'bg-[#FF00FF] text-white',
-            'bg-[#CC00FF] text-white', 'bg-[#009FCC] text-white', 'bg-[#FF88C2] text-gray-800',
-            'bg-[#990099] text-white', 'bg-[#007799] text-white', 'bg-[#E38EFF] text-gray-800',
-            'bg-[#FFB7DD] text-gray-800', 'bg-[#99FFFF] text-gray-800'
+            'bg-[#FF0000] text-white',
+            'bg-[#FF0088] text-white',
+            'bg-[#FF5511] text-white',
+            'bg-[#FF8800] text-white',
+            'bg-[#FFFF00] text-gray-800',
+            'bg-[#BBFF00] text-gray-800',
+            'bg-[#00FF00] text-gray-800',
+            'bg-[#00FFFF] text-gray-800',
+            'bg-[#00BBFF] text-white',
+            'bg-[#0000FF] text-white',
+            'bg-[#7700FF] text-white',
+            'bg-[#FF00FF] text-white',
+            'bg-[#CC00FF] text-white',
+            'bg-[#009FCC] text-white',
+            'bg-[#FF88C2] text-gray-800',
+            'bg-[#990099] text-white',
+            'bg-[#007799] text-white',
+            'bg-[#E38EFF] text-gray-800',
+            'bg-[#FFB7DD] text-gray-800',
+            'bg-[#99FFFF] text-gray-800'
         ];
         
         const getUserColor = (name) => {
             if(!name) return USER_COLORS[0];
-            if(usersProfile[name] && usersProfile[name].color) return usersProfile[name].color;
+            if(usersProfile[name] && usersProfile[name].color) {
+                return usersProfile[name].color;
+            }
             let hash = 0;
-            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            for (let i = 0; i < name.length; i++) {
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }
             return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
         };
 
@@ -323,6 +364,7 @@
         let currentMonth = new Date().getMonth(); 
         
         let unsubUsers, unsubDates, unsubGrades, unsubChat, unsubProfile;
+        
         let radarChartInstance = null; 
 
         // ==========================================
@@ -330,10 +372,13 @@
         // ==========================================
         const formatStep3Text = (text) => {
             let formatted = text;
+            
+            // 優先處理「會考模擬試題 *~*冊」
             if (formatted.includes('會考模擬試題')) {
                 formatted = formatted.replace(/(會考模擬試題\s*\d+~\d+\s*冊)/g, '<span class="step3-color-exam">$1</span>');
                 return formatted;
             }
+            
             formatted = formatted.replace(/(單元\d+)/g, '<span class="step3-color-unit">$1</span>');
             formatted = formatted.replace(/(第[一二三四五六七八九十\d]+冊)/g, '<span class="step3-color-book">$1</span>');
             formatted = formatted.replace(/(\(.*?\)|（.*?）)/g, '<span class="step3-color-desc">$1</span>');
@@ -345,7 +390,8 @@
             now.setHours(0,0,0,0);
             const target = new Date(targetDateStr);
             target.setHours(0,0,0,0);
-            return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+            const diffTime = target - now;
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         };
 
         const formatDate = (date) => {
@@ -365,7 +411,9 @@
         };
 
         const getAvatarChar = (u) => {
-            if(usersProfile[u] && usersProfile[u].nickname) return usersProfile[u].nickname.charAt(0);
+            if(usersProfile[u] && usersProfile[u].nickname) {
+                return usersProfile[u].nickname.charAt(0);
+            }
             return u ? u.charAt(0) : '?';
         };
 
@@ -375,26 +423,6 @@
                 if (tb) return tb.name;
             }
             return '';
-        };
-
-        const getTextbookImg = (mainSub, subSub) => {
-            if (TEXTBOOKS[mainSub]) {
-                const tb = TEXTBOOKS[mainSub].find(t => t.chapters.includes(subSub));
-                if (tb) return tb.img;
-            }
-            return null;
-        };
-
-        const getUserHexColor = (name) => {
-            const colorClass = getUserColor(name);
-            const match = colorClass.match(/bg-\[(#[0-9a-fA-F]+)\]/);
-            return match ? match[1] : '#0d9488'; // fallback
-        };
-
-        const getCircleNum = (idx) => {
-            // 帶有顏色的圓框數字(使用 Unicode)
-            const nums = ['➀','➁','➂','➃','➄','➅','➆','➇','➈','➉','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
-            return nums[idx] || `(${idx+1})`;
         };
 
         // ==========================================
@@ -566,7 +594,7 @@
             }
         };
 
-        // 全域 Modals 渲染
+        // 全域 Modals 渲染 (放置於 #modals-container)
         const renderGlobalModals = () => {
             const container = document.getElementById('modals-container');
             container.innerHTML = `
@@ -639,7 +667,7 @@
                     </div>
                 </div>
 
-                <!-- 成績輸入 Modal -->
+                <!-- 成績輸入 Modal (升級版) -->
                 <div id="score-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-opacity duration-200 opacity-0">
                     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden border-4 border-pink-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 95%; max-height: 95dvh;" id="score-modal-content">
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
@@ -717,18 +745,20 @@
                             <button onclick="closeGlobalModal('progress-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
                         <div class="p-6 bg-gray-50/50 overflow-y-auto flex-1 custom-scrollbar" id="progress-content">
+                            <!-- 內容由 JS 動態生成 -->
                         </div>
                     </div>
                 </div>
                 
-                <!-- 弱點集中營 Modal (強化寬度) -->
+                <!-- 弱點集中營 Modal -->
                 <div id="weakness-modal" class="fixed inset-0 bg-gray-900/70 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('weakness-modal')">
-                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-7xl overflow-hidden border-4 border-red-300 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
+                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl overflow-hidden border-4 border-red-300 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
                         <div class="bg-gradient-to-r from-red-500 to-orange-500 p-4 flex justify-between items-center text-white shrink-0">
                             <h2 class="text-xl font-bold flex items-center gap-2">🔥 弱點集中營</h2>
                             <button onclick="closeGlobalModal('weakness-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
                         </div>
                         <div class="p-6 bg-red-50/30 overflow-y-auto flex-1 custom-scrollbar" id="weakness-content">
+                            <!-- 內容由 JS 動態生成 -->
                         </div>
                     </div>
                 </div>
@@ -754,10 +784,12 @@
                 <div id="view-profile-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[80] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('view-profile-modal')">
                     <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform duration-200 flex flex-col relative border-4 border-teal-100">
                         <button onclick="closeGlobalModal('view-profile-modal')" class="absolute top-4 right-4 bg-black/20 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold z-10 hover:bg-black/40">✕</button>
+                        
                         <div class="h-32 bg-gradient-to-r from-teal-400 to-emerald-400 w-full relative"></div>
+                        
                         <div class="px-6 pb-6 pt-0 relative flex flex-col items-center mt-[-3rem]">
                             <img id="vp-photo" src="" class="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover bg-teal-50 mb-3" style="display:none;">
-                            <div id="vp-avatar-fallback" class="w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black mb-3"></div>
+                            <div id="vp-avatar-fallback" class="w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black mb-3 ${getUserColor(name)}">${getAvatarChar(name)}</div>
                             
                             <h2 class="text-2xl font-black text-gray-800" id="vp-nickname"></h2>
                             <p class="text-sm text-gray-400 font-bold mb-4" id="vp-name"></p>
@@ -777,7 +809,7 @@
                     </div>
                 </div>
 
-                <!-- 查看他人成績 Modal -->
+                <!-- 查看他人成績 Modal (z-index 提高，可覆蓋在其他視窗之上) -->
                 <div id="view-score-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[80] p-4 transition-opacity duration-200 opacity-0">
                     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-4 border-teal-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 90%; max-height: 90dvh;">
                         <div class="bg-gradient-to-r from-teal-400 to-emerald-400 p-4 flex justify-between items-center text-white shrink-0">
@@ -802,6 +834,7 @@
                         </div>
                         
                         <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/50 relative">
+                            <!-- 考試日程分頁 -->
                             <div id="admin-tab-dates" class="space-y-4 block">
                                 <div class="bg-white p-4 rounded-xl border border-amber-200 shadow-sm flex flex-col md:flex-row gap-2">
                                     <input type="text" id="admin-new-date-title" placeholder="新增考試名稱" class="flex-1 px-3 py-2 rounded-lg border border-gray-300">
@@ -811,6 +844,7 @@
                                 <div id="admin-dates-list" class="space-y-2"></div>
                             </div>
                             
+                            <!-- 參賽者管理分頁 -->
                             <div id="admin-tab-users" class="hidden">
                                 <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
                                     <table class="w-full text-left text-sm whitespace-nowrap">
@@ -854,7 +888,9 @@
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
                 const inner = modal.firstElementChild;
-                if(inner.classList.contains('scale-95')) inner.classList.remove('scale-95');
+                if(inner.classList.contains('scale-95')) {
+                    inner.classList.remove('scale-95');
+                }
             }, 10);
         };
 
@@ -863,7 +899,9 @@
             if(!modal) return;
             modal.classList.add('opacity-0');
             const inner = modal.firstElementChild;
-            if(inner && inner.classList.contains('scale-95') === false) inner.classList.add('scale-95');
+            if(inner && inner.classList.contains('scale-95') === false) {
+                inner.classList.add('scale-95');
+            }
             setTimeout(() => {
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
@@ -884,6 +922,7 @@
             const getBestGrade = (subKey) => {
                 let bestObj = null;
                 let bestW = 0;
+
                 Object.entries(uGrades).forEach(([dateStr, dayData]) => {
                     if(dayData[subKey]) {
                         const g = dayData[subKey].grade;
@@ -908,20 +947,33 @@
 
             const buildHorizontalTable = (title, imgSrc, chapters, subjectKeyFn) => {
                 const formatChapterHtml = (ch) => {
-                    if (ch.includes('會考模擬試題')) return `<div class="step3-color-exam font-black text-center w-full text-[11px] sm:text-xs leading-tight whitespace-pre-line flex items-center justify-center h-full">${ch.replace(' ', '\n')}</div>`;
-                    
-                    let line1 = '', line2 = '', line3 = '';
-                    const parts = ch.split(' ');
-                    if (parts.length >= 2 && parts[0].startsWith('單元')) {
-                        line1 = parts[0]; line2 = parts[1]; line3 = parts.slice(2).join(' ');
-                    } else if (parts.length >= 2 && parts[0].includes('會考模擬試題')) {
-                        line1 = parts[0]; line2 = parts.slice(1).join(' ');
+                    if (ch.includes('會考模擬試題')) {
+                        return `<div class="step3-color-exam font-black text-center w-full text-[11px] sm:text-xs leading-tight whitespace-pre-line flex items-center justify-center h-full">${ch.replace(' ', '\n')}</div>`;
                     }
                     
+                    let line1 = '';
+                    let line2 = '';
+                    let line3 = '';
+                    
+                    // 智慧拆分章節字串
+                    const parts = ch.split(' ');
+                    if (parts.length >= 2 && parts[0].startsWith('單元')) {
+                        line1 = parts[0];
+                        line2 = parts[1];
+                        line3 = parts.slice(2).join(' ');
+                    } else if (parts.length >= 2 && parts[0].includes('會考模擬試題')) {
+                        line1 = parts[0];
+                        line2 = parts.slice(1).join(' ');
+                    }
+                    
+                    // 根據是否有匹配到主標題來決定渲染三行或單行
                     if (line1) {
-                        let html = `<div class="text-[#DC143C] text-[12px] sm:text-[14px] font-black mb-0.5 leading-tight w-full text-center">${line1}</div>`;
+                        let html = '';
+                        html += `<div class="text-[#DC143C] text-[12px] sm:text-[14px] font-black mb-0.5 leading-tight w-full text-center">${line1}</div>`;
                         html += `<div class="text-[#0066FF] text-[11px] sm:text-xs font-black mb-0.5 leading-tight w-full text-center">${line2}</div>`;
-                        if (line3) html += `<div class="text-[10px] sm:text-[11px] text-gray-700 font-bold leading-tight whitespace-pre-line w-full text-center">${line3}</div>`;
+                        if (line3) {
+                            html += `<div class="text-[10px] sm:text-[11px] text-gray-700 font-bold leading-tight whitespace-pre-line w-full text-center">${line3}</div>`;
+                        }
                         return html;
                     } else {
                         return `<div class="text-[10px] sm:text-xs text-gray-700 font-bold leading-tight whitespace-pre-line w-full text-center flex items-center justify-center h-full">${ch}</div>`;
@@ -940,8 +992,11 @@
                 chapters.forEach(ch => {
                     const queryKey = subjectKeyFn(ch);
                     const bestObj = getBestGrade(queryKey);
+                    
                     const isWeak = bestObj && bestObj.isWeakness;
-                    const weaknessClasses = isWeak ? 'border-2 border-red-500 bg-red-50 shadow-[0_0_8px_rgba(239,68,68,0.5)] z-10' : 'bg-white hover:bg-gray-50';
+                    const weaknessClasses = isWeak 
+                        ? 'border-2 border-red-500 bg-red-50 shadow-[0_0_8px_rgba(239,68,68,0.5)] z-10' 
+                        : 'bg-white hover:bg-gray-50';
                     const clickAttr = bestObj ? `onclick="viewOthersScore(event, '${targetUser}', '${bestObj.date}')"` : '';
                     
                     tableHtml += `
@@ -956,23 +1011,52 @@
                             </div>
                     `;
                 });
-                tableHtml += `</div></div></div>`;
+                tableHtml += `
+                        </div>
+                    </div>
+                </div>
+                `;
                 return tableHtml;
             };
 
             let html = '<div class="space-y-6">';
+            
+            // 國文 (麻辣講義)
             html += buildHorizontalTable('國文\n(麻辣講義)', 'images/c1.jpg', CHINESE_CHAPTERS, (ch) => ch);
+            
+            // 英文 (超會考)
             html += buildHorizontalTable('英文\n(超會考)', 'images/e1.jpg', ENGLISH_CHAPTERS, (ch) => ch);
+
+            // 數學 (麻辣講義)
             html += buildHorizontalTable('數學\n(麻辣講義)', 'images/m1.jpg', MATH_CHAPTERS, (ch) => ch);
+
+            // 生物 (麻辣講義)
             html += buildHorizontalTable('生物\n(麻辣講義)', 'images/b1.jpg', BIO_CHAPTERS, (ch) => ch);
+
+            // 生物 (大滿貫)
             html += buildHorizontalTable('生物\n(大滿貫)', 'images/b2.jpg', BIO_CHAPTERS_2, (ch) => ch);
+
+            // 理化 (大滿貫)
             html += buildHorizontalTable('理化\n(大滿貫)', 'images/p1.jpg', PHY_CHAPTERS, (ch) => ch);
+
+            // 地球科學 (大滿貫)
             html += buildHorizontalTable('地球科學\n(大滿貫)', 'images/earth1.jpg', EARTH_CHAPTERS, (ch) => ch);
+
+            // 歷史 (大滿貫)
             html += buildHorizontalTable('歷史\n(大滿貫)', 'images/h1.jpg', HISTORY_CHAPTERS, (ch) => ch);
+
+            // 地理 (KO會考)
             html += buildHorizontalTable('地理\n(KO會考)', 'images/g1.jpg', GEO_CHAPTERS, (ch) => ch);
+
+            // 公民 (大滿貫)
             html += buildHorizontalTable('公民\n(大滿貫)', 'images/ct1.jpg', CITIZEN_CHAPTERS, (ch) => ch);
+
+            // 自然合科
             html += buildHorizontalTable('自然合科', null, SUB_SUBJECTS['自然'], (sub) => sub);
+
+            // 社會合科
             html += buildHorizontalTable('社會合科', null, SUB_SUBJECTS['社會'], (sub) => sub);
+
             html += '</div>';
 
             document.getElementById('progress-content').innerHTML = html;
@@ -988,9 +1072,12 @@
             
             const uGrades = allGrades[targetUser] || {};
             let weaknesses = [];
+            
             Object.entries(uGrades).forEach(([dateStr, dayData]) => {
                 Object.entries(dayData).forEach(([subKey, info]) => {
-                    if (info.isWeakness) weaknesses.push({ date: dateStr, subSubject: subKey, ...info });
+                    if (info.isWeakness) {
+                        weaknesses.push({ date: dateStr, subSubject: subKey, ...info });
+                    }
                 });
             });
 
@@ -1014,18 +1101,27 @@
                 return 999;
             };
 
+            // 先依科目名稱排序，再依單元順序排序
             weaknesses.sort((a, b) => {
                 const subA = a.mainSubject || a.subSubject;
                 const subB = b.mainSubject || b.subSubject;
+                
                 if (subA !== subB) {
                     const orderA = getSubjectOrder(subA);
                     const orderB = getSubjectOrder(subB);
                     if (orderA !== orderB) return orderA - orderB;
                     return subA.localeCompare(subB, 'zh-TW');
                 }
+
+                // 科目相同時，依單元順序
                 const unitA = getUnitOrder(subA, a.subSubject);
                 const unitB = getUnitOrder(subB, b.subSubject);
-                if (unitA !== unitB) return unitA - unitB;
+                
+                if (unitA !== unitB) {
+                    return unitA - unitB;
+                }
+
+                // 如果單元也一樣(例如重複紀錄)，則以時間新舊排(新的在上)
                 return new Date(b.date) - new Date(a.date);
             });
 
@@ -1040,31 +1136,25 @@
                     </div>
                 `;
             } else {
-                // 弱點顯示採用更寬的版面排版 ( lg:grid-cols-3 )
-                let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
+                let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
                 weaknesses.forEach(w => {
                     const mainSub = w.mainSubject || w.subSubject;
                     const isMe = targetUser === username;
                     const hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
                     const bgStyle = `background-color: ${hexColor}25; border-color: ${hexColor};`;
+                    
                     const safeTextColor = getSafeTextColor(mainSub);
                     const badgeBgStyle = `background-color: #ffffff; color: ${safeTextColor}; border-color: ${hexColor};`;
                     
                     const tbName = getTextbookName(w.mainSubject, w.subSubject);
-                    const tbImg = getTextbookImg(w.mainSubject, w.subSubject);
                     const displaySubject = tbName ? `${mainSub}(${tbName})` : mainSub;
-                    const imgHtml = tbImg ? `<img src="${tbImg}" class="h-6 w-auto rounded object-cover ml-2 border border-gray-200 shadow-sm" onerror="this.style.display='none'">` : '';
-
                     const reviews = w.reviews || [false, false, false, false, false];
 
                     html += `
                         <div class="rounded-2xl p-4 shadow-sm border-2 relative flex flex-col hover:shadow-md transition-shadow" style="${bgStyle}">
                             <div class="flex justify-between items-start mb-2">
-                                <span class="font-bold text-sm px-2 py-1 rounded-md border flex items-center" style="${badgeBgStyle}">
-                                    📌 [${displaySubject}]
-                                    ${imgHtml}
-                                </span>
-                                <span class="text-xs text-gray-500 font-mono bg-white/60 px-1 rounded ml-1 shrink-0">${w.date}</span>
+                                <span class="font-bold text-sm px-2 py-1 rounded-md border" style="${badgeBgStyle}">📌 [${displaySubject}]</span>
+                                <span class="text-xs text-gray-500 font-mono bg-white/60 px-1 rounded">${w.date}</span>
                             </div>
                             <h4 class="font-black text-gray-800 text-md md:text-lg mb-2 leading-tight">${w.subSubject}</h4>
                             <div class="flex items-center gap-2 mb-3">
@@ -1077,7 +1167,9 @@
                                     ${w.weaknessNote.replace(/\n/g, '<br>')}
                                 </div>
                             ` : ''}
-                            ${w.photo ? `<img src="${w.photo}" class="w-full h-32 object-cover rounded-xl border border-gray-200 mb-3 cursor-pointer hover:opacity-90" onclick="window.open('${w.photo}', '_blank')" alt="考卷照片" title="點擊查看大圖">` : ''}
+                            ${w.photo ? `
+                                <img src="${w.photo}" class="w-full h-32 object-cover rounded-xl border border-gray-200 mb-3 cursor-pointer hover:opacity-90" onclick="window.open('${w.photo}', '_blank')" alt="考卷照片" title="點擊查看大圖">
+                            ` : ''}
                             
                             <div class="mt-auto pt-2 flex flex-col items-center bg-white/60 p-2 rounded-xl border border-white shadow-sm">
                                 <div class="text-sm font-bold text-gray-600 mb-2">複習進度 (目標 5 次)</div>
@@ -1100,6 +1192,7 @@
                 html += '</div>';
                 container.innerHTML = html;
             }
+
             openGlobalModal('weakness-modal');
         };
 
@@ -1108,16 +1201,22 @@
                 const docId = `${username}_${dateStr}_${subSubject}`;
                 const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
                 
+                // Fetch local state
                 const currentData = allGrades[username][dateStr][subSubject];
                 let reviews = currentData.reviews || [false, false, false, false, false];
                 reviews[idx] = isChecked;
 
-                await setDoc(gradeRef, { reviews: reviews, updatedAt: new Date().toISOString() }, { merge: true });
+                await setDoc(gradeRef, {
+                    reviews: reviews,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
 
+                // Optimistically update local state to avoid flickers
                 if (!allGrades[username][dateStr][subSubject].reviews) {
                     allGrades[username][dateStr][subSubject].reviews = [false, false, false, false, false];
                 }
                 allGrades[username][dateStr][subSubject].reviews[idx] = isChecked;
+
             } catch (e) {
                 console.error(e);
                 alert("更新失敗！請檢查網路連線。");
@@ -1130,10 +1229,13 @@
         window.openAnalysisModal = () => {
             const targetUser = viewingUser === 'ALL' ? username : viewingUser;
             if (!targetUser) return;
+
             const dispName = usersProfile[targetUser]?.nickname || targetUser;
             document.getElementById('analysis-user-name').innerText = `👤 ${dispName} 的戰力分析`;
             
+            // 要求的九大科目
             const analysisSubjects = ['國文', '英文', '數學', '生物', '理化', '地球科學', '歷史', '地理', '公民'];
+            
             const gradeToNum = (g) => {
                 const map = { 'A++': 7, 'A+': 6, 'A': 5, 'B++': 4, 'B+': 3, 'B': 2, 'C': 1 };
                 return map[g] !== undefined ? map[g] : null;
@@ -1145,17 +1247,25 @@
             let subjectDetails = {};
 
             analysisSubjects.forEach(sub => {
-                subjectTotals[sub] = 0; subjectCounts[sub] = 0;
+                subjectTotals[sub] = 0;
+                subjectCounts[sub] = 0;
                 subjectDetails[sub] = { 'A++':0, 'A+':0, 'A':0, 'B++':0, 'B+':0, 'B':0, 'C':0 };
             });
 
+            // 抓取各科目「所有」的成績資料並加總
             Object.keys(uGrades).forEach(dateStr => {
                 Object.keys(uGrades[dateStr]).forEach(subKey => {
                     const item = uGrades[dateStr][subKey];
+                    
+                    // 相容舊有資料可能叫「地科」的問題
                     let actualSub = null;
-                    if (analysisSubjects.includes(subKey)) actualSub = subKey;
-                    else if (analysisSubjects.includes(item.mainSubject)) actualSub = item.mainSubject;
-                    else if (item.mainSubject === '地科' || subKey === '地科') actualSub = '地球科學';
+                    if (analysisSubjects.includes(subKey)) {
+                        actualSub = subKey;
+                    } else if (analysisSubjects.includes(item.mainSubject)) {
+                        actualSub = item.mainSubject;
+                    } else if (item.mainSubject === '地科' || subKey === '地科') {
+                        actualSub = '地球科學';
+                    }
                     
                     if (actualSub) {
                         const grade = item.grade;
@@ -1163,7 +1273,9 @@
                         if (num !== null) {
                             subjectTotals[actualSub] += num;
                             subjectCounts[actualSub] += 1;
-                            if(subjectDetails[actualSub][grade] !== undefined) subjectDetails[actualSub][grade]++;
+                            if(subjectDetails[actualSub][grade] !== undefined) {
+                                subjectDetails[actualSub][grade]++;
+                            }
                         }
                     }
                 });
@@ -1178,7 +1290,9 @@
 
             setTimeout(() => {
                 const ctx = document.getElementById('radarChart').getContext('2d');
-                if (radarChartInstance) radarChartInstance.destroy();
+                if (radarChartInstance) {
+                    radarChartInstance.destroy();
+                }
                 radarChartInstance = new Chart(ctx, {
                     type: 'radar',
                     plugins: [window.ChartDataLabels],
@@ -1193,17 +1307,34 @@
                             pointBorderColor: '#fff',
                             pointHoverBackgroundColor: '#fff',
                             pointHoverBorderColor: 'rgba(99, 102, 241, 1)',
-                            pointRadius: 6, pointHoverRadius: 8, borderWidth: 2,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            borderWidth: 2,
                         }]
                     },
                     options: {
-                        responsive: true, maintainAspectRatio: false, layout: { padding: 40 },
-                        scales: { r: { min: 0, max: 7, angleLines: { color: 'rgba(0,0,0,0.1)' }, grid: { color: 'rgba(0,0,0,0.1)' }, pointLabels: { display: false }, ticks: { stepSize: 1, display: false } } },
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: { padding: 40 },
+                        scales: {
+                            r: {
+                                min: 0, max: 7,
+                                angleLines: { color: 'rgba(0,0,0,0.1)' },
+                                grid: { color: 'rgba(0,0,0,0.1)' },
+                                pointLabels: { display: false },
+                                ticks: { stepSize: 1, display: false }
+                            }
+                        },
                         plugins: {
-                            legend: { display: false }, tooltip: { enabled: false },
+                            legend: { display: false },
+                            tooltip: { enabled: false },
                             datalabels: {
-                                color: '#4338ca', font: { family: 'Noto Sans TC', size: 14, weight: 'bold' },
-                                formatter: function(value, context) { return context.chart.data.labels[context.dataIndex] + '\n' + value + ' 分'; },
+                                color: '#4338ca',
+                                font: { family: 'Noto Sans TC', size: 14, weight: 'bold' },
+                                formatter: function(value, context) {
+                                    const sub = context.chart.data.labels[context.dataIndex];
+                                    return sub + '\n' + value + ' 分';
+                                },
                                 textAlign: 'center', align: 'end', anchor: 'end', offset: 5,
                                 listeners: {
                                     click: function(context) {
@@ -1211,7 +1342,8 @@
                                         const details = subjectDetails[sub];
                                         if(!details) return;
                                         const statsStr = `【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`;
-                                        alert(statsStr); return true;
+                                        alert(statsStr);
+                                        return true;
                                     }
                                 }
                             }
@@ -1243,7 +1375,9 @@
         };
 
         window.logout = () => {
-            username = ''; viewingUser = ''; isAdmin = false;
+            username = '';
+            viewingUser = '';
+            isAdmin = false;
             localStorage.removeItem('study_group_user');
             
             if(unsubDates) unsubDates();
@@ -1252,7 +1386,10 @@
             if(unsubUsers) unsubUsers();
             if(unsubProfile) unsubProfile();
             
-            allGrades = {}; chatMessages = []; importantDates = [];
+            allGrades = {};
+            chatMessages = [];
+            importantDates = [];
+            
             setupLoginListener();
             window.renderLogin();
         };
@@ -1274,7 +1411,9 @@
             const emojiPicker = document.getElementById('emoji-picker');
             const toggleBtn = document.getElementById('emoji-toggle-btn');
             if (emojiPicker && !emojiPicker.classList.contains('hidden')) {
-                if (!emojiPicker.contains(e.target) && e.target !== toggleBtn) emojiPicker.classList.add('hidden');
+                if (!emojiPicker.contains(e.target) && e.target !== toggleBtn) {
+                    emojiPicker.classList.add('hidden');
+                }
             }
         });
 
@@ -1298,8 +1437,13 @@
         window.confirmLoginPassword = () => {
             const name = document.getElementById('login-pwd-username').value;
             const pwd = document.getElementById('login-pwd-input').value;
-            if (name === 'Nick' && pwd !== '2iligloi') return alert("Nick 為管理員保留帳號，密碼錯誤！");
-            if (usersProfile[name] && usersProfile[name].password !== pwd) return alert("密碼錯誤，請重試！");
+            
+            if (name === 'Nick' && pwd !== '2iligloi') {
+                return alert("Nick 為管理員保留帳號，密碼錯誤！");
+            }
+            if (usersProfile[name] && usersProfile[name].password !== pwd) {
+                return alert("密碼錯誤，請重試！");
+            }
             
             closeGlobalModal('login-pwd-modal');
             doCompleteLogin(name);
@@ -1407,13 +1551,17 @@
             if (isNewUser) {
                 const usedColors = Object.values(usersProfile).map(p => p.color).filter(Boolean);
                 const availableColors = USER_COLORS.filter(c => !usedColors.includes(c));
-                if (availableColors.length > 0) assignedColor = availableColors[Math.floor(Math.random() * availableColors.length)];
-                else assignedColor = USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)];
+                if (availableColors.length > 0) {
+                    assignedColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+                } else {
+                    assignedColor = USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)];
+                }
             }
 
             let updatedProfiles = JSON.parse(JSON.stringify(usersProfile));
             updatedProfiles[name] = {
-                password: pwd, nickname: nickname,
+                password: pwd,
+                nickname: nickname,
                 birthday: document.getElementById('prof-birthday').value,
                 target: document.getElementById('prof-target').value,
                 motto: document.getElementById('prof-motto').value,
@@ -1430,8 +1578,12 @@
                 
                 closeGlobalModal('profile-edit-modal');
                 
-                if(username !== name) doCompleteLogin(name);
-                else { alert("資料卡更新成功！"); window.renderMainContent(); }
+                if(username !== name) {
+                    doCompleteLogin(name);
+                } else {
+                    alert("資料卡更新成功！");
+                    window.renderMainContent(); 
+                }
             } catch(e) {
                 console.error(e);
                 alert("儲存失敗！");
@@ -1439,7 +1591,8 @@
         };
 
         const doCompleteLogin = (name) => {
-            username = name; viewingUser = name; 
+            username = name;
+            viewingUser = name; 
             isAdmin = (username === 'Nick'); 
             localStorage.setItem('study_group_user', username);
             setupListeners();
@@ -1467,6 +1620,7 @@
                 fallbackEl.style.display = 'flex';
                 fallbackEl.className = `w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black mb-3 ${getUserColor(name)}`;
             }
+
             openGlobalModal('view-profile-modal');
         };
 
@@ -1586,8 +1740,11 @@
             const others = globalUsers.filter(u => u !== userToDelete);
             if (others.length > 0) {
                 const ans = prompt(`是否轉移其成績給其他人？\n(若不轉移請留空按確定，將連帶刪除所有成績)\n可選對象: ${others.join(', ')}`);
-                if (ans && others.includes(ans.trim())) transferTarget = ans.trim();
-                else if (ans) return alert("輸入的名稱無效，已取消刪除操作。");
+                if (ans && others.includes(ans.trim())) {
+                    transferTarget = ans.trim();
+                } else if (ans) {
+                    return alert("輸入的名稱無效，已取消刪除操作。");
+                }
             }
 
             try {
@@ -1626,12 +1783,781 @@
                         }
                     }
                 }
+
                 alert(`已成功移除使用者 ${userToDelete} ${transferTarget ? '，成績已轉移至 ' + transferTarget : '，成績已連帶刪除'}。`);
                 renderAdminUsers();
             } catch(e) {
                 console.error(e);
                 alert("移除操作失敗！");
             }
+        };
+
+        // ==========================================
+        //  UI 渲染函式 - 個別區塊 (月曆/動態/排行)
+        // ==========================================
+        window.renderSidebar = () => {
+            const container = document.getElementById('sidebar-countdowns');
+            if(!container) return;
+            const examDaysLeft = getDaysLeft(EXAM_DATE);
+            let html = `
+                <div class="bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl p-5 text-center shadow-lg text-white mb-4 transform hover:scale-[1.02] transition-transform border border-pink-300 shrink-0 z-10 relative">
+                    <h3 class="text-sm font-bold text-pink-100 mb-1">會考大日子 (2027-05-22)</h3>
+                    <div class="text-5xl font-black drop-shadow-md mb-2">${examDaysLeft >= 0 ? examDaysLeft : 0} <span class="text-xl">天</span></div>
+                    <div class="text-xs bg-black/20 rounded-full inline-block px-3 py-1 font-bold">🎯 決戰時刻</div>
+                </div>
+                <h4 class="font-bold text-teal-700 mb-2 flex items-center gap-2 shrink-0 z-10 relative">🗓️ 重要考試里程碑</h4>
+                <div class="marquee-container flex-1 w-full relative z-0 pb-1">
+                    <div class="marquee-content space-y-3 pt-2">
+            `;
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            sortedDates.forEach((item) => {
+                const days = getDaysLeft(item.date);
+                if (days >= 0) {
+                    html += `
+                        <div class="bg-white p-3 rounded-xl border border-teal-100 shadow-sm flex justify-between items-center relative overflow-hidden group">
+                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-teal-300"></div>
+                            <div class="pl-2">
+                                <div class="text-sm font-bold text-gray-700">${item.title}</div>
+                                <div class="text-xs text-gray-400">${item.date}</div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xl font-black ${days <= 7 ? 'text-rose-500' : 'text-teal-500'}">${days}</span>
+                                <span class="text-xs text-gray-500">天</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            html += `</div></div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderChat = () => {
+            const container = document.getElementById('chat-messages');
+            if(!container) return;
+            container.innerHTML = chatMessages.map(msg => {
+                const isMe = msg.user === username;
+                const displayName = usersProfile[msg.user]?.nickname || msg.user;
+                return `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        <span class="text-[10px] text-gray-400 mb-0.5 px-1">${displayName}</span>
+                        <div class="${isMe ? 'chat-bubble-me border border-blue-100' : 'chat-bubble-other border border-pink-100'} px-3 py-2 text-gray-700 shadow-sm inline-block max-w-[90%] break-words">
+                            ${msg.text}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        };
+
+        window.toggleEmojiPicker = (e) => {
+            if(e) e.stopPropagation();
+            const picker = document.getElementById('emoji-picker');
+            picker.classList.toggle('hidden');
+        };
+
+        window.insertEmoji = (emoji) => {
+            const input = document.getElementById('chatInput');
+            input.value += emoji;
+            input.focus();
+            document.getElementById('emoji-picker').classList.add('hidden');
+        };
+
+        window.changeMonth = (delta) => {
+            currentMonth += delta;
+            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+            if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+            window.renderMainContent();
+        };
+
+        window.changeViewingUser = (user) => {
+            viewingUser = user;
+            window.renderCalendar();
+        };
+
+        window.renderCalendar = () => {
+            const container = document.getElementById('calendar-grid');
+            const headerContainer = document.getElementById('calendar-header-container');
+            if(!container || !headerContainer) return;
+
+            headerContainer.innerHTML = `
+                <h2 class="text-xl md:text-2xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
+                <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-teal-700 bg-teal-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
+                    <option value="ALL" ${viewingUser === 'ALL' ? 'selected' : ''}>🌍 全部進度</option>
+                    ${globalUsers.map(u => {
+                        const dispName = usersProfile[u]?.nickname || u;
+                        return `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>❤️ ${dispName} 的個人進度</option>`;
+                    }).join('')}
+                </select>
+            `;
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const startPad = firstDay === 0 ? 6 : firstDay - 1;
+
+            let html = `<div class="grid grid-cols-7 gap-1 md:gap-2 mb-2 shrink-0">`;
+            ['一', '二', '三', '四', '五', '六', '日'].forEach((d, idx) => {
+                const isWeekend = idx >= 5;
+                html += `<div class="text-center font-bold ${isWeekend ? 'text-rose-500 bg-rose-50' : 'text-teal-700 bg-teal-50'} py-1 md:py-2 text-sm md:text-base rounded-lg md:rounded-xl shadow-sm border border-gray-100">${d}</div>`;
+            });
+            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[100px] md:auto-rows-[120px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
+
+            for(let i=0; i<startPad; i++) {
+                html += `<div class="bg-white/30 rounded-xl md:rounded-2xl border border-transparent"></div>`;
+            }
+
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const isToday = dateStr === formatDate(new Date());
+                const isImportant = importantDates.find(i => i.date === dateStr);
+                
+                let usersWithDataToday = [];
+                Object.entries(allGrades).forEach(([u, dates]) => {
+                    if (dates[dateStr] && Object.keys(dates[dateStr]).length > 0) {
+                        if (viewingUser === 'ALL' || u === viewingUser) {
+                            usersWithDataToday.push(u);
+                        }
+                    }
+                });
+
+                const headerClass = isToday 
+                    ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-white shadow-md' 
+                    : isImportant 
+                        ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md' 
+                        : 'bg-pink-50 text-pink-700';
+
+                const clickAction = (viewingUser === username || viewingUser === 'ALL') 
+                    ? `openScoreModal('${dateStr}')` 
+                    : `viewOthersScore(event, '${viewingUser}', '${dateStr}')`;
+
+                let cellHTML = '';
+
+                if (viewingUser === 'ALL') {
+                    // ALL View: No subjects/grades. Just date on left, 2-col scrollable avatars on right.
+                    const avatarsHtml = usersWithDataToday.map(u => `
+                        <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
+                             class="${getUserColor(u)} w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center text-[9px] md:text-xs font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
+                             title="查看 ${usersProfile[u]?.nickname || u} 的成績">
+                            ${getAvatarChar(u)}
+                        </div>
+                    `).join('');
+
+                    cellHTML = `
+                        <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-1.5 rounded-xl md:rounded-2xl shadow-sm flex flex-row transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
+                            
+                            <div class="flex flex-col items-center shrink-0 w-6 md:w-8">
+                                <span class="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-[11px] md:text-sm font-bold ${headerClass} shrink-0 shadow-sm">${d}</span>
+                                ${isImportant ? `<span class="text-[10px] md:text-xs drop-shadow-sm mt-1 group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
+                            </div>
+
+                            <div class="flex-1 overflow-y-auto custom-scrollbar h-full pl-1">
+                                ${usersWithDataToday.length > 0 ? `
+                                    <div class="grid grid-cols-2 gap-1 justify-items-end md:justify-items-center pb-1 pr-0.5">
+                                        ${avatarsHtml}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Specific User View: Show subject badges.
+                    let cellContent = '';
+                    const userGrades = (allGrades[viewingUser] && allGrades[viewingUser][dateStr]) ? allGrades[viewingUser][dateStr] : null;
+                    if (userGrades && Object.keys(userGrades).length > 0) {
+                        cellContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
+                        Object.entries(userGrades).forEach(([subKey, info]) => {
+                            let mainSub = info.mainSubject || subKey;
+                            let hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
+                            let safeTextColor = getSafeTextColor(mainSub);
+
+                            let shortName = mainSub;
+                            if(shortName === '自然合科') shortName = '自然';
+                            if(shortName === '社會合科') shortName = '社會';
+                            if(shortName === '地球科學') shortName = '地科';
+
+                            cellContent += `
+                                <div class="text-[9px] md:text-[11px] font-bold border px-1 py-0.5 rounded flex items-center justify-between shadow-sm" style="background-color: ${hexColor}20; border-color: ${hexColor}50; color: ${safeTextColor};">
+                                    <span class="truncate">${shortName} <span class="font-black ml-0.5">${info.grade}</span></span>
+                                    ${info.photo ? '<span class="text-[8px] md:text-[9px] text-purple-500 shrink-0 ml-0.5">📸</span>' : ''}
+                                </div>
+                            `;
+                        });
+                        cellContent += `</div>`;
+                    }
+
+                    cellHTML = `
+                        <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-2 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
+                            <div class="flex justify-between items-start shrink-0 mb-0.5 md:mb-1 w-full">
+                                <span class="w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass} shrink-0">${d}</span>
+                                
+                                <div class="flex flex-wrap justify-end content-start gap-1 flex-1 mx-1 mt-0.5 overflow-y-auto custom-scrollbar max-h-12 md:max-h-14 pr-1">
+                                    ${usersWithDataToday.map(u => `
+                                        <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
+                                             class="${getUserColor(u)} w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center text-[9px] md:text-[11px] font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
+                                             title="查看 ${usersProfile[u]?.nickname || u} 的成績">
+                                            ${getAvatarChar(u)}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                ${isImportant ? `<span class="text-xs md:text-sm drop-shadow-sm group-hover:scale-125 transition-transform shrink-0" title="${isImportant.title}">🔥</span>` : ''}
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                                ${cellContent}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += cellHTML;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderTimeline = () => {
+            const container = document.getElementById('timeline-feed');
+            if(!container) return;
+
+            const feed = [];
+            Object.entries(allGrades).forEach(([u, dates]) => {
+                Object.entries(dates).forEach(([d, subjects]) => {
+                    Object.entries(subjects).forEach(([s, info]) => {
+                        feed.push({ user: u, date: d, subject: s, ...info });
+                    });
+                });
+            });
+
+            feed.sort((a,b) => {
+                const timeA = a.updatedAt ? new Date(a.updatedAt) : new Date(a.date);
+                const timeB = b.updatedAt ? new Date(b.updatedAt) : new Date(b.date);
+                return timeB - timeA;
+            });
+
+            if (feed.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-70"><div class="text-4xl mb-2">🍃</div><div class="text-sm font-bold">尚無戰況紀錄，趕快搶頭香！</div></div>`;
+                return;
+            }
+
+            let html = '';
+            feed.forEach(item => {
+                const isMe = item.user === username;
+                const isA = item.grade.includes('A');
+                const emoji = isA ? '🏆' : '💪';
+                
+                const mainSub = item.mainSubject || item.subject;
+                const hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
+                const safeTextColor = getSafeTextColor(mainSub);
+                const displayName = usersProfile[item.user]?.nickname || item.user;
+
+                const mainSubStr = item.mainSubject && item.mainSubject !== item.subject ? `${item.mainSubject} ` : '';
+                const fullSubStr = `${mainSubStr}${item.subject}`;
+
+                html += `
+                    <div class="p-3 rounded-2xl border-2 shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" style="background-color: ${hexColor}15; border-color: ${hexColor}50;" onclick="viewOthersScore(null, '${item.user}', '${item.date}')">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-gray-700 bg-white px-2 py-0.5 rounded shadow-sm text-xs border border-gray-100 flex items-center gap-1.5">
+                                <div class="w-3 h-3 rounded-full flex items-center justify-center text-[8px] ${getUserColor(item.user)}">${getAvatarChar(item.user)}</div>
+                                ${isMe ? '我' : displayName}
+                            </span>
+                            <span class="text-[10px] text-gray-400 font-mono">${item.date}</span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            在 <span class="font-bold text-gray-800" title="${fullSubStr}">${fullSubStr.length > 20 ? fullSubStr.substring(0,18)+'...' : fullSubStr}</span> 獲得 <span class="font-black text-lg mx-1" style="color: ${safeTextColor}">${item.grade}</span> ${emoji}
+                        </div>
+                        ${item.photo ? `<div class="absolute right-3 bottom-2 text-purple-400 text-lg opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        };
+
+        window.renderLeaderboard = () => {
+            const container = document.getElementById('leaderboard-feed');
+            if(!container) return;
+
+            let userStats = [];
+            globalUsers.forEach(u => {
+                let stats = { user: u, totalScore: 0, totalEntries: 0 };
+                const uGrades = allGrades[u] || {};
+                Object.values(uGrades).forEach(dayGrades => {
+                    Object.values(dayGrades).forEach(item => {
+                        stats.totalEntries++;
+                        stats.totalScore += GRADE_WEIGHT[item.grade] || 0;
+                    });
+                });
+                stats.average = stats.totalEntries > 0 ? (stats.totalScore / stats.totalEntries) : 0;
+                userStats.push(stats);
+            });
+
+            // 依照總平均分數由高到低排名，若平均相同則比較總刷題數
+            userStats.sort((a, b) => b.average - a.average || b.totalEntries - a.totalEntries);
+
+            if (userStats.length === 0 || userStats[0].totalEntries === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 text-sm mt-4 font-bold">目前無人上榜</div>`;
+                return;
+            }
+
+            let html = '';
+            userStats.forEach((stat, index) => {
+                if (stat.totalEntries === 0) return;
+                let rankMedal = '';
+                if (index === 0) rankMedal = '🥇';
+                else if (index === 1) rankMedal = '🥈';
+                else if (index === 2) rankMedal = '🥉';
+                else rankMedal = `<span class="text-teal-700 bg-teal-100 rounded-full w-6 h-6 flex items-center justify-center text-xs font-black shadow-inner">${index + 1}</span>`;
+
+                const displayName = usersProfile[stat.user]?.nickname || stat.user;
+
+                html += `
+                    <div onclick="openPublicProfile('${stat.user}')" class="bg-white rounded-xl p-2.5 border border-teal-100 shadow-sm flex items-center gap-3 relative hover:scale-[1.02] transition-transform cursor-pointer hover:border-teal-300">
+                        <div class="text-2xl w-8 flex justify-center drop-shadow-sm">${rankMedal}</div>
+                        <div class="flex-1 min-w-0 flex items-center gap-2">
+                            <div class="${getUserColor(stat.user)} w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0">
+                                ${getAvatarChar(stat.user)}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-black text-gray-700 text-sm mb-0.5 truncate">${displayName}</div>
+                                <div class="text-[10px] text-gray-500 flex gap-2 items-center mt-1">
+                                    <span class="text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 shadow-sm">平均 ${stat.average.toFixed(2)} 分</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center bg-gray-50 p-1.5 rounded-lg border border-gray-100 shrink-0">
+                            <div class="text-[10px] text-gray-400 font-bold">總刷題</div>
+                            <div class="font-black text-teal-600 text-base leading-none">${stat.totalEntries}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        };
+
+        window.renderMainContent = () => {
+            if(window.renderCalendar) window.renderCalendar();
+            if(window.renderTimeline) window.renderTimeline();
+            if(window.renderLeaderboard) window.renderLeaderboard();
+            if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) window.renderAdminUsers();
+        };
+
+        // ==========================================
+        //  輸入成績邏輯 (全面升級版 5 Steps)
+        // ==========================================
+        window.openScoreModal = (dateStr) => {
+            modalState = { date: dateStr, mainSubject: '', textbook: '', subSubject: '', grade: '', photoBase64: '' };
+            document.getElementById('modal-date').innerText = dateStr;
+            
+            // 狀態還原：清除所有強調樣式
+            SUBJECTS.forEach(s => { 
+                const el = document.getElementById(`btn-sub-${s}`);
+                if (el) {
+                    el.classList.remove('bg-teal-600', 'text-white', 'shadow-md', 'ring-4', 'ring-teal-200', 'border-teal-600', 'scale-105');
+                    el.classList.add('bg-white', 'text-teal-700', 'border-teal-200');
+                }
+            });
+            GRADES.forEach(g => { 
+                const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                if (el) {
+                    el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                    el.classList.add('bg-white', 'text-rose-700', 'border-rose-200');
+                }
+            });
+            
+            // 隱藏 2~5 步驟與弱點區塊
+            document.getElementById('step-2-container').classList.add('hidden');
+            document.getElementById('step-3-container').classList.add('hidden');
+            document.getElementById('step-4-container').classList.add('hidden');
+            document.getElementById('step-5-container').classList.add('hidden');
+            document.getElementById('weakness-container').classList.add('hidden');
+            document.getElementById('is-weakness-check').checked = false;
+            document.getElementById('weakness-note').value = '';
+            
+            document.getElementById('photo-upload').value = '';
+            document.getElementById('photo-preview-container').classList.add('hidden');
+            document.getElementById('photo-preview-container').classList.remove('flex');
+            document.getElementById('photo-placeholder').classList.remove('hidden');
+            document.getElementById('btn-delete-grade').classList.add('hidden');
+
+            // 復原 Step 5 上傳區域樣式
+            const dropzone = document.getElementById('step-5-dropzone');
+            if (dropzone) {
+                dropzone.classList.remove('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid');
+                dropzone.classList.add('border-dashed', 'bg-white');
+            }
+            
+            openGlobalModal('score-modal');
+        };
+
+        window.selectSubject = (sub) => {
+            modalState.mainSubject = sub;
+            modalState.textbook = '';
+            modalState.subSubject = '';
+            modalState.grade = '';
+
+            // 按鈕高亮
+            SUBJECTS.forEach(s => {
+                const el = document.getElementById(`btn-sub-${s}`);
+                if(el) {
+                    if(s === sub) {
+                        el.classList.add('bg-teal-600', 'text-white', 'shadow-md', 'ring-4', 'ring-teal-200', 'border-teal-600', 'scale-105');
+                        el.classList.remove('bg-white', 'text-teal-700', 'border-teal-200');
+                    } else {
+                        el.classList.remove('bg-teal-600', 'text-white', 'shadow-md', 'ring-4', 'ring-teal-200', 'border-teal-600', 'scale-105');
+                        el.classList.add('bg-white', 'text-teal-700', 'border-teal-200');
+                    }
+                }
+            });
+
+            // 清除 Grade 按鈕與弱點狀態
+            GRADES.forEach(g => { 
+                const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                if (el) {
+                    el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                    el.classList.add('bg-white', 'text-rose-700', 'border-rose-200');
+                }
+            });
+            document.getElementById('weakness-container').classList.add('hidden');
+            document.getElementById('is-weakness-check').checked = false;
+            document.getElementById('weakness-note').value = '';
+
+            // 流程控制
+            const step2 = document.getElementById('step-2-container');
+            const step3 = document.getElementById('step-3-container');
+            const step4 = document.getElementById('step-4-container');
+            const step5 = document.getElementById('step-5-container');
+
+            step2.classList.add('hidden');
+            step3.classList.add('hidden');
+            step4.classList.add('hidden');
+            step5.classList.add('hidden');
+
+            if (TEXTBOOKS[sub]) {
+                // 有定義教科書，跳轉 Step 2
+                step2.classList.remove('hidden');
+                document.getElementById('textbook-selector').innerHTML = TEXTBOOKS[sub].map(tb => `
+                    <div onclick="selectTextbook('${tb.id}')" id="btn-tb-${tb.id}" class="cursor-pointer border-4 border-transparent bg-white hover:border-blue-400 rounded-xl p-2 text-center transition-all shadow-sm w-32 md:w-36 group">
+                        <img src="${tb.img}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2YxZjVmOSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM5Y2EzYWYiPueEoeWcluAHfTwvdGV4dD48L3N2Zz4='" class="w-full h-32 md:h-36 object-cover rounded-lg mb-2 shadow-sm border border-gray-200 pointer-events-none group-hover:shadow-md transition-shadow">
+                        <div class="font-bold text-sm text-gray-700 pointer-events-none">${tb.name}</div>
+                    </div>
+                `).join('');
+            } else if (SUB_SUBJECTS[sub]) {
+                // 有定義細項 (如自然、社會)，跳轉 Step 3
+                step3.classList.remove('hidden');
+                document.getElementById('sub-subject-selector').innerHTML = SUB_SUBJECTS[sub].map(sItem => 
+                    `<button onclick="selectSubSubject('${sItem}')" id="btn-subitem-${sItem}" class="block w-full text-left py-3 px-4 rounded-xl border-2 border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-50 transition-all bg-white shadow-sm text-sm md:text-base hover:scale-[1.02] whitespace-nowrap overflow-hidden text-ellipsis">${formatStep3Text(sItem)}</button>`
+                ).join('');
+                
+                // 自動預選第一個或舊有的
+                let subToSelect = SUB_SUBJECTS[sub][0];
+                for (let sItem of SUB_SUBJECTS[sub]) {
+                    if (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][sItem]) {
+                        subToSelect = sItem; break;
+                    }
+                }
+                window.selectSubSubject(subToSelect);
+            } else {
+                // 只有主科 (如英文、數學)，直接跳轉 Step 4 & 5
+                modalState.subSubject = sub;
+                step4.classList.remove('hidden');
+                step5.classList.remove('hidden');
+                checkExistingGrade(sub);
+            }
+        };
+
+        window.selectTextbook = (tbId) => {
+            modalState.textbook = tbId;
+            modalState.subSubject = '';
+            
+            // Highlight
+            const tbs = TEXTBOOKS[modalState.mainSubject];
+            if(tbs) {
+                tbs.forEach(tb => {
+                    const el = document.getElementById(`btn-tb-${tb.id}`);
+                    if(el) {
+                        if(tb.id === tbId) {
+                            el.classList.add('border-blue-500', 'bg-blue-50', 'ring-4', 'ring-blue-200', 'scale-105', 'shadow-md');
+                            el.classList.remove('border-transparent', 'bg-white');
+                        } else {
+                            el.classList.remove('border-blue-500', 'bg-blue-50', 'ring-4', 'ring-blue-200', 'scale-105', 'shadow-md');
+                            el.classList.add('border-transparent', 'bg-white');
+                        }
+                    }
+                });
+            }
+
+            // Show Step 3
+            document.getElementById('step-3-container').classList.remove('hidden');
+            const tbObj = tbs.find(t => t.id === tbId);
+            if(tbObj && tbObj.chapters) {
+                document.getElementById('sub-subject-selector').innerHTML = tbObj.chapters.map((ch, idx) => 
+                    `<button onclick="selectSubSubject('${ch}', ${idx})" id="btn-subitem-${idx}" class="block w-full text-left py-3 px-4 rounded-xl border-2 border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-50 transition-all bg-white shadow-sm text-sm md:text-base hover:scale-[1.02] whitespace-nowrap overflow-hidden text-ellipsis">${formatStep3Text(ch)}</button>`
+                ).join('');
+            }
+            
+            // Hide 4 & 5 until chapter selected
+            document.getElementById('step-4-container').classList.add('hidden');
+            document.getElementById('step-5-container').classList.add('hidden');
+        };
+
+        window.selectSubSubject = (subItem, indexId = null) => {
+            modalState.subSubject = subItem;
+            
+            // Highlight
+            if (TEXTBOOKS[modalState.mainSubject] && indexId !== null) {
+                const tbObj = TEXTBOOKS[modalState.mainSubject].find(t => t.id === modalState.textbook);
+                if (tbObj && tbObj.chapters) {
+                    tbObj.chapters.forEach((_, idx) => {
+                        const el = document.getElementById(`btn-subitem-${idx}`);
+                        if(el) {
+                            if(idx === indexId) {
+                                el.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]');
+                                el.classList.remove('bg-white', 'text-indigo-700', 'border-indigo-200');
+                            } else {
+                                el.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]');
+                                el.classList.add('bg-white', 'text-indigo-700', 'border-indigo-200');
+                            }
+                        }
+                    });
+                }
+            } else if (SUB_SUBJECTS[modalState.mainSubject]) {
+                SUB_SUBJECTS[modalState.mainSubject].forEach(s => {
+                    const el = document.getElementById(`btn-subitem-${s}`);
+                    if (el) {
+                        if(s === subItem) {
+                            el.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]');
+                            el.classList.remove('bg-white', 'text-indigo-700', 'border-indigo-200');
+                        } else {
+                            el.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]');
+                            el.classList.add('bg-white', 'text-indigo-700', 'border-indigo-200');
+                        }
+                    }
+                });
+            }
+
+            // Show Step 4 & 5
+            document.getElementById('step-4-container').classList.remove('hidden');
+            document.getElementById('step-5-container').classList.remove('hidden');
+            
+            checkExistingGrade(subItem);
+
+            // 自動平滑滾動到 Step 4
+            setTimeout(() => {
+                const step4Container = document.getElementById('step-4-container');
+                if(step4Container) {
+                    step4Container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        };
+
+        const checkExistingGrade = (subKey) => {
+            let existing = (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][subKey]) ? allGrades[username][modalState.date][subKey] : null;
+
+            if (existing) {
+                window.selectGrade(existing.grade);
+                // 復原弱點狀態
+                if (['B++', 'B+', 'B', 'C'].includes(existing.grade)) {
+                    document.getElementById('weakness-container').classList.remove('hidden');
+                    document.getElementById('is-weakness-check').checked = existing.isWeakness || false;
+                    document.getElementById('weakness-note').value = existing.weaknessNote || '';
+                }
+
+                if (existing.photo) setPhotoPreview(existing.photo);
+                else {
+                     modalState.photoBase64 = '';
+                     document.getElementById('photo-preview-container').classList.add('hidden');
+                     document.getElementById('photo-preview-container').classList.remove('flex');
+                     document.getElementById('photo-placeholder').classList.remove('hidden');
+                     
+                     const dropzone = document.getElementById('step-5-dropzone');
+                     if (dropzone) {
+                         dropzone.classList.remove('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid');
+                         dropzone.classList.add('border-dashed', 'bg-white');
+                     }
+                }
+                document.getElementById('btn-delete-grade').classList.remove('hidden');
+            } else {
+                modalState.grade = '';
+                modalState.photoBase64 = '';
+                GRADES.forEach(g => { 
+                    const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                    if (el) {
+                        el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                        el.classList.add('bg-white', 'text-rose-700', 'border-rose-200');
+                    }
+                });
+                document.getElementById('weakness-container').classList.add('hidden');
+                document.getElementById('is-weakness-check').checked = false;
+                document.getElementById('weakness-note').value = '';
+
+                document.getElementById('photo-preview-container').classList.add('hidden');
+                document.getElementById('photo-preview-container').classList.remove('flex');
+                document.getElementById('photo-placeholder').classList.remove('hidden');
+                
+                const dropzone = document.getElementById('step-5-dropzone');
+                if (dropzone) {
+                    dropzone.classList.remove('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid');
+                    dropzone.classList.add('border-dashed', 'bg-white');
+                }
+                document.getElementById('btn-delete-grade').classList.add('hidden');
+            }
+        };
+
+        window.selectGrade = (grade) => {
+            modalState.grade = grade;
+            GRADES.forEach(g => {
+                const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                if(el) {
+                    if(g === grade) {
+                        el.classList.add('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                        el.classList.remove('bg-white', 'text-rose-700', 'border-rose-200');
+                    } else {
+                        el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                        el.classList.add('bg-white', 'text-rose-700', 'border-rose-200');
+                    }
+                }
+            });
+
+            // 判斷是否顯示弱點標記區塊
+            const weaknessContainer = document.getElementById('weakness-container');
+            if (['B++', 'B+', 'B', 'C'].includes(grade)) {
+                weaknessContainer.classList.remove('hidden');
+            } else {
+                weaknessContainer.classList.add('hidden');
+                document.getElementById('is-weakness-check').checked = false;
+                document.getElementById('weakness-note').value = '';
+            }
+        };
+
+        window.handlePhotoUpload = (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 600; 
+                    const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const base64 = canvas.toDataURL('image/jpeg', 0.6);
+                    setPhotoPreview(base64);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        const setPhotoPreview = (base64) => {
+            modalState.photoBase64 = base64;
+            const preview = document.getElementById('photo-preview');
+            preview.src = base64;
+            document.getElementById('photo-placeholder').classList.add('hidden');
+            document.getElementById('photo-preview-container').classList.remove('hidden');
+            document.getElementById('photo-preview-container').classList.add('flex');
+            
+            // 加入明顯的 Step 5 完成狀態框線與底色
+            const dropzone = document.getElementById('step-5-dropzone');
+            if (dropzone) {
+                dropzone.classList.add('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid');
+                dropzone.classList.remove('border-dashed', 'bg-white');
+            }
+        };
+
+        window.saveGrade = async () => {
+            if(!modalState.subSubject) return alert("請完整選擇科目與章節細項！");
+            if(!modalState.grade) return alert("請選擇您的成績等級！");
+
+            const isWeakness = document.getElementById('is-weakness-check').checked;
+            const weaknessNote = document.getElementById('weakness-note').value.trim();
+
+            let existingReviews = [false, false, false, false, false];
+            if (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][modalState.subSubject]) {
+                existingReviews = allGrades[username][modalState.date][modalState.subSubject].reviews || existingReviews;
+            }
+
+            try {
+                // 將成績獨立儲存為一個 Document，ID 命名規則為: 帳號_日期_科目細項
+                const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
+                const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
+                
+                await setDoc(gradeRef, {
+                    user: username,
+                    date: modalState.date,
+                    mainSubject: modalState.mainSubject,
+                    subSubject: modalState.subSubject,
+                    grade: modalState.grade,
+                    photo: modalState.photoBase64 || null,
+                    isWeakness: isWeakness,
+                    weaknessNote: weaknessNote,
+                    reviews: existingReviews,
+                    updatedAt: new Date().toISOString() 
+                }, { merge: true });
+                
+                closeGlobalModal('score-modal');
+            } catch(e) {
+                console.error(e);
+                alert("儲存失敗，請確認圖片是否過大！");
+            }
+        };
+
+        window.deleteGradeRecord = async () => {
+            if(!modalState.subSubject) return;
+            if(!confirm(`確定要刪除 ${modalState.date} 的 ${modalState.subSubject} 紀錄嗎？`)) return;
+
+            try {
+                const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
+                const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
+                await deleteDoc(gradeRef);
+
+                closeGlobalModal('score-modal');
+            } catch(e) { console.error(e); }
+        };
+
+        window.viewOthersScore = (e, otherUser, dateStr) => {
+            if (e) e.stopPropagation(); 
+            const data = (allGrades[otherUser] && allGrades[otherUser][dateStr]) ? allGrades[otherUser][dateStr] : null;
+            if(!data || Object.keys(data).length === 0) {
+                alert(`${usersProfile[otherUser]?.nickname || otherUser} 在 ${dateStr} 尚未登錄成績！`);
+                return; 
+            }
+            
+            document.getElementById('view-modal-date').innerText = dateStr;
+            let contentHtml = `
+                <div class="flex items-center gap-3 mb-4 border-b-2 border-teal-200 pb-3">
+                    <div class="${getUserColor(otherUser)} w-10 h-10 rounded-full flex items-center justify-center text-lg font-black shadow-sm">
+                        ${getAvatarChar(otherUser)}
+                    </div>
+                    <h3 class="font-black text-xl text-teal-800">${usersProfile[otherUser]?.nickname || otherUser} 的戰果</h3>
+                    </div>
+            `;
+            
+            Object.entries(data).forEach(([subKey, item]) => {
+                const mainSub = item.mainSubject || subKey;
+                const hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
+                const safeTextColor = getSafeTextColor(mainSub);
+                const isWeak = item.isWeakness;
+                const weakIndicator = isWeak ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded border border-red-200 ml-2 shadow-sm whitespace-nowrap">🔥 弱點標記</span>' : '';
+                
+                contentHtml += `
+                    <div class="mb-5 bg-white p-4 rounded-2xl shadow-sm border-2 relative" style="background-color: ${hexColor}0A; border-color: ${hexColor}50;">
+                        <div class="flex justify-between items-start mb-2 gap-2 flex-wrap" style="color: ${safeTextColor}">
+                            <span class="font-bold text-base md:text-lg whitespace-pre-line leading-tight pt-1 flex items-center flex-wrap">📌 [${mainSub}] ${subKey} ${weakIndicator}</span>
+                            <span class="font-black text-xl md:text-2xl shrink-0">${item.grade}</span>
+                        </div>
+                        ${isWeak && item.weaknessNote ? `
+                            <div class="mt-2 mb-3 bg-white/80 p-2 rounded border border-white text-sm text-gray-700 shadow-sm">
+                                <div class="text-xs font-bold mb-1" style="color: ${safeTextColor}">📝 錯題筆記：</div>
+                                ${item.weaknessNote.replace(/\n/g, '<br>')}
+                            </div>
+                        ` : ''}
+                        ${item.photo ? `<div class="mt-3"><img src="${item.photo}" class="w-full rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-90" onclick="window.open('${item.photo}', '_blank')" alt="考卷照片" title="點擊查看大圖"></div>` : '<div class="text-xs text-gray-400 text-center mt-2">（無附照片）</div>'}
+                    </div>
+                `;
+            });
+            document.getElementById('view-score-content').innerHTML = contentHtml;
+            openGlobalModal('view-score-modal');
         };
 
         // ==========================================
@@ -1696,7 +2622,6 @@
                     importantDates = snap.data().list || [];
                 } else {
                     importantDates = [
-                        { date: '2027-05-22', title: '國中教育會考' },
                         { date: '2026-09-09', title: '第1次模擬考' },
                         { date: '2026-10-13', title: '第1次段考' },
                         { date: '2026-10-28', title: '第2次模擬考' }
