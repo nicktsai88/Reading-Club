@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎒 邁向5A10+ 國中會考 複習進度排程器 ✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%; 
+            height: -webkit-fill-available;
+            height: 100dvh;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Varela Round', 'Noto Sans TC', sans-serif;
+            background-color: #fdfbfb;
+            background-image: 
+                radial-gradient(#e0f2fe 2px, transparent 2px),
+                radial-gradient(#fce7f3 2px, transparent 2px);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            -webkit-tap-highlight-color: transparent;
+            color: #4a4a4a;
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 3px solid #e0f2fe;
+            box-shadow: 0 8px 32px rgba(186, 230, 253, 0.4);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(125, 211, 252, 0.6); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(56, 189, 248, 1); }
+
+        .animate-bounce-slow { animation: bounce 3s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(-5%); } 50% { transform: translateY(0); } }
+
+        @keyframes marqueeVertical {
+            0% { transform: translateY(100%); }
+            100% { transform: translateY(-100%); }
+        }
+        .marquee-container {
+            overflow: hidden;
+            position: relative;
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
+            mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
+        }
+        .marquee-content {
+            position: absolute;
+            width: 100%;
+            animation: marqueeVertical 15s linear infinite;
+        }
+        .marquee-container:hover .marquee-content, 
+        .marquee-container:active .marquee-content {
+            animation-play-state: paused;
+        }
+        
+        .chat-bubble-me { background: #e0f2fe; border-radius: 1rem 1rem 0 1rem; }
+        .chat-bubble-other { background: #fce7f3; border-radius: 1rem 1rem 1rem 0; }
+
+        .time-slot-active {
+            border-color: #3b82f6 !important;
+            background-color: #eff6ff !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+            transform: scale(1.02);
+        }
+    </style>
+
+    <script type="application/json" id="app-data">
+    {
+      "EXAM_DATE": "2027-05-22T00:00:00",
+      "SUBJECTS": ["國文", "英文", "數學", "生物", "理化", "地球科學", "歷史", "地理", "公民", "自然", "社會", "生活類"],
+      "SUB_SUBJECTS": {
+        "自然": ["自然合科", "地科"],
+        "社會": ["社會合科", "地理", "公民"]
+      },
+      "TEXTBOOKS": {
+        "國文": [
+          { "id": "c1", "name": "麻辣講義", "img": "images/c1.jpg", "chapters": ["單元1 第一冊 (1~5課)", "單元2 第一冊 (6~10課 自學課)", "單元3 第一冊 (主題專區)", "單元4 第二冊 (1~5課)", "單元5 第二冊 (6~10課 自學課)", "會考模擬試題 1~2冊", "單元7 第三冊 (1~5課)"] }
+        ],
+        "英文": [
+          { "id": "e1", "name": "超會考", "img": "images/e1.jpg", "chapters": ["單元1 第一冊 (1~3課)", "單元2 第一冊 (4~6課)", "單元3 第二冊 (1~2課)", "單元4 第二冊 (3~4課)", "會考模擬試題 1~2冊"] }
+        ],
+        "數學": [
+          { "id": "m1", "name": "麻辣講義", "img": "images/m1.jpg", "chapters": ["單元1 第一冊 (整數的運算)", "單元2 第一冊 (分數的運算)", "單元3 第一冊 (一元一次方程式)", "單元4 第二冊 (二元一次聯立方程式)", "會考模擬試題 1~2冊"] }
+        ],
+        "生活類": [
+          { "id": "life1", "name": "日常作息", "img": "", "chapters": ["早餐", "午餐", "晚餐", "午睡", "運動", "暑輔", "補習", "旅遊", "打電動", "彈性時間", "家事", "閱讀課外讀物"] }
+        ]
+      }
+    }
+    </script>
+</head>
+<body class="w-full flex flex-col overflow-hidden">
+
+    <div id="app" class="w-full h-full flex flex-col overflow-hidden"></div>
+    <div id="modals-container"></div> 
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ==========================================
+        //  系統設定與常數
+        // ==========================================
+        const appData = JSON.parse(document.getElementById('app-data').textContent);
+        const EXAM_DATE = new Date(appData.EXAM_DATE);
+        const SUBJECTS = appData.SUBJECTS;
+        const SUB_SUBJECTS = appData.SUB_SUBJECTS;
+        let globalTextbooks = appData.TEXTBOOKS; 
+        
+        const TIME_SLOTS = [];
+        for(let i = 6; i <= 23; i++) {
+            TIME_SLOTS.push(`${String(i).padStart(2,'0')}:00 - ${String(i+1).padStart(2,'0')}:00`);
+        }
+
+        const EMOJI_LIST = ['😀','😎','💪','🔥','📚','📝','🏆','✨','🚀','💡','🎯','🏃','🍔','💤','🎮'];
+
+        const SUBJECT_HEX_COLORS = {
+            '國文': '#EF4444', '英文': '#F97316', '數學': '#EAB308',
+            '生物': '#84CC16', '理化': '#06B6D4', '地科': '#3B82F6',
+            '地球科學': '#3B82F6', '歷史': '#D946EF', '地理': '#EC4899',
+            '公民': '#10B981', '自然合科': '#84CC16', '社會合科': '#EC4899', 
+            '生活類': '#8B5CF6', 'default': '#6B7280'
+        };
+
+        const USER_COLORS = [
+            'bg-[#EF4444] text-white', 'bg-[#EC4899] text-white', 'bg-[#F97316] text-white',
+            'bg-[#EAB308] text-gray-800', 'bg-[#84CC16] text-gray-800', 'bg-[#10B981] text-white',
+            'bg-[#06B6D4] text-gray-800', 'bg-[#3B82F6] text-white', 'bg-[#8B5CF6] text-white',
+            'bg-[#D946EF] text-white', 'bg-[#6366F1] text-white', 'bg-[#14B8A6] text-white'
+        ];
+        
+        const getUserColor = (name) => {
+            if(!name) return USER_COLORS[0];
+            if(usersProfile[name] && usersProfile[name].color) return usersProfile[name].color;
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
+        };
+
+        // 資料狀態
+        let appInstance, auth, db;
+        let currentUser = null;
+        let username = '';
+        let viewingUser = 'ALL'; 
+        let isAdmin = false;
+        
+        let globalUsers = [];
+        let importantDates = [];
+        let allSchedules = {}; 
+        let chatMessages = [];
+        let usersProfile = {}; 
+        
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth(); 
+        
+        // 排程視窗專用狀態
+        let scheduleModalState = { 
+            date: '', 
+            activeSlot: '', 
+            currentDayData: {}, 
+            selectedSubject: '',
+            selectedBookId: ''
+        };
+        
+        let unsubUsers, unsubDates, unsubSchedules, unsubChat, unsubProfile, unsubTextbooks;
+
+        // Firebase 初始化
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-scheduler-app';
+        let firebaseConfig;
+        try {
+            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        } catch (e) {
+            console.warn("解析 Firebase 參數失敗");
+            firebaseConfig = {};
+        }
+        
+        appInstance = initializeApp(firebaseConfig);
+        auth = getAuth(appInstance);
+        db = getFirestore(appInstance);
+
+        // ==========================================
+        //  輔助工具函式
+        // ==========================================
+        const getDaysLeft = (targetDateStr) => {
+            const now = new Date();
+            now.setHours(0,0,0,0);
+            const target = new Date(targetDateStr);
+            target.setHours(0,0,0,0);
+            return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+        };
+
+        const formatDate = (date) => {
+            const d = new Date(date);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        };
+
+        const getAvatarChar = (u) => {
+            if(usersProfile[u] && usersProfile[u].nickname) return usersProfile[u].nickname.charAt(0);
+            return u ? u.charAt(0) : '?';
+        };
+
+        const getRandomEmoji = () => EMOJI_LIST[Math.floor(Math.random() * EMOJI_LIST.length)];
+
+        // 檢查該單元是否已經在該使用者的任何日期的排程中
+        const isChapterScheduled = (chapterName) => {
+            let scheduled = false;
+            if(!allSchedules[username]) return false;
+            Object.values(allSchedules[username]).forEach(dayObj => {
+                Object.values(dayObj).forEach(slotData => {
+                    if (slotData.chapter === chapterName) scheduled = true;
+                });
+            });
+            return scheduled;
+        };
+
+        // ==========================================
+        //  UI 渲染函式 - 系統框架與登入
+        // ==========================================
+        window.renderApp = () => { 
+            document.getElementById('app').innerHTML = `<div id="view-container" class="w-full h-full flex flex-col relative overflow-hidden bg-white/20"></div>`; 
+            renderGlobalModals();
+        };
+
+        window.renderSetup = () => {
+            const container = document.getElementById('view-container');
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-y-auto">
+                    <div class="glass-panel p-8 md:p-10 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] max-w-[95vw] border-4 border-sky-200 relative overflow-hidden text-center">
+                        <h1 class="text-2xl md:text-3xl font-black text-sky-600 mb-2 drop-shadow-sm">⚙️ 系統資料庫設定</h1>
+                        <p class="text-sm text-gray-500 mb-6 font-bold">請填入您的 API Key，以啟用雲端同步功能</p>
+                        <div class="space-y-3 bg-white/60 p-6 rounded-2xl border border-sky-100">
+                            <div>
+                                <label class="block text-xs font-bold text-sky-800 mb-1">API Key (必填) *</label>
+                                <input type="text" id="cfg-apiKey" placeholder="AIzaSy..." class="w-full px-3 py-2 rounded-lg border border-sky-200 focus:outline-none focus:border-sky-400 text-sm font-mono text-center">
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-center">
+                            <button onclick="saveFirebaseConfig()" class="w-full bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-md hover:shadow-lg transition-all text-lg">
+                                💾 儲存並啟動系統
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.renderLogin = () => {
+            const container = document.getElementById('view-container');
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-y-auto">
+                    <div class="glass-panel p-8 md:p-12 rounded-[2.5rem] shadow-2xl z-10 w-[38rem] max-w-[95vw] text-center border-4 border-blue-200 relative overflow-hidden">
+                        <div class="absolute top-4 left-4 text-4xl animate-bounce-slow">✨</div>
+                        <div class="absolute bottom-4 right-4 text-4xl animate-bounce-slow" style="animation-delay: 1s;">📅</div>
+                        
+                        <div class="flex justify-center items-center gap-4 md:gap-6 mb-8 mt-2">
+                            <div class="w-24 h-24 md:w-28 md:h-28 bg-white rounded-full p-1 shadow-lg border-4 border-sky-200 overflow-hidden flex justify-center items-center hover:scale-105 transition-transform">
+                                <img src="school1.jpg" alt="雄中" class="w-full h-full object-contain rounded-full" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2YwZjlmZiIvPjwvc3ZnPg=='">
+                            </div>
+                            <div class="text-3xl md:text-4xl font-black text-sky-400">&</div>
+                            <div class="w-24 h-24 md:w-28 md:h-28 bg-white rounded-full p-1 shadow-lg border-4 border-sky-200 overflow-hidden flex justify-center items-center hover:scale-105 transition-transform">
+                                <img src="school2.jpg" alt="雄女" class="w-full h-full object-contain rounded-full" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2YwZjlmZiIvPjwvc3ZnPg=='">
+                            </div>
+                        </div>
+
+                        <h1 class="text-3xl md:text-4xl font-black text-blue-600 mb-3 drop-shadow-sm tracking-wide">🎒 邁向5A10+</h1>
+                        <h2 class="text-xl font-bold text-sky-600 mb-8 bg-sky-50 inline-block px-6 py-2 rounded-full border border-sky-100">國中會考 複習進度排程器 🗓️</h2>
+                        
+                        <div class="bg-white/60 p-6 rounded-3xl border border-blue-100 mb-6 shadow-inner">
+                            <p class="text-sm text-blue-500 font-bold mb-4">👇 點擊您的暱稱快速登入 👇</p>
+                            <div class="flex flex-wrap justify-center gap-3">
+                                ${globalUsers.length > 0 ? 
+                                    globalUsers.map(u => {
+                                        const dispName = usersProfile[u]?.nickname || u;
+                                        return `<button onclick="initiateLogin('${u}')" class="flex items-center gap-2 text-md font-bold bg-white border-2 border-blue-200 text-blue-700 hover:bg-blue-50 hover:scale-105 py-1.5 pl-2 pr-4 rounded-xl shadow-sm transition-all">
+                                            <div class="${getUserColor(u)} w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-sm border-2 border-white shrink-0">${getAvatarChar(u)}</div>
+                                            <span>${dispName}</span>
+                                        </button>`;
+                                    }).join('') 
+                                    : `<span class="text-sm text-gray-400">尚無參賽者，請點擊下方註冊</span>`
+                                }
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-2 w-full mt-2">
+                            <button onclick="openProfileEditModal('', true)" class="w-full bg-gradient-to-r from-sky-400 to-blue-500 text-white font-black py-4 px-6 text-xl rounded-2xl shadow-md hover:shadow-lg transition-all transform hover:scale-[1.02]">
+                                🚀 註冊新帳號
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.renderMain = () => {
+            const container = document.getElementById('view-container');
+            container.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-md border-b-2 border-sky-200 p-3 flex justify-between items-center shadow-sm shrink-0 z-20 relative">
+                    <div class="flex items-center gap-4 pl-2">
+                        <div class="flex gap-2 hidden md:flex">
+                            <img src="school1.jpg" alt="雄中" class="w-10 h-10 object-contain rounded-full border border-gray-200 shadow-sm bg-sky-50" onerror="this.style.display='none'">
+                            <img src="school2.jpg" alt="雄女" class="w-10 h-10 object-contain rounded-full border border-gray-200 shadow-sm bg-sky-50" onerror="this.style.display='none'">
+                        </div>
+                        <h1 class="text-xl md:text-2xl font-black text-blue-600 tracking-wider">邁向5A10+ 複習排程器 🗓️</h1>
+                    </div>
+                    <div class="flex items-center gap-2 md:gap-3 pr-2 flex-wrap justify-end">
+                        ${isAdmin ? `<button onclick="openAdminPanel()" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-transform text-sm shrink-0">👑 管理員面板</button>` : ''}
+                        
+                        <button onclick="openProfileEditModal('${username}')" class="font-bold text-sky-700 bg-sky-50 px-2 md:px-3 py-1.5 rounded-lg border border-sky-200 shadow-sm hover:bg-sky-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            <div class="${getUserColor(username)} w-5 h-5 rounded-full flex items-center justify-center text-[10px]">${getAvatarChar(username)}</div>
+                            <span class="hidden md:inline">我的資料卡</span>
+                        </button>
+                        
+                        <button onclick="logout()" class="text-red-500 hover:bg-red-50 font-bold px-2 md:px-3 py-1.5 rounded-lg transition-colors text-sm border border-red-200 bg-white shadow-sm shrink-0">登出 👋</button>
+                    </div>
+                </div>
+
+                <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                    <div class="w-full md:w-64 lg:w-72 flex flex-col bg-white/60 border-b-2 md:border-b-0 md:border-r-2 border-sky-100 z-10 shrink-0 h-full min-h-0">
+                        <div id="sidebar-countdowns" class="p-4 flex flex-col border-b-2 border-sky-100 shrink-0 h-[45%] min-h-[250px] relative overflow-hidden"></div>
+                        <div class="flex-1 flex flex-col bg-white/80 overflow-hidden relative min-h-0">
+                            <div class="bg-sky-100/50 p-2 text-center font-bold text-sky-700 border-b border-sky-100 text-sm shadow-sm shrink-0">💬 留言板</div>
+                            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-sm relative min-h-0"></div>
+                            
+                            <div class="p-2 bg-white flex flex-col border-t border-sky-100 relative shrink-0">
+                                <div id="emoji-picker" class="hidden absolute bottom-full left-2 mb-2 bg-white border border-sky-200 p-2 rounded-xl shadow-lg grid grid-cols-5 gap-2 z-50">
+                                    ${['😀','😂','🥰','😎','🥺','💪','🔥','💯','📚','🎓','✨','🎉','📝','🏆','💖'].map(e => `<button onclick="insertChatEmoji('${e}')" class="text-xl hover:scale-125 transition-transform">${e}</button>`).join('')}
+                                </div>
+                                <div class="flex gap-1.5 items-center w-full">
+                                    <button id="emoji-toggle-btn" onclick="toggleEmojiPicker('emoji-picker', event)" class="text-2xl hover:bg-sky-50 px-1 rounded-lg transition-colors shrink-0">😀</button>
+                                    <div class="flex-1 min-w-0">
+                                        <input type="text" id="chatInput" placeholder="說點什麼..." class="w-full px-3 py-2 rounded-lg border border-sky-200 focus:outline-none focus:border-sky-400 bg-gray-50 text-sm" onkeypress="if(event.key === 'Enter') sendChat()">
+                                    </div>
+                                    <button onclick="sendChat()" class="bg-blue-500 text-white px-3 py-2 rounded-lg font-bold hover:bg-blue-600 transition-colors shrink-0 whitespace-nowrap text-sm">送出</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 bg-white/40 p-4 flex flex-col relative z-0 min-w-0">
+                        <div class="flex justify-between items-center mb-4 bg-white/90 p-3 rounded-2xl border border-sky-100 shadow-sm shrink-0">
+                            <button onclick="changeMonth(-1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-sky-50 border border-sky-200 hover:bg-sky-100 text-sky-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">◀ 上月</button>
+                            <div class="flex flex-col items-center flex-1 mx-2 overflow-hidden" id="calendar-header-container"></div>
+                            <button onclick="changeMonth(1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-sky-50 border border-sky-200 hover:bg-sky-100 text-sky-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">下月 ▶</button>
+                        </div>
+                        <div id="calendar-grid" class="flex-1 flex flex-col min-h-0 bg-white/50 rounded-2xl p-2 border border-sky-50 shadow-inner"></div>
+                    </div>
+                </div>
+            `;
+            if (username) {
+                window.renderSidebar();
+                window.renderMainContent();
+                window.renderChat();
+            }
+        };
+
+        const renderGlobalModals = () => {
+            const container = document.getElementById('modals-container');
+            container.innerHTML = `
+                <!-- 輸入密碼登入 Modal -->
+                <div id="login-pwd-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0">
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border-4 border-blue-200 transform scale-95 transition-transform duration-200 flex flex-col p-6">
+                        <h2 class="text-2xl font-black text-blue-600 mb-4 text-center">🔐 安全登入</h2>
+                        <p class="text-center font-bold text-gray-600 mb-4" id="login-pwd-username-display"></p>
+                        <input type="hidden" id="login-pwd-username">
+                        <input type="password" id="login-pwd-input" placeholder="請輸入密碼" class="w-full px-4 py-3 rounded-xl border-2 border-blue-200 focus:outline-none focus:border-blue-400 text-center font-bold text-lg mb-6" onkeypress="if(event.key === 'Enter') confirmLoginPassword()">
+                        <div class="flex gap-3">
+                            <button onclick="closeGlobalModal('login-pwd-modal')" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100">取消</button>
+                            <button onclick="confirmLoginPassword()" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-blue-500 hover:bg-blue-600 shadow-md">登入</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 註冊/編輯個人資料卡 Modal -->
+                <div id="profile-edit-modal" class="fixed inset-0 bg-gray-900/70 backdrop-blur-sm hidden items-center justify-center z-[80] p-4 transition-opacity duration-200 opacity-0">
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border-4 border-blue-200 transform scale-95 transition-transform duration-200 flex flex-col" style="max-height: 95vh;">
+                        <div class="bg-gradient-to-r from-sky-500 to-blue-600 p-4 flex justify-between items-center text-white shrink-0">
+                            <h2 class="text-xl font-bold" id="profile-modal-title">📝 設定專屬資料卡</h2>
+                            <button onclick="closeGlobalModal('profile-edit-modal')" id="profile-modal-close" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
+                        </div>
+                        <div class="p-6 overflow-y-auto flex-1 custom-scrollbar space-y-4 bg-sky-50/30">
+                            <div>
+                                <label class="block text-blue-800 font-bold mb-1 text-sm">真實姓名 (登入帳號) <span class="text-red-500">*</span></label>
+                                <input type="text" id="prof-name" placeholder="請輸入真實姓名" class="w-full px-3 py-2 rounded-lg border-2 border-blue-200 bg-white focus:outline-none focus:border-blue-400 font-bold text-gray-700">
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-blue-800 font-bold mb-1 text-sm">設定密碼 (必填) <span class="text-xs font-normal text-red-400" id="pwd-hint"></span> <span class="text-red-500">*</span></label>
+                                    <input type="text" id="prof-pwd" placeholder="請設定登入密碼" class="w-full px-3 py-2 rounded-lg border-2 border-blue-200 bg-white focus:outline-none focus:border-blue-400">
+                                </div>
+                                <div>
+                                    <label class="block text-blue-800 font-bold mb-1 text-sm">確認密碼 (必填) <span class="text-red-500">*</span></label>
+                                    <input type="text" id="prof-pwd-confirm" placeholder="請再次輸入密碼" class="w-full px-3 py-2 rounded-lg border-2 border-blue-200 bg-white focus:outline-none focus:border-blue-400">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-blue-800 font-bold mb-1 text-sm">顯示暱稱 (必填) <span class="text-red-500">*</span></label>
+                                <input type="text" id="prof-nickname" placeholder="例如: 小明" class="w-full px-3 py-2 rounded-lg border-2 border-blue-200 bg-white focus:outline-none focus:border-blue-400">
+                            </div>
+                        </div>
+                        <div class="p-4 bg-white border-t border-blue-100 flex justify-end shrink-0">
+                            <button onclick="saveProfile()" class="px-6 py-2.5 rounded-xl font-bold text-white bg-blue-500 hover:bg-blue-600 shadow-md w-full md:w-auto">儲存 🚀</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 排程專屬 Modal -->
+                <div id="schedule-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[80] p-2 md:p-4 transition-opacity duration-200 opacity-0">
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-6xl h-full md:h-[90vh] overflow-hidden border-4 border-sky-300 transform scale-95 transition-transform duration-200 flex flex-col" id="schedule-modal-content">
+                        <div class="bg-gradient-to-r from-sky-500 to-blue-600 p-3 md:p-4 flex justify-between items-center text-white shrink-0">
+                            <div class="flex items-center gap-3">
+                                <h2 class="text-lg md:text-xl font-black flex items-center gap-2">🗓️ 編輯排程</h2>
+                                <span id="schedule-modal-date" class="bg-white/20 px-3 py-1 rounded-lg text-sm md:text-base font-mono tracking-wider shadow-inner border border-white/30"></span>
+                            </div>
+                            <button onclick="closeScheduleModal()" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold transition-colors">✕</button>
+                        </div>
+                        
+                        <div class="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-50 relative">
+                            <!-- Overlay for View Only Mode -->
+                            <div id="schedule-readonly-overlay" class="hidden absolute inset-0 bg-gray-100/50 z-50 flex items-center justify-center backdrop-blur-[1px]">
+                                <div class="bg-black/70 text-white px-6 py-3 rounded-full font-bold shadow-lg flex items-center gap-2 text-lg">
+                                    <span>👀</span> 僅供檢視模式，無法編輯他人排程
+                                </div>
+                            </div>
+
+                            <!-- 左側: 資源庫 (科目 -> 書本 -> 單元) -->
+                            <div class="w-full md:w-1/2 lg:w-3/5 flex flex-col border-b-2 md:border-b-0 md:border-r-2 border-sky-200 bg-white min-h-[40%] md:min-h-0">
+                                
+                                <!-- 科目選擇 (橫向捲動) -->
+                                <div class="bg-sky-50 p-2 border-b border-sky-100 shrink-0">
+                                    <div class="font-bold text-sky-800 text-xs mb-1.5 pl-1">1. 選擇科目：</div>
+                                    <div class="flex overflow-x-auto gap-2 pb-1 custom-scrollbar" id="sch-subject-list">
+                                        ${SUBJECTS.map(s => `
+                                            <button onclick="schSelectSubject('${s}')" id="sch-btn-sub-${s}" class="shrink-0 px-4 py-2 rounded-xl border border-sky-200 text-sky-700 font-bold hover:bg-sky-100 transition-colors bg-white shadow-sm text-sm">
+                                                ${s}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                </div>
+
+                                <!-- 書本與單元顯示區 -->
+                                <div class="flex-1 overflow-y-auto custom-scrollbar p-3 bg-slate-50/50" id="sch-content-area">
+                                    <div class="flex h-full items-center justify-center text-gray-400 font-bold text-sm">
+                                        👈 請先從上方選擇科目
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 右側: 時間段排程 -->
+                            <div class="w-full md:w-1/2 lg:w-2/5 flex flex-col bg-white min-h-[50%] md:min-h-0">
+                                <div class="bg-blue-50 p-2.5 border-b border-blue-100 shrink-0 flex justify-between items-center shadow-sm z-10">
+                                    <div>
+                                        <div class="font-black text-blue-800 text-sm">2. 選擇時段並排入進度：</div>
+                                        <div class="text-[10px] text-blue-600 font-bold mt-0.5">點擊時段使其發光，再點擊左側單元即可排入！</div>
+                                    </div>
+                                    <button onclick="saveDailySchedule()" id="sch-save-btn" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg font-bold shadow hover:bg-blue-700 transition-transform hover:scale-105 active:scale-95 text-sm flex items-center gap-1">
+                                        💾 儲存本日
+                                    </button>
+                                </div>
+                                
+                                <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2 bg-slate-50" id="sch-time-slots">
+                                    <!-- Slots dynamically generated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 小巧 Emoji 選擇器 (浮動) -->
+                <div id="sch-emoji-picker" class="hidden absolute bg-white border-2 border-gray-200 p-2 rounded-xl shadow-2xl grid grid-cols-5 gap-1 z-[100] transform transition-transform scale-95 origin-top-left w-48">
+                    ${EMOJI_LIST.map(e => `<button onclick="schSetEmoji('${e}')" class="text-xl hover:bg-gray-100 rounded p-1 transition-colors">${e}</button>`).join('')}
+                    <input type="hidden" id="sch-emoji-target-slot">
+                </div>
+
+                <!-- 管理員面板 Modal -->
+                <div id="admin-panel-modal" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm hidden items-center justify-center z-[90] p-4 transition-opacity duration-200 opacity-0">
+                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden border-4 border-amber-300 transform scale-95 transition-transform duration-200 flex flex-col h-[90vh]">
+                        <div class="bg-gradient-to-r from-amber-500 to-orange-600 p-4 flex justify-between items-center text-white shrink-0 shadow-md">
+                            <h2 class="text-2xl font-black flex items-center gap-2">👑 系統管理控制台</h2>
+                            <button onclick="closeGlobalModal('admin-panel-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold text-xl">✕</button>
+                        </div>
+                        
+                        <div class="flex border-b border-gray-200 shrink-0 bg-gray-100 overflow-x-auto custom-scrollbar">
+                            <button onclick="switchAdminTab('dates')" id="tab-btn-dates" class="flex-1 py-3 px-4 font-black text-amber-600 border-b-4 border-amber-500 bg-white whitespace-nowrap">📅 考試日程</button>
+                            <button onclick="switchAdminTab('users')" id="tab-btn-users" class="flex-1 py-3 px-4 font-bold text-gray-500 border-b-4 border-transparent hover:bg-gray-200 whitespace-nowrap transition-colors">👤 參賽者管理</button>
+                            <button onclick="switchAdminTab('textbooks')" id="tab-btn-textbooks" class="flex-1 py-3 px-4 font-bold text-gray-500 border-b-4 border-transparent hover:bg-gray-200 whitespace-nowrap transition-colors">📚 教科書管理</button>
+                        </div>
+                        
+                        <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 relative">
+                            <!-- Tab: Dates -->
+                            <div id="admin-tab-dates" class="space-y-4 block">
+                                <div class="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm flex flex-col md:flex-row gap-3 items-end md:items-center">
+                                    <div class="flex-1 w-full">
+                                        <label class="block text-xs font-bold text-gray-500 mb-1">考試/事件名稱</label>
+                                        <input type="text" id="admin-new-date-title" placeholder="例如：第1次模擬考" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-amber-400 focus:outline-none">
+                                    </div>
+                                    <div class="w-full md:w-48">
+                                        <label class="block text-xs font-bold text-gray-500 mb-1">日期</label>
+                                        <input type="date" id="admin-new-date-value" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-amber-400 focus:outline-none">
+                                    </div>
+                                    <button onclick="adminAddDate()" class="w-full md:w-auto bg-amber-500 text-white font-bold px-6 py-2.5 rounded-lg hover:bg-amber-600 shadow transition-colors">新增</button>
+                                </div>
+                                <div id="admin-dates-list" class="space-y-2"></div>
+                            </div>
+                            
+                            <!-- Tab: Users -->
+                            <div id="admin-tab-users" class="hidden">
+                                <div class="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm bg-white">
+                                    <table class="w-full text-left text-sm whitespace-nowrap">
+                                        <thead class="bg-gray-50 text-gray-600 font-bold border-b border-gray-200">
+                                            <tr>
+                                                <th class="p-4">帳號 (真實姓名)</th>
+                                                <th class="p-4">暱稱</th>
+                                                <th class="p-4">密碼</th>
+                                                <th class="p-4 text-right">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="admin-users-list" class="divide-y divide-gray-100"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Tab: Textbooks (New) -->
+                            <div id="admin-tab-textbooks" class="hidden flex flex-col h-full gap-4">
+                                <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-sm flex items-center gap-3 shrink-0">
+                                    <label class="font-bold text-blue-800 shrink-0">選擇科目：</label>
+                                    <select id="admin-tb-subject-sel" class="flex-1 py-2 px-3 rounded-lg border border-blue-300 font-bold text-blue-900 focus:outline-none" onchange="renderAdminTextbookList()">
+                                        ${SUBJECTS.map(s => `<option value="${s}">${s}</option>`).join('')}
+                                    </select>
+                                    <button onclick="adminShowNewBookForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 shadow shrink-0">+ 新增書籍</button>
+                                </div>
+
+                                <div class="flex-1 flex flex-col md:flex-row gap-4 min-h-0">
+                                    <!-- Book List -->
+                                    <div class="w-full md:w-1/3 bg-white border border-gray-200 rounded-xl shadow-sm overflow-y-auto custom-scrollbar p-2 space-y-2" id="admin-tb-list">
+                                    </div>
+                                    <!-- Edit Form -->
+                                    <div class="w-full md:w-2/3 bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col hidden" id="admin-tb-form">
+                                        <h3 class="font-black text-lg text-gray-800 mb-3 border-b pb-2 flex justify-between items-center" id="admin-tb-form-title">
+                                            編輯書籍
+                                            <button onclick="document.getElementById('admin-tb-form').classList.add('hidden')" class="text-sm text-gray-400 hover:text-gray-600">✕ 關閉</button>
+                                        </h3>
+                                        <input type="hidden" id="admin-tb-id">
+                                        
+                                        <div class="space-y-3 flex-1 flex flex-col min-h-0">
+                                            <div>
+                                                <label class="block text-xs font-bold text-gray-500 mb-1">書本名稱 (必填)</label>
+                                                <input type="text" id="admin-tb-name" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-blue-400 focus:outline-none font-bold">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-bold text-gray-500 mb-1">封面圖片網址 (選填，可填入 images/xxx.jpg 或 http 網址)</label>
+                                                <input type="text" id="admin-tb-img" placeholder="例如: images/c1.jpg" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-blue-400 focus:outline-none text-sm font-mono">
+                                            </div>
+                                            <div class="flex-1 flex flex-col min-h-0">
+                                                <label class="block text-xs font-bold text-gray-500 mb-1 flex justify-between">
+                                                    <span>單元列表 (必填，一行一個單元)</span>
+                                                    <span class="text-blue-500">支援關鍵字變色如「會考模擬試題」、「單元1」</span>
+                                                </label>
+                                                <textarea id="admin-tb-chapters" class="w-full flex-1 p-3 rounded-lg border border-gray-300 focus:border-blue-400 focus:outline-none resize-none font-mono text-sm leading-relaxed" placeholder="單元1 第一冊 (1~5課)&#10;單元2 第一冊 (6~10課 自學課)&#10;會考模擬試題 1~2冊"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="mt-4 flex gap-3 justify-end shrink-0">
+                                            <button onclick="adminDeleteBook()" id="admin-tb-delete-btn" class="px-4 py-2 bg-red-50 text-red-600 rounded-lg font-bold hover:bg-red-100 hidden">刪除此書</button>
+                                            <button onclick="adminSaveBook()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow">💾 儲存</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 編輯單筆日程 Modal -->
+                <div id="edit-date-modal" class="fixed inset-0 bg-gray-900/60 hidden items-center justify-center z-[100] p-4">
+                    <div class="bg-white p-6 rounded-2xl w-full max-w-sm">
+                        <h3 class="font-bold mb-4 text-lg">修改日程</h3>
+                        <input type="hidden" id="edit-date-index">
+                        <input type="text" id="edit-date-title" class="w-full mb-3 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-amber-400">
+                        <input type="date" id="edit-date-value" class="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-amber-400">
+                        <div class="flex gap-2">
+                            <button onclick="closeGlobalModal('edit-date-modal')" class="flex-1 py-2 bg-gray-100 rounded font-bold text-gray-600">取消</button>
+                            <button onclick="saveEditedDate()" class="flex-1 py-2 bg-amber-500 text-white rounded font-bold shadow">儲存</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.openGlobalModal = (id) => {
+            const modal = document.getElementById(id);
+            if(!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                const inner = modal.firstElementChild;
+                if(inner && inner.classList.contains('scale-95')) inner.classList.remove('scale-95');
+            }, 10);
+        };
+
+        window.closeGlobalModal = (id) => {
+            const modal = document.getElementById(id);
+            if(!modal) return;
+            modal.classList.add('opacity-0');
+            const inner = modal.firstElementChild;
+            if(inner && inner.classList.contains('scale-95') === false) inner.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 200);
+        };
+
+        // ==========================================
+        //  主要排程 Modal 邏輯 (全新)
+        // ==========================================
+        window.openScheduleModal = (dateStr) => {
+            scheduleModalState.date = dateStr;
+            scheduleModalState.activeSlot = '08:00 - 09:00'; // Default
+            scheduleModalState.selectedSubject = '';
+            scheduleModalState.selectedBookId = '';
+            
+            // 複製一份當天的進度資料到本地 State 進行編輯
+            const userDayData = (allSchedules[username] && allSchedules[username][dateStr]) ? allSchedules[username][dateStr] : {};
+            scheduleModalState.currentDayData = JSON.parse(JSON.stringify(userDayData));
+
+            document.getElementById('schedule-modal-date').innerText = dateStr;
+            
+            // Check Permissions
+            const isReadonly = (viewingUser !== 'ALL' && viewingUser !== username);
+            const overlay = document.getElementById('schedule-readonly-overlay');
+            const saveBtn = document.getElementById('sch-save-btn');
+            if(isReadonly) {
+                overlay.classList.remove('hidden');
+                saveBtn.classList.add('hidden');
+                // Load target user's data for view
+                const targetDayData = (allSchedules[viewingUser] && allSchedules[viewingUser][dateStr]) ? allSchedules[viewingUser][dateStr] : {};
+                scheduleModalState.currentDayData = JSON.parse(JSON.stringify(targetDayData));
+            } else {
+                overlay.classList.add('hidden');
+                saveBtn.classList.remove('hidden');
+            }
+
+            // 初始化左側科目選擇 (移除 active 狀態)
+            SUBJECTS.forEach(s => {
+                const btn = document.getElementById(`sch-btn-sub-${s}`);
+                if(btn) {
+                    btn.classList.remove('bg-sky-500', 'text-white', 'border-sky-600', 'shadow-md');
+                    btn.classList.add('text-sky-700', 'bg-white', 'border-sky-200');
+                }
+            });
+            document.getElementById('sch-content-area').innerHTML = `<div class="flex h-full items-center justify-center text-gray-400 font-bold text-sm">👈 請先從上方選擇科目</div>`;
+
+            renderScheduleRightPanel();
+            openGlobalModal('schedule-modal');
+        };
+
+        window.closeScheduleModal = () => {
+            closeGlobalModal('schedule-modal');
+            document.getElementById('sch-emoji-picker').classList.add('hidden');
+        };
+
+        // 右側: 渲染時間段
+        const renderScheduleRightPanel = () => {
+            const container = document.getElementById('sch-time-slots');
+            const data = scheduleModalState.currentDayData;
+            const isReadonly = (viewingUser !== 'ALL' && viewingUser !== username);
+
+            let html = '';
+            TIME_SLOTS.forEach(slot => {
+                const slotData = data[slot];
+                const isActive = (scheduleModalState.activeSlot === slot) && !isReadonly;
+                const activeClass = isActive ? 'time-slot-active' : 'border-gray-200 hover:border-blue-300 bg-white';
+                
+                if (slotData) {
+                    const hexColor = SUBJECT_HEX_COLORS[slotData.subject] || SUBJECT_HEX_COLORS['default'];
+                    const safeColor = getSafeTextColor(slotData.subject);
+                    html += `
+                        <div class="flex border-2 rounded-xl p-2 items-center gap-3 transition-all cursor-pointer shadow-sm ${activeClass}" 
+                             onclick="!${isReadonly} && schSetActiveSlot('${slot}')" id="slot-${slot}">
+                            <div class="w-14 text-center shrink-0">
+                                <div class="text-[10px] text-gray-400 font-bold mb-0.5 border-b">${slot.split(' - ')[0]}</div>
+                                <div class="text-[10px] text-gray-400 font-bold">${slot.split(' - ')[1]}</div>
+                            </div>
+                            <button onclick="!${isReadonly} && toggleEmojiPicker('sch-emoji-picker', event, '${slot}')" class="text-2xl hover:scale-125 transition-transform shrink-0 w-8 flex justify-center bg-gray-50 rounded-lg py-1 border border-gray-100 ${isReadonly ? 'cursor-default pointer-events-none' : ''}">
+                                ${slotData.emoji || '📅'}
+                            </button>
+                            <div class="flex-1 min-w-0 flex flex-col justify-center">
+                                <div class="text-xs font-black px-1.5 py-0.5 rounded inline-block w-max mb-1" style="background-color: ${hexColor}20; color: ${safeColor}; border: 1px solid ${hexColor}40;">
+                                    ${slotData.subject} ${slotData.bookName ? `(${slotData.bookName})` : ''}
+                                </div>
+                                <div class="text-sm font-bold text-gray-700 leading-tight truncate px-1">${slotData.chapter}</div>
+                            </div>
+                            ${!isReadonly ? `<button onclick="schClearSlot('${slot}', event)" class="text-gray-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors shrink-0">🗑️</button>` : ''}
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="flex border-2 rounded-xl p-2 items-center gap-3 transition-all cursor-pointer ${activeClass}" 
+                             onclick="!${isReadonly} && schSetActiveSlot('${slot}')" id="slot-${slot}">
+                            <div class="w-14 text-center shrink-0 opacity-50">
+                                <div class="text-[10px] text-gray-500 font-bold mb-0.5 border-b">${slot.split(' - ')[0]}</div>
+                                <div class="text-[10px] text-gray-500 font-bold">${slot.split(' - ')[1]}</div>
+                            </div>
+                            <div class="flex-1 text-sm font-bold text-gray-300 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg h-10 bg-gray-50/50">
+                                ${isActive ? '👈 點擊左側單元排入此時段' : '空閒'}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            container.innerHTML = html;
+
+            // Scroll active slot into view
+            if (!isReadonly) {
+                setTimeout(() => {
+                    const el = document.getElementById(`slot-${scheduleModalState.activeSlot}`);
+                    if(el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 50);
+            }
+        };
+
+        window.schSetActiveSlot = (slot) => {
+            scheduleModalState.activeSlot = slot;
+            renderScheduleRightPanel();
+        };
+
+        window.schClearSlot = (slot, event) => {
+            if(event) event.stopPropagation();
+            delete scheduleModalState.currentDayData[slot];
+            renderScheduleRightPanel();
+        };
+
+        // 左側: 點擊科目
+        window.schSelectSubject = (sub) => {
+            scheduleModalState.selectedSubject = sub;
+            scheduleModalState.selectedBookId = '';
+            
+            // Highlight Button
+            SUBJECTS.forEach(s => {
+                const btn = document.getElementById(`sch-btn-sub-${s}`);
+                if(btn) {
+                    if(s === sub) {
+                        btn.classList.add('bg-sky-500', 'text-white', 'border-sky-600', 'shadow-md');
+                        btn.classList.remove('text-sky-700', 'bg-white', 'border-sky-200');
+                    } else {
+                        btn.classList.remove('bg-sky-500', 'text-white', 'border-sky-600', 'shadow-md');
+                        btn.classList.add('text-sky-700', 'bg-white', 'border-sky-200');
+                    }
+                }
+            });
+
+            // 決定顯示書本列表或直接顯示單元(如自然合科)
+            const books = globalTextbooks[sub];
+            if (books && books.length > 0) {
+                // 如果只有一本書，直接展開
+                if (books.length === 1) {
+                    schSelectBook(books[0].id);
+                } else {
+                    // 多本書，顯示書本卡片
+                    const html = `<div class="grid grid-cols-2 md:grid-cols-3 gap-3 p-2">` + 
+                        books.map(b => `
+                            <div onclick="schSelectBook('${b.id}')" class="bg-white border-2 border-gray-200 hover:border-blue-400 rounded-xl p-2 cursor-pointer transition-all shadow-sm hover:shadow text-center group">
+                                <div class="h-24 md:h-32 mb-2 bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden border border-gray-100">
+                                    ${b.img ? `<img src="${b.img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform" onerror="this.style.display='none'">` : '<span class="text-3xl">📚</span>'}
+                                </div>
+                                <div class="font-bold text-gray-700 text-xs md:text-sm truncate px-1">${b.name}</div>
+                            </div>
+                        `).join('') + `</div>`;
+                    document.getElementById('sch-content-area').innerHTML = html;
+                }
+            } else if (SUB_SUBJECTS[sub]) {
+                // 如 自然合科 -> 地科/自然... 沒有特定書本
+                renderChapters(sub, '', SUB_SUBJECTS[sub]);
+            } else {
+                document.getElementById('sch-content-area').innerHTML = `<div class="flex h-full items-center justify-center text-gray-400 font-bold text-sm">此科目暫無資料</div>`;
+            }
+        };
+
+        // 左側: 點擊書本，顯示單元
+        window.schSelectBook = (bookId) => {
+            scheduleModalState.selectedBookId = bookId;
+            const sub = scheduleModalState.selectedSubject;
+            const book = globalTextbooks[sub].find(b => b.id === bookId);
+            if(book) {
+                renderChapters(sub, book.name, book.chapters);
+            }
+        };
+
+        // 渲染單元按鈕
+        const renderChapters = (subjectName, bookName, chaptersArray) => {
+            let html = `
+                <div class="mb-3 flex items-center gap-2">
+                    <button onclick="schSelectSubject('${subjectName}')" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded hover:bg-gray-300 font-bold">◀ 返回</button>
+                    <span class="font-black text-blue-800 text-sm md:text-base">${subjectName} ${bookName ? `> ${bookName}` : ''}</span>
+                </div>
+                <div class="space-y-2 pb-4">
+            `;
+
+            chaptersArray.forEach(ch => {
+                const isSched = isChapterScheduled(ch);
+                const isExam = ch.includes('會考模擬試題');
+                const btnStyle = isSched 
+                    ? 'bg-gray-100 border-gray-300 text-gray-400 grayscale' 
+                    : isExam 
+                        ? 'bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100 shadow-sm'
+                        : 'bg-white border-blue-200 text-blue-700 hover:bg-blue-50 shadow-sm hover:border-blue-400 hover:scale-[1.01]';
+                
+                const icon = isSched ? '✅' : (isExam ? '🔥' : '📖');
+
+                html += `
+                    <div onclick="schAssignChapter('${ch}', ${isSched}, '${bookName}')" 
+                         class="border-2 rounded-xl p-3 flex items-center gap-3 cursor-pointer transition-all ${btnStyle}">
+                        <div class="shrink-0 text-xl">${icon}</div>
+                        <div class="flex-1 font-bold text-sm leading-snug whitespace-pre-line">${ch}</div>
+                        ${isSched ? '<div class="text-[10px] bg-gray-300 text-white px-1.5 py-0.5 rounded font-bold shrink-0">已排過</div>' : ''}
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            document.getElementById('sch-content-area').innerHTML = html;
+        };
+
+        // 左側: 將單元排入右側 Focus 的時段
+        window.schAssignChapter = (chapterName, isAlreadyScheduled, bookName) => {
+            const isReadonly = (viewingUser !== 'ALL' && viewingUser !== username);
+            if (isReadonly) return;
+
+            if(!scheduleModalState.activeSlot) {
+                return alert("請先從右側點選一個時間段！");
+            }
+
+            if (isAlreadyScheduled) {
+                if(!confirm(`「${chapterName}」已經存在於您其他日期的排程中。\n是否要再次進行複習並排入？`)) {
+                    return;
+                }
+            }
+
+            // 指派至 Slot
+            scheduleModalState.currentDayData[scheduleModalState.activeSlot] = {
+                subject: scheduleModalState.selectedSubject,
+                bookName: bookName || '',
+                chapter: chapterName,
+                emoji: getRandomEmoji()
+            };
+
+            // 自動前進到下一個空閒時段
+            const currIdx = TIME_SLOTS.indexOf(scheduleModalState.activeSlot);
+            let nextSlot = scheduleModalState.activeSlot;
+            for(let i = currIdx + 1; i < TIME_SLOTS.length; i++) {
+                if(!scheduleModalState.currentDayData[TIME_SLOTS[i]]) {
+                    nextSlot = TIME_SLOTS[i];
+                    break;
+                }
+            }
+            scheduleModalState.activeSlot = nextSlot;
+
+            renderScheduleRightPanel();
+            // Optional: Render left panel again to grey out the newly scheduled item immediately
+            // But since check is against allSchedules (saved data), it won't grey out until saved. 
+            // We can leave it bright until they save.
+        };
+
+        // Emoji Picker Logic (For Schedule Slot)
+        window.toggleEmojiPicker = (pickerId, event, slotId = null) => {
+            if(event) event.stopPropagation();
+            const picker = document.getElementById(pickerId);
+            if(picker.classList.contains('hidden')) {
+                picker.classList.remove('hidden');
+                // Positioning
+                const rect = event.currentTarget.getBoundingClientRect();
+                picker.style.top = `${rect.bottom + window.scrollY + 5}px`;
+                picker.style.left = `${Math.max(10, rect.left + window.scrollX - 100)}px`;
+                
+                if(slotId) {
+                    document.getElementById('sch-emoji-target-slot').value = slotId;
+                }
+            } else {
+                picker.classList.add('hidden');
+            }
+        };
+
+        window.insertChatEmoji = (emoji) => {
+            const input = document.getElementById('chatInput');
+            input.value += emoji;
+            input.focus();
+            document.getElementById('emoji-picker').classList.add('hidden');
+        };
+
+        window.schSetEmoji = (emoji) => {
+            const slotId = document.getElementById('sch-emoji-target-slot').value;
+            if(slotId && scheduleModalState.currentDayData[slotId]) {
+                scheduleModalState.currentDayData[slotId].emoji = emoji;
+                renderScheduleRightPanel();
+            }
+            document.getElementById('sch-emoji-picker').classList.add('hidden');
+        };
+
+        document.addEventListener('click', (e) => {
+            const pickers = ['emoji-picker', 'sch-emoji-picker'];
+            pickers.forEach(pid => {
+                const el = document.getElementById(pid);
+                if (el && !el.classList.contains('hidden')) {
+                    if (!el.contains(e.target)) el.classList.add('hidden');
+                }
+            });
+        });
+
+        // 儲存每日排程
+        window.saveDailySchedule = async () => {
+            const docId = `${username}_${scheduleModalState.date}`;
+            const schedRef = doc(db, 'artifacts', appId, 'public', 'data', 'Schedules', docId);
+            
+            try {
+                // 如果整天清空了，可以選擇刪除 Document 或存空物件
+                if(Object.keys(scheduleModalState.currentDayData).length === 0) {
+                    await deleteDoc(schedRef);
+                } else {
+                    await setDoc(schedRef, {
+                        user: username,
+                        date: scheduleModalState.date,
+                        slots: scheduleModalState.currentDayData,
+                        updatedAt: new Date().toISOString()
+                    });
+                }
+                closeScheduleModal();
+            } catch(e) {
+                console.error(e);
+                alert("儲存失敗！請檢查網路連線。");
+            }
+        };
+
+        // 查看他人排程 (整合至同一個 Modal)
+        window.viewOthersScore = (e, otherUser, dateStr) => {
+            if(e) e.stopPropagation();
+            const originalUser = viewingUser;
+            viewingUser = otherUser; 
+            window.openScheduleModal(dateStr);
+            // 恢復 viewingUser 狀態，以免影響主畫面日曆
+            viewingUser = originalUser; 
+        };
+
+        // ==========================================
+        //  UI 渲染函式 - 月曆/動態/排行榜
+        // ==========================================
+        window.renderSidebar = () => {
+            const container = document.getElementById('sidebar-countdowns');
+            if(!container) return;
+            const examDaysLeft = getDaysLeft(EXAM_DATE);
+            let html = `
+                <div class="bg-gradient-to-br from-blue-500 to-sky-400 rounded-2xl p-5 text-center shadow-lg text-white mb-4 transform hover:scale-[1.02] transition-transform border border-sky-300 shrink-0 z-10 relative">
+                    <h3 class="text-sm font-bold text-sky-100 mb-1">會考大日子 (2027-05-22)</h3>
+                    <div class="text-5xl font-black drop-shadow-md mb-2">${examDaysLeft >= 0 ? examDaysLeft : 0} <span class="text-xl">天</span></div>
+                    <div class="text-xs bg-black/20 rounded-full inline-block px-3 py-1 font-bold">🎯 決戰時刻</div>
+                </div>
+                <h4 class="font-bold text-blue-800 mb-2 flex items-center gap-2 shrink-0 z-10 relative pl-1">🗓️ 考試日程提醒</h4>
+                <div class="marquee-container flex-1 w-full relative z-0 pb-1">
+                    <div class="marquee-content space-y-3 pt-2 px-1">
+            `;
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            sortedDates.forEach((item) => {
+                const days = getDaysLeft(item.date);
+                if (days >= 0) {
+                    html += `
+                        <div class="bg-white p-3 rounded-xl border border-sky-100 shadow-sm flex justify-between items-center relative overflow-hidden group">
+                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-400"></div>
+                            <div class="pl-2">
+                                <div class="text-sm font-bold text-gray-700">${item.title}</div>
+                                <div class="text-[10px] text-gray-400 font-mono mt-0.5">${item.date}</div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xl font-black ${days <= 7 ? 'text-red-500' : 'text-blue-500'}">${days}</span>
+                                <span class="text-xs text-gray-500">天</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            html += `</div></div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderChat = () => {
+            const container = document.getElementById('chat-messages');
+            if(!container) return;
+            container.innerHTML = chatMessages.map(msg => {
+                const isMe = msg.user === username;
+                const displayName = usersProfile[msg.user]?.nickname || msg.user;
+                return `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        <span class="text-[10px] text-gray-400 mb-0.5 px-1">${displayName}</span>
+                        <div class="${isMe ? 'chat-bubble-me border border-blue-100' : 'chat-bubble-other border border-pink-100'} px-3 py-2 text-gray-700 shadow-sm inline-block max-w-[90%] break-words">
+                            ${msg.text}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        };
+
+        window.changeMonth = (delta) => {
+            currentMonth += delta;
+            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+            if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+            window.renderMainContent();
+        };
+
+        window.changeViewingUser = (user) => {
+            viewingUser = user;
+            window.renderCalendar();
+        };
+
+        window.renderCalendar = () => {
+            const container = document.getElementById('calendar-grid');
+            const headerContainer = document.getElementById('calendar-header-container');
+            if(!container || !headerContainer) return;
+
+            headerContainer.innerHTML = `
+                <h2 class="text-xl md:text-2xl font-black text-blue-600 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
+                <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-blue-800 bg-blue-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
+                    <option value="ALL" ${viewingUser === 'ALL' ? 'selected' : ''}>🌍 全員排程總覽</option>
+                    ${globalUsers.map((u, idx) => {
+                        const dispName = usersProfile[u]?.nickname || u;
+                        const isMe = u === username ? ' (我)' : '';
+                        return `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>👀 ${dispName}${isMe} 的排程</option>`;
+                    }).join('')}
+                </select>
+            `;
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const startPad = firstDay === 0 ? 6 : firstDay - 1;
+
+            let html = `<div class="grid grid-cols-7 gap-1 md:gap-2 mb-2 shrink-0">`;
+            ['一', '二', '三', '四', '五', '六', '日'].forEach((d, idx) => {
+                const isWeekend = idx >= 5;
+                html += `<div class="text-center font-bold ${isWeekend ? 'text-blue-500 bg-blue-50' : 'text-gray-600 bg-gray-100'} py-1 md:py-1.5 text-sm md:text-base rounded-lg md:rounded-xl shadow-sm border border-gray-200">${d}</div>`;
+            });
+            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[100px] md:auto-rows-[130px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
+
+            for(let i=0; i<startPad; i++) html += `<div class="bg-transparent rounded-xl md:rounded-2xl border border-transparent"></div>`;
+
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const isToday = dateStr === formatDate(new Date());
+                const isImportant = importantDates.find(i => i.date === dateStr);
+                
+                let usersWithDataToday = [];
+                Object.entries(allSchedules).forEach(([u, dates]) => {
+                    if (dates[dateStr] && Object.keys(dates[dateStr].slots || {}).length > 0) {
+                        if (viewingUser === 'ALL' || u === viewingUser) usersWithDataToday.push(u);
+                    }
+                });
+
+                const headerClass = isToday 
+                    ? 'bg-gradient-to-r from-blue-500 to-sky-500 text-white shadow-md' 
+                    : isImportant 
+                        ? 'bg-gradient-to-r from-orange-400 to-red-400 text-white shadow-md' 
+                        : 'bg-white border border-gray-200 text-gray-600';
+
+                // 日曆點擊邏輯：ALL -> 看自己的排程框 (其他人從動態看)；看特定人 -> 看特定人的排程框
+                const clickAction = (viewingUser === 'ALL') 
+                    ? `openScheduleModal('${dateStr}')` 
+                    : `viewOthersScore(event, '${viewingUser}', '${dateStr}')`;
+
+                let cellHTML = '';
+
+                if (viewingUser === 'ALL') {
+                    // ALL View: Show tiny avatars of who scheduled today
+                    const avatarsHtml = usersWithDataToday.map(u => `
+                        <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
+                             class="${getUserColor(u)} w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-[9px] md:text-[11px] font-bold shadow-sm cursor-pointer hover:scale-125 transition-transform flex-shrink-0 border border-white" 
+                             title="查看 ${usersProfile[u]?.nickname || u} 的排程">
+                            ${getAvatarChar(u)}
+                        </div>
+                    `).join('');
+
+                    cellHTML = `
+                        <div onclick="${clickAction}" class="bg-white border-2 border-sky-100 p-1.5 md:p-2 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-blue-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
+                            <div class="flex justify-between items-start shrink-0 mb-1 w-full">
+                                <span class="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass} shrink-0 shadow-sm">${d}</span>
+                                ${isImportant ? `<span class="text-[10px] md:text-xs drop-shadow-sm mt-1 group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-wrap content-start gap-1 justify-center pt-1">
+                                ${avatarsHtml}
+                                ${usersWithDataToday.length === 0 ? '<div class="text-[10px] text-gray-300 w-full text-center mt-2">無排程</div>' : ''}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Single User View: Show their actual slots
+                    let cellContent = '';
+                    const dayData = (allSchedules[viewingUser] && allSchedules[viewingUser][dateStr]) ? allSchedules[viewingUser][dateStr] : {slots:{}};
+                    const slots = dayData.slots || {};
+                    
+                    if (Object.keys(slots).length > 0) {
+                        cellContent = `<div class="flex flex-col gap-0.5 md:gap-1 w-full mt-1">`;
+                        // 依照時間排序
+                        const sortedTimes = Object.keys(slots).sort();
+                        sortedTimes.forEach(time => {
+                            const info = slots[time];
+                            const hexColor = SUBJECT_HEX_COLORS[info.subject] || SUBJECT_HEX_COLORS['default'];
+                            const safeColor = getSafeTextColor(info.subject);
+                            
+                            cellContent += `
+                                <div class="text-[9px] md:text-[10px] truncate px-1 py-0.5 rounded shadow-sm border border-transparent font-bold flex gap-1" 
+                                     style="background-color: ${hexColor}15; border-color: ${hexColor}30; color: ${safeColor};" 
+                                     title="${time} ${info.subject}: ${info.chapter}">
+                                    <span class="shrink-0 grayscale opacity-80">${info.emoji||'🔹'}</span>
+                                    <span class="truncate">${info.chapter}</span>
+                                </div>
+                            `;
+                        });
+                        cellContent += `</div>`;
+                    } else {
+                        cellContent = `<div class="flex h-full items-center justify-center text-[10px] text-gray-300 font-bold">空閒</div>`;
+                    }
+
+                    cellHTML = `
+                        <div onclick="${clickAction}" class="bg-white border-2 border-sky-100 p-1 md:p-1.5 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-blue-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
+                            <div class="flex justify-between items-start shrink-0 mb-0.5 w-full">
+                                <span class="w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full text-xs font-bold ${headerClass} shrink-0 shadow-sm">${d}</span>
+                                ${isImportant ? `<span class="text-[10px] drop-shadow-sm group-hover:scale-125 transition-transform shrink-0" title="${isImportant.title}">🔥</span>` : ''}
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar relative">
+                                ${cellContent}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += cellHTML;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderTimeline = () => {
+            const container = document.getElementById('timeline-feed');
+            if(!container) return;
+
+            const feed = [];
+            Object.entries(allSchedules).forEach(([u, dates]) => {
+                Object.entries(dates).forEach(([d, dayData]) => {
+                    const updateTime = dayData.updatedAt || d;
+                    const slotCount = Object.keys(dayData.slots || {}).length;
+                    if(slotCount > 0) {
+                        // 只顯示某天安排了幾項，避免洗版
+                        feed.push({ user: u, date: d, count: slotCount, updatedAt: updateTime });
+                    }
+                });
+            });
+
+            feed.sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+            if (feed.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-70"><div class="text-4xl mb-2">🍃</div><div class="text-sm font-bold">尚無排程動態</div></div>`;
+                return;
+            }
+
+            let html = '';
+            feed.slice(0, 30).forEach(item => { // Limit to recent 30
+                const isMe = item.user === username;
+                const displayName = usersProfile[item.user]?.nickname || item.user;
+
+                html += `
+                    <div class="p-3 rounded-xl border border-sky-100 shadow-sm bg-white relative group cursor-pointer hover:-translate-y-0.5 hover:shadow transition-all" onclick="viewOthersScore(null, '${item.user}', '${item.date}')">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span class="font-bold text-gray-700 flex items-center gap-1.5 text-xs">
+                                <div class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] ${getUserColor(item.user)}">${getAvatarChar(item.user)}</div>
+                                ${isMe ? '我' : displayName}
+                            </span>
+                            <span class="text-[10px] text-gray-400 font-mono">${item.updatedAt ? new Date(item.updatedAt).toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'}) : ''}</span>
+                        </div>
+                        <div class="text-sm text-gray-600 font-bold pl-5">
+                            更新了 <span class="text-blue-600 font-black">${item.date}</span> 的排程
+                            <span class="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded ml-1 text-xs border border-blue-100">共 ${item.count} 項</span>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        };
+
+        window.renderLeaderboard = () => {
+            const container = document.getElementById('leaderboard-feed');
+            if(!container) return;
+
+            let userStats = [];
+            globalUsers.forEach(u => {
+                let stats = { user: u, totalSlots: 0, lifeSlots: 0, studySlots: 0 };
+                const uSched = allSchedules[u] || {};
+                Object.values(uSched).forEach(dayObj => {
+                    const slots = dayObj.slots || {};
+                    Object.values(slots).forEach(item => {
+                        stats.totalSlots++;
+                        if(item.subject === '生活類') stats.lifeSlots++;
+                        else stats.studySlots++;
+                    });
+                });
+                userStats.push(stats);
+            });
+
+            // 依據「讀書時段數量」排序
+            userStats.sort((a, b) => b.studySlots - a.studySlots);
+
+            if (userStats.length === 0 || userStats[0].totalSlots === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 text-sm mt-4 font-bold">尚未有人建立排程</div>`;
+                return;
+            }
+
+            let html = '';
+            userStats.forEach((stat, index) => {
+                if (stat.totalSlots === 0) return;
+                let rankMedal = '';
+                if (index === 0) rankMedal = '🔥';
+                else if (index === 1) rankMedal = '🚀';
+                else if (index === 2) rankMedal = '⭐';
+                else rankMedal = `<span class="text-blue-700 bg-blue-100 rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-black shadow-inner">${index + 1}</span>`;
+
+                const displayName = usersProfile[stat.user]?.nickname || stat.user;
+
+                html += `
+                    <div onclick="openPublicProfile('${stat.user}')" class="bg-white rounded-xl p-2.5 border border-sky-100 shadow-sm flex items-center gap-2 relative hover:scale-[1.02] transition-transform cursor-pointer hover:border-blue-300">
+                        <div class="text-lg w-6 flex justify-center drop-shadow-sm shrink-0">${rankMedal}</div>
+                        <div class="flex-1 min-w-0 flex items-center gap-2">
+                            <div class="${getUserColor(stat.user)} w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0">
+                                ${getAvatarChar(stat.user)}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-black text-gray-700 text-sm truncate">${displayName}</div>
+                                <div class="text-[10px] text-gray-400 flex gap-1 mt-0.5">
+                                    <span class="text-blue-500 font-bold">讀書 ${stat.studySlots}</span> |
+                                    <span class="text-purple-500 font-bold">生活 ${stat.lifeSlots}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        };
+
+        window.renderMainContent = () => {
+            if(window.renderCalendar) window.renderCalendar();
+            if(window.renderTimeline) window.renderTimeline();
+            if(window.renderLeaderboard) window.renderLeaderboard();
+            if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) {
+                window.renderAdminUsers();
+                window.renderAdminTextbookList();
+            }
+        };
+
+        // ==========================================
+        //  管理員面板邏輯 (含教科書編輯)
+        // ==========================================
+        window.openAdminPanel = () => {
+            renderAdminDates();
+            renderAdminUsers();
+            renderAdminTextbookList();
+            switchAdminTab('dates');
+            openGlobalModal('admin-panel-modal');
+        };
+
+        window.switchAdminTab = (tab) => {
+            const tabs = ['dates', 'users', 'textbooks'];
+            tabs.forEach(t => {
+                const content = document.getElementById(`admin-tab-${t}`);
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if(t === tab) {
+                    content.classList.remove('hidden');
+                    btn.classList.replace('text-gray-500', 'text-amber-600');
+                    btn.classList.replace('border-transparent', 'border-amber-500');
+                    btn.classList.replace('hover:bg-gray-200', 'bg-white');
+                } else {
+                    content.classList.add('hidden');
+                    btn.classList.replace('text-amber-600', 'text-gray-500');
+                    btn.classList.replace('border-amber-500', 'border-transparent');
+                    btn.classList.replace('bg-white', 'hover:bg-gray-200');
+                }
+            });
+        };
+
+        // ... (Dates and Users admin functions remain the same as previous)
+        window.renderAdminDates = () => {
+            const container = document.getElementById('admin-dates-list');
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            container.innerHTML = sortedDates.map((item, index) => `
+                <div class="bg-white p-3 rounded-lg border border-gray-200 flex justify-between items-center shadow-sm">
+                    <div>
+                        <div class="font-bold text-gray-800">${item.title}</div>
+                        <div class="text-sm text-gray-500">${item.date}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="adminEditDate(${index})" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded font-bold text-sm hover:bg-blue-100">編輯</button>
+                        <button onclick="adminDeleteDate(${index})" class="px-3 py-1.5 bg-red-50 text-red-600 rounded font-bold text-sm hover:bg-red-100">刪除</button>
+                    </div>
+                </div>
+            `).join('');
+        };
+        window.adminAddDate = async () => {
+            const title = document.getElementById('admin-new-date-title').value.trim();
+            const date = document.getElementById('admin-new-date-value').value;
+            if(!title || !date) return alert("請填寫完整");
+            const newDates = [...importantDates, { title, date }];
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+            document.getElementById('admin-new-date-title').value = '';
+            document.getElementById('admin-new-date-value').value = '';
+        };
+        window.adminEditDate = (index) => {
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const item = sortedDates[index];
+            const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
+            document.getElementById('edit-date-index').value = realIndex;
+            document.getElementById('edit-date-title').value = item.title;
+            document.getElementById('edit-date-value').value = item.date;
+            openGlobalModal('edit-date-modal');
+        };
+        window.saveEditedDate = async () => {
+            const idx = parseInt(document.getElementById('edit-date-index').value);
+            const title = document.getElementById('edit-date-title').value.trim();
+            const date = document.getElementById('edit-date-value').value;
+            if(!title || !date) return alert("不可留空");
+            let newDates = [...importantDates];
+            newDates[idx] = { title, date };
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+            closeGlobalModal('edit-date-modal');
+        };
+        window.adminDeleteDate = async (index) => {
+            if(!confirm("確定刪除此日程？")) return;
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const item = sortedDates[index];
+            const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
+            const newDates = [...importantDates];
+            newDates.splice(realIndex, 1);
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
+        };
+
+        window.renderAdminUsers = () => {
+            const tbody = document.getElementById('admin-users-list');
+            tbody.innerHTML = globalUsers.map(u => {
+                const prof = usersProfile[u] || {};
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 font-bold text-gray-800">${u}</td>
+                        <td class="p-3 text-gray-600">${prof.nickname || '-'}</td>
+                        <td class="p-3 font-mono text-gray-400 text-xs">${prof.password || '未設定'}</td>
+                        <td class="p-3 text-right space-x-1">
+                            <button onclick="openProfileEditModal('${u}')" class="px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded font-bold text-xs hover:bg-blue-100">修改</button>
+                            ${u === 'Nick' ? '' : `<button onclick="adminDeleteUser('${u}')" class="px-2.5 py-1.5 bg-red-50 text-red-600 rounded font-bold text-xs hover:bg-red-100">移除</button>`}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        };
+        window.adminDeleteUser = async (userToDelete) => {
+            if(!confirm(`⚠️ 警告！確定要刪除帳號 [${userToDelete}] 嗎？此操作不可逆！`)) return;
+            try {
+                const newUsers = globalUsers.filter(u => u !== userToDelete);
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers });
+                let newProfiles = JSON.parse(JSON.stringify(usersProfile));
+                delete newProfiles[userToDelete];
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: newProfiles });
+                
+                // Optional: Delete user's schedules
+                if (allSchedules[userToDelete]) {
+                    const dates = Object.keys(allSchedules[userToDelete]);
+                    for(let dateStr of dates) {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'Schedules', `${userToDelete}_${dateStr}`));
+                    }
+                }
+                alert(`已成功移除使用者 ${userToDelete} 及相關排程。`);
+                renderAdminUsers();
+            } catch(e) {
+                alert("移除操作失敗！");
+            }
+        };
+
+        // Admin Textbook Management
+        window.renderAdminTextbookList = () => {
+            const sub = document.getElementById('admin-tb-subject-sel').value;
+            const container = document.getElementById('admin-tb-list');
+            const books = globalTextbooks[sub] || [];
+            
+            document.getElementById('admin-tb-form').classList.add('hidden'); // Hide form initially
+            
+            if (books.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold text-sm">此科目尚未建立任何書籍</div>`;
+                return;
+            }
+
+            container.innerHTML = books.map((b, idx) => `
+                <div class="p-3 border rounded-xl flex items-center justify-between hover:bg-blue-50 cursor-pointer transition-colors" onclick="adminEditBook('${sub}', ${idx})">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gray-100 rounded overflow-hidden flex items-center justify-center border shrink-0">
+                            ${b.img ? `<img src="${b.img}" class="w-full h-full object-cover">` : '📚'}
+                        </div>
+                        <div class="font-bold text-gray-800 text-sm truncate">${b.name}</div>
+                    </div>
+                    <div class="text-blue-500 font-bold text-xs">編輯 ✏️</div>
+                </div>
+            `).join('');
+        };
+
+        window.adminShowNewBookForm = () => {
+            document.getElementById('admin-tb-form').classList.remove('hidden');
+            document.getElementById('admin-tb-form-title').innerHTML = `新增書籍 <button onclick="document.getElementById('admin-tb-form').classList.add('hidden')" class="text-sm text-gray-400 hover:text-gray-600">✕ 關閉</button>`;
+            document.getElementById('admin-tb-id').value = 'NEW';
+            document.getElementById('admin-tb-name').value = '';
+            document.getElementById('admin-tb-img').value = '';
+            document.getElementById('admin-tb-chapters').value = '';
+            document.getElementById('admin-tb-delete-btn').classList.add('hidden');
+        };
+
+        window.adminEditBook = (sub, idx) => {
+            const book = globalTextbooks[sub][idx];
+            document.getElementById('admin-tb-form').classList.remove('hidden');
+            document.getElementById('admin-tb-form-title').innerHTML = `編輯：${book.name} <button onclick="document.getElementById('admin-tb-form').classList.add('hidden')" class="text-sm text-gray-400 hover:text-gray-600">✕ 關閉</button>`;
+            document.getElementById('admin-tb-id').value = idx;
+            document.getElementById('admin-tb-name').value = book.name;
+            document.getElementById('admin-tb-img').value = book.img || '';
+            document.getElementById('admin-tb-chapters').value = book.chapters ? book.chapters.join('\n') : '';
+            document.getElementById('admin-tb-delete-btn').classList.remove('hidden');
+        };
+
+        window.adminSaveBook = async () => {
+            const sub = document.getElementById('admin-tb-subject-sel').value;
+            const idxStr = document.getElementById('admin-tb-id').value;
+            const name = document.getElementById('admin-tb-name').value.trim();
+            const img = document.getElementById('admin-tb-img').value.trim();
+            const chaptersRaw = document.getElementById('admin-tb-chapters').value;
+            
+            if(!name) return alert("書本名稱為必填！");
+            
+            const chapters = chaptersRaw.split('\n').map(c => c.trim()).filter(c => c);
+            
+            let newTextbooks = JSON.parse(JSON.stringify(globalTextbooks));
+            if(!newTextbooks[sub]) newTextbooks[sub] = [];
+
+            if (idxStr === 'NEW') {
+                const newId = `tb_${Date.now()}`;
+                newTextbooks[sub].push({ id: newId, name, img, chapters });
+            } else {
+                const idx = parseInt(idxStr);
+                newTextbooks[sub][idx] = { ...newTextbooks[sub][idx], name, img, chapters };
+            }
+
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Textbooks'), { data: newTextbooks });
+                document.getElementById('admin-tb-form').classList.add('hidden');
+                alert("儲存成功！");
+            } catch(e) {
+                console.error(e);
+                alert("儲存至雲端失敗！");
+            }
+        };
+
+        window.adminDeleteBook = async () => {
+            if(!confirm("確定要刪除這本書嗎？相關的歷史排程紀錄不會被刪除，但未來無法再選取此書。")) return;
+            const sub = document.getElementById('admin-tb-subject-sel').value;
+            const idxStr = document.getElementById('admin-tb-id').value;
+            if(idxStr === 'NEW') return;
+
+            const idx = parseInt(idxStr);
+            let newTextbooks = JSON.parse(JSON.stringify(globalTextbooks));
+            newTextbooks[sub].splice(idx, 1);
+
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Textbooks'), { data: newTextbooks });
+                document.getElementById('admin-tb-form').classList.add('hidden');
+            } catch(e) {
+                alert("刪除失敗！");
+            }
+        };
+
+        // ==========================================
+        //  Firebase 監聽與初始化
+        // ==========================================
+        const setupListeners = () => {
+            if (!currentUser) return;
+            const errHandler = (err) => console.warn("Firestore Listener Error:", err);
+
+            // Users
+            if(unsubUsers) unsubUsers();
+            unsubUsers = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), (snap) => {
+                globalUsers = snap.exists() ? (snap.data().users || []) : [];
+                if (username && !globalUsers.includes(username)) {
+                    alert('⚠️ 系統提示：您的帳號已被管理員移除或系統重置，請重新註冊/登入！');
+                    window.logout(); 
+                }
+            }, errHandler);
+
+            // Profiles
+            if(unsubProfile) unsubProfile();
+            unsubProfile = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), (snap) => {
+                usersProfile = snap.exists() ? (snap.data().profiles || {}) : {};
+                if(username) window.renderMainContent();
+            }, errHandler);
+
+            // Dates
+            if(unsubDates) unsubDates();
+            unsubDates = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), (snap) => {
+                if(snap.exists()) {
+                    importantDates = snap.data().list || [];
+                } else {
+                    importantDates = [
+                        { date: '2027-05-22', title: '國中教育會考' },
+                        { date: '2026-09-09', title: '第1次模擬考' },
+                        { date: '2026-10-13', title: '第1次段考' }
+                    ];
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: importantDates }).catch(errHandler);
+                }
+                if(username) window.renderSidebar();
+                if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) window.renderAdminDates();
+            }, errHandler);
+
+            // Chat
+            if(unsubChat) unsubChat();
+            unsubChat = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), (snap) => {
+                if(snap.exists()) chatMessages = snap.data().messages || [];
+                if(username) window.renderChat();
+            }, errHandler);
+
+            // Textbooks
+            if(unsubTextbooks) unsubTextbooks();
+            unsubTextbooks = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Textbooks'), (snap) => {
+                if(snap.exists()) {
+                    globalTextbooks = snap.data().data || appData.TEXTBOOKS;
+                } else {
+                    globalTextbooks = appData.TEXTBOOKS;
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Textbooks'), { data: globalTextbooks }).catch(errHandler);
+                }
+                if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) window.renderAdminTextbookList();
+            }, errHandler);
+
+            // Schedules (New Structure)
+            const schedCol = collection(db, 'artifacts', appId, 'public', 'data', 'Schedules');
+            if(unsubSchedules) unsubSchedules();
+            unsubSchedules = onSnapshot(schedCol, (snap) => {
+                let newAllSchedules = {};
+                snap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if(!data.user || !data.date) return; 
+                    if(!newAllSchedules[data.user]) newAllSchedules[data.user] = {};
+                    newAllSchedules[data.user][data.date] = {
+                        slots: data.slots || {},
+                        updatedAt: data.updatedAt || ''
+                    };
+                });
+                allSchedules = newAllSchedules;
+                if(username) {
+                    window.renderMainContent();
+                    // Re-render modal if open
+                    if(!document.getElementById('schedule-modal').classList.contains('hidden')) {
+                        // Soft update to not interrupt user editing too aggressively, but sync read-only view
+                        const isReadonly = (viewingUser !== 'ALL' && viewingUser !== username);
+                        if (isReadonly) {
+                            const targetDayData = (allSchedules[viewingUser] && allSchedules[viewingUser][scheduleModalState.date]) ? allSchedules[viewingUser][scheduleModalState.date] : {};
+                            scheduleModalState.currentDayData = JSON.parse(JSON.stringify(targetDayData));
+                            renderScheduleRightPanel();
+                        }
+                    }
+                }
+            }, errHandler);
+        };
+
+        const setupLoginListener = () => {
+            if (!currentUser) return;
+            unsubUsers = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), (snap) => {
+                globalUsers = snap.exists() ? (snap.data().users || []) : [];
+                if(!username && window.renderLogin) window.renderLogin();
+            });
+            unsubProfile = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), (snap) => {
+                usersProfile = snap.exists() ? (snap.data().profiles || {}) : {};
+                if(!username && window.renderLogin) window.renderLogin();
+            });
+        };
+
+        const initApp = async () => {
+            window.renderApp();
+
+            try {
+                const initAuth = async () => {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                };
+                await initAuth();
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        setupLoginListener();
+                        window.renderLogin();
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase 連線失敗:", error);
+                document.getElementById('app').innerHTML = `<div class="p-8 text-red-500 font-bold bg-white text-center">系統連線失敗，請稍後再試。<br>${error.message}</div>`;
+            }
+        };
+
+        initApp();
+
+    </script>
+</body>
+</html>
