@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🎒 邁向5A10+ 國中會考 複習進度排程器 ✨</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         html, body {
@@ -172,20 +174,28 @@
         };
         
         let unsubUsers, unsubDates, unsubSchedules, unsubChat, unsubProfile, unsubTextbooks;
+        let radarChartInstance = null;
 
-        // Firebase 初始化
+        // Firebase 基礎設定 (不含 API Key)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-scheduler-app';
-        let firebaseConfig;
-        try {
-            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        } catch (e) {
-            console.warn("解析 Firebase 參數失敗");
-            firebaseConfig = {};
-        }
-        
-        appInstance = initializeApp(firebaseConfig);
-        auth = getAuth(appInstance);
-        db = getFirestore(appInstance);
+        const BASE_FIREBASE_CONFIG = {
+            authDomain: "chinese-learning-47f4d.firebaseapp.com",
+            projectId: "chinese-learning-47f4d",
+            storageBucket: "chinese-learning-47f4d.firebasestorage.app",
+            messagingSenderId: "76289812052",
+            appId: "1:76289812052:web:898384a916f9f341f62fc1"
+        };
+
+        const getStoredConfig = () => {
+            if (typeof __firebase_config !== 'undefined') {
+                try { return JSON.parse(__firebase_config); } catch(e) {}
+            }
+            try {
+                const stored = localStorage.getItem('study_group_firebase_config');
+                if (stored) return JSON.parse(stored);
+            } catch(e) {} // 處理預覽模式下阻擋 localStorage 的情況
+            return null;
+        };
 
         // ==========================================
         //  輔助工具函式
@@ -211,15 +221,31 @@
         const getRandomEmoji = () => EMOJI_LIST[Math.floor(Math.random() * EMOJI_LIST.length)];
 
         // 檢查該單元是否已經在該使用者的任何日期的排程中
-        const isChapterScheduled = (chapterName) => {
+        const isChapterScheduled = (chapterName, targetUser) => {
             let scheduled = false;
-            if(!allSchedules[username]) return false;
-            Object.values(allSchedules[username]).forEach(dayObj => {
-                Object.values(dayObj).forEach(slotData => {
+            if(!allSchedules[targetUser]) return false;
+            Object.values(allSchedules[targetUser]).forEach(dayObj => {
+                Object.values(dayObj.slots || {}).forEach(slotData => {
                     if (slotData.chapter === chapterName) scheduled = true;
                 });
             });
             return scheduled;
+        };
+
+        const getSafeTextColor = (sub) => {
+            const map = {
+                '國文': '#CC0000', '英文': '#CC4400', '數學': '#999900', 
+                '生物': '#449900', '理化': '#008888', '地科': '#0000AA', 
+                '地球科學': '#0000AA', '歷史': '#990099', '地理': '#CC0066', 
+                '公民': '#009900', '自然合科': '#449900', '社會合科': '#CC0066', 
+                '生活類': '#5B21B6', 'default': '#4B5563'
+            };
+            return map[sub] || map['default'];
+        };
+
+        const getCircleNum = (idx) => {
+            const nums = ['➀','➁','➂','➃','➄','➅','➆','➇','➈','➉','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
+            return nums[idx] || `(${idx+1})`;
         };
 
         // ==========================================
@@ -314,6 +340,10 @@
                     <div class="flex items-center gap-2 md:gap-3 pr-2 flex-wrap justify-end">
                         ${isAdmin ? `<button onclick="openAdminPanel()" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-transform text-sm shrink-0">👑 管理員面板</button>` : ''}
                         
+                        <button onclick="openAnalysisModal()" class="font-bold text-sky-700 bg-sky-50 px-2 md:px-3 py-1.5 rounded-lg border border-sky-200 shadow-sm hover:bg-sky-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            📊 <span class="hidden md:inline">排程戰力分析</span>
+                        </button>
+                        
                         <button onclick="openProfileEditModal('${username}')" class="font-bold text-sky-700 bg-sky-50 px-2 md:px-3 py-1.5 rounded-lg border border-sky-200 shadow-sm hover:bg-sky-100 transition-colors text-sm flex items-center gap-1 shrink-0">
                             <div class="${getUserColor(username)} w-5 h-5 rounded-full flex items-center justify-center text-[10px]">${getAvatarChar(username)}</div>
                             <span class="hidden md:inline">我的資料卡</span>
@@ -364,6 +394,7 @@
 
         const renderGlobalModals = () => {
             const container = document.getElementById('modals-container');
+            // 已移除舊有的 score-modal, progress-modal, weakness-modal
             container.innerHTML = `
                 <!-- 輸入密碼登入 Modal -->
                 <div id="login-pwd-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0">
@@ -408,6 +439,36 @@
                         </div>
                         <div class="p-4 bg-white border-t border-blue-100 flex justify-end shrink-0">
                             <button onclick="saveProfile()" class="px-6 py-2.5 rounded-xl font-bold text-white bg-blue-500 hover:bg-blue-600 shadow-md w-full md:w-auto">儲存 🚀</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 排程戰力分析雷達圖 Modal -->
+                <div id="analysis-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('analysis-modal')">
+                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl overflow-hidden border-4 border-sky-300 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
+                        <div class="bg-gradient-to-r from-sky-400 to-blue-500 p-4 flex justify-between items-center text-white shrink-0">
+                            <h2 class="text-xl font-bold flex items-center gap-2">📊 排程戰力分析</h2>
+                            <button onclick="closeGlobalModal('analysis-modal')" class="hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center font-bold">✕</button>
+                        </div>
+                        <div class="p-6 bg-sky-50/30 overflow-y-auto flex-1 custom-scrollbar flex flex-col items-center">
+                            <h3 class="text-lg font-black text-sky-800 mb-4 bg-white px-4 py-1.5 rounded-full shadow-sm border border-sky-100" id="analysis-user-name"></h3>
+                            <div class="w-full relative h-80 sm:h-96 md:h-[450px] lg:h-[550px] flex justify-center items-center">
+                                <canvas id="radarChart"></canvas>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-6 font-bold text-center bg-white/60 p-2 rounded-lg">* 雷達圖呈現您在各科目總計安排的時段數量，助您檢視學習平衡。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 瀏覽公開資料卡 Modal -->
+                <div id="view-profile-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[80] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('view-profile-modal')">
+                    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform duration-200 flex flex-col relative border-4 border-sky-200">
+                        <button onclick="closeGlobalModal('view-profile-modal')" class="absolute top-4 right-4 bg-black/20 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold z-10 hover:bg-black/40">✕</button>
+                        <div class="h-32 bg-gradient-to-r from-sky-400 to-blue-500 w-full relative"></div>
+                        <div class="px-6 pb-6 pt-0 relative flex flex-col items-center mt-[-3rem]">
+                            <div id="vp-avatar-fallback" class="w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black mb-3"></div>
+                            <h2 class="text-2xl font-black text-gray-800" id="vp-nickname"></h2>
+                            <p class="text-sm text-gray-400 font-bold mb-4" id="vp-name"></p>
                         </div>
                     </div>
                 </div>
@@ -619,7 +680,7 @@
         };
 
         // ==========================================
-        //  主要排程 Modal 邏輯 (全新)
+        //  主要排程 Modal 邏輯
         // ==========================================
         window.openScheduleModal = (dateStr) => {
             scheduleModalState.date = dateStr;
@@ -627,28 +688,24 @@
             scheduleModalState.selectedSubject = '';
             scheduleModalState.selectedBookId = '';
             
-            // 複製一份當天的進度資料到本地 State 進行編輯
             const userDayData = (allSchedules[username] && allSchedules[username][dateStr]) ? allSchedules[username][dateStr] : {};
-            scheduleModalState.currentDayData = JSON.parse(JSON.stringify(userDayData));
+            scheduleModalState.currentDayData = JSON.parse(JSON.stringify(userDayData.slots || {}));
 
             document.getElementById('schedule-modal-date').innerText = dateStr;
             
-            // Check Permissions
             const isReadonly = (viewingUser !== 'ALL' && viewingUser !== username);
             const overlay = document.getElementById('schedule-readonly-overlay');
             const saveBtn = document.getElementById('sch-save-btn');
             if(isReadonly) {
                 overlay.classList.remove('hidden');
                 saveBtn.classList.add('hidden');
-                // Load target user's data for view
                 const targetDayData = (allSchedules[viewingUser] && allSchedules[viewingUser][dateStr]) ? allSchedules[viewingUser][dateStr] : {};
-                scheduleModalState.currentDayData = JSON.parse(JSON.stringify(targetDayData));
+                scheduleModalState.currentDayData = JSON.parse(JSON.stringify(targetDayData.slots || {}));
             } else {
                 overlay.classList.add('hidden');
                 saveBtn.classList.remove('hidden');
             }
 
-            // 初始化左側科目選擇 (移除 active 狀態)
             SUBJECTS.forEach(s => {
                 const btn = document.getElementById(`sch-btn-sub-${s}`);
                 if(btn) {
@@ -667,7 +724,6 @@
             document.getElementById('sch-emoji-picker').classList.add('hidden');
         };
 
-        // 右側: 渲染時間段
         const renderScheduleRightPanel = () => {
             const container = document.getElementById('sch-time-slots');
             const data = scheduleModalState.currentDayData;
@@ -718,7 +774,6 @@
             });
             container.innerHTML = html;
 
-            // Scroll active slot into view
             if (!isReadonly) {
                 setTimeout(() => {
                     const el = document.getElementById(`slot-${scheduleModalState.activeSlot}`);
@@ -738,12 +793,10 @@
             renderScheduleRightPanel();
         };
 
-        // 左側: 點擊科目
         window.schSelectSubject = (sub) => {
             scheduleModalState.selectedSubject = sub;
             scheduleModalState.selectedBookId = '';
             
-            // Highlight Button
             SUBJECTS.forEach(s => {
                 const btn = document.getElementById(`sch-btn-sub-${s}`);
                 if(btn) {
@@ -757,14 +810,11 @@
                 }
             });
 
-            // 決定顯示書本列表或直接顯示單元(如自然合科)
             const books = globalTextbooks[sub];
             if (books && books.length > 0) {
-                // 如果只有一本書，直接展開
                 if (books.length === 1) {
                     schSelectBook(books[0].id);
                 } else {
-                    // 多本書，顯示書本卡片
                     const html = `<div class="grid grid-cols-2 md:grid-cols-3 gap-3 p-2">` + 
                         books.map(b => `
                             <div onclick="schSelectBook('${b.id}')" class="bg-white border-2 border-gray-200 hover:border-blue-400 rounded-xl p-2 cursor-pointer transition-all shadow-sm hover:shadow text-center group">
@@ -777,14 +827,12 @@
                     document.getElementById('sch-content-area').innerHTML = html;
                 }
             } else if (SUB_SUBJECTS[sub]) {
-                // 如 自然合科 -> 地科/自然... 沒有特定書本
                 renderChapters(sub, '', SUB_SUBJECTS[sub]);
             } else {
                 document.getElementById('sch-content-area').innerHTML = `<div class="flex h-full items-center justify-center text-gray-400 font-bold text-sm">此科目暫無資料</div>`;
             }
         };
 
-        // 左側: 點擊書本，顯示單元
         window.schSelectBook = (bookId) => {
             scheduleModalState.selectedBookId = bookId;
             const sub = scheduleModalState.selectedSubject;
@@ -794,7 +842,6 @@
             }
         };
 
-        // 渲染單元按鈕
         const renderChapters = (subjectName, bookName, chaptersArray) => {
             let html = `
                 <div class="mb-3 flex items-center gap-2">
@@ -804,8 +851,10 @@
                 <div class="space-y-2 pb-4">
             `;
 
+            const targetUser = viewingUser === 'ALL' ? username : viewingUser;
+
             chaptersArray.forEach(ch => {
-                const isSched = isChapterScheduled(ch);
+                const isSched = isChapterScheduled(ch, targetUser);
                 const isExam = ch.includes('會考模擬試題');
                 const btnStyle = isSched 
                     ? 'bg-gray-100 border-gray-300 text-gray-400 grayscale' 
@@ -813,7 +862,7 @@
                         ? 'bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100 shadow-sm'
                         : 'bg-white border-blue-200 text-blue-700 hover:bg-blue-50 shadow-sm hover:border-blue-400 hover:scale-[1.01]';
                 
-                const icon = isSched ? '✅' : (isExam ? '🔥' : '📖');
+                const icon = isSched ? '✅' : (isExam ? '🔥' : (subjectName==='生活類' ? '🌟' : '📖'));
 
                 html += `
                     <div onclick="schAssignChapter('${ch}', ${isSched}, '${bookName}')" 
@@ -828,7 +877,6 @@
             document.getElementById('sch-content-area').innerHTML = html;
         };
 
-        // 左側: 將單元排入右側 Focus 的時段
         window.schAssignChapter = (chapterName, isAlreadyScheduled, bookName) => {
             const isReadonly = (viewingUser !== 'ALL' && viewingUser !== username);
             if (isReadonly) return;
@@ -838,12 +886,11 @@
             }
 
             if (isAlreadyScheduled) {
-                if(!confirm(`「${chapterName}」已經存在於您其他日期的排程中。\n是否要再次進行複習並排入？`)) {
+                if(!confirm(`「${chapterName}」已經存在於您的排程中。\n是否要再次進行複習並排入？`)) {
                     return;
                 }
             }
 
-            // 指派至 Slot
             scheduleModalState.currentDayData[scheduleModalState.activeSlot] = {
                 subject: scheduleModalState.selectedSubject,
                 bookName: bookName || '',
@@ -851,7 +898,6 @@
                 emoji: getRandomEmoji()
             };
 
-            // 自動前進到下一個空閒時段
             const currIdx = TIME_SLOTS.indexOf(scheduleModalState.activeSlot);
             let nextSlot = scheduleModalState.activeSlot;
             for(let i = currIdx + 1; i < TIME_SLOTS.length; i++) {
@@ -863,18 +909,13 @@
             scheduleModalState.activeSlot = nextSlot;
 
             renderScheduleRightPanel();
-            // Optional: Render left panel again to grey out the newly scheduled item immediately
-            // But since check is against allSchedules (saved data), it won't grey out until saved. 
-            // We can leave it bright until they save.
         };
 
-        // Emoji Picker Logic (For Schedule Slot)
         window.toggleEmojiPicker = (pickerId, event, slotId = null) => {
             if(event) event.stopPropagation();
             const picker = document.getElementById(pickerId);
             if(picker.classList.contains('hidden')) {
                 picker.classList.remove('hidden');
-                // Positioning
                 const rect = event.currentTarget.getBoundingClientRect();
                 picker.style.top = `${rect.bottom + window.scrollY + 5}px`;
                 picker.style.left = `${Math.max(10, rect.left + window.scrollX - 100)}px`;
@@ -913,13 +954,11 @@
             });
         });
 
-        // 儲存每日排程
         window.saveDailySchedule = async () => {
             const docId = `${username}_${scheduleModalState.date}`;
             const schedRef = doc(db, 'artifacts', appId, 'public', 'data', 'Schedules', docId);
             
             try {
-                // 如果整天清空了，可以選擇刪除 Document 或存空物件
                 if(Object.keys(scheduleModalState.currentDayData).length === 0) {
                     await deleteDoc(schedRef);
                 } else {
@@ -937,329 +976,262 @@
             }
         };
 
-        // 查看他人排程 (整合至同一個 Modal)
+        // ==========================================
+        //  排程戰力分析 (雷達圖)
+        // ==========================================
+        window.openAnalysisModal = () => {
+            const targetUser = viewingUser === 'ALL' ? username : viewingUser;
+            if (!targetUser) return;
+            const dispName = usersProfile[targetUser]?.nickname || targetUser;
+            document.getElementById('analysis-user-name').innerText = `👤 ${dispName} 的排程分析`;
+            
+            const analysisSubjects = ['國文', '英文', '數學', '生物', '理化', '地球科學', '歷史', '地理', '公民', '生活類'];
+            let subjectCounts = {};
+            analysisSubjects.forEach(sub => subjectCounts[sub] = 0);
+
+            const uSched = allSchedules[targetUser] || {};
+            Object.values(uSched).forEach(dayObj => {
+                Object.values(dayObj.slots || {}).forEach(item => {
+                    let actualSub = item.subject;
+                    if (actualSub === '地科') actualSub = '地球科學';
+                    if (actualSub === '自然合科') actualSub = '生物'; 
+                    if (actualSub === '社會合科') actualSub = '地理'; 
+                    if (subjectCounts[actualSub] !== undefined) {
+                        subjectCounts[actualSub]++;
+                    }
+                });
+            });
+
+            const dataPoints = analysisSubjects.map(sub => subjectCounts[sub]);
+
+            openGlobalModal('analysis-modal');
+
+            setTimeout(() => {
+                const ctx = document.getElementById('radarChart').getContext('2d');
+                if (radarChartInstance) radarChartInstance.destroy();
+                radarChartInstance = new Chart(ctx, {
+                    type: 'radar',
+                    plugins: [window.ChartDataLabels],
+                    data: {
+                        labels: analysisSubjects,
+                        datasets: [{
+                            label: '排程次數',
+                            data: dataPoints,
+                            backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                            borderColor: 'rgba(56, 189, 248, 1)',
+                            pointBackgroundColor: 'rgba(56, 189, 248, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(56, 189, 248, 1)',
+                            pointRadius: 6, pointHoverRadius: 8, borderWidth: 2,
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, layout: { padding: 40 },
+                        scales: { r: { min: 0, suggestedMax: 5, angleLines: { color: 'rgba(0,0,0,0.1)' }, grid: { color: 'rgba(0,0,0,0.1)' }, pointLabels: { font: { family: 'Noto Sans TC', size: 12, weight: 'bold' } }, ticks: { stepSize: 1, display: false } } },
+                        plugins: {
+                            legend: { display: false }, tooltip: { enabled: false },
+                            datalabels: {
+                                color: '#0284c7', font: { family: 'Noto Sans TC', size: 14, weight: 'bold' },
+                                formatter: function(value, context) { return value > 0 ? value + ' 次' : ''; },
+                                textAlign: 'center', align: 'end', anchor: 'end', offset: 5
+                            }
+                        }
+                    }
+                });
+            }, 100);
+        };
+
+        // ==========================================
+        //  通用動作邏輯 (設定、登出等) 
+        // ==========================================
+        window.saveFirebaseConfig = () => {
+            const apiKey = document.getElementById('cfg-apiKey').value.trim();
+            if (!apiKey) return alert("API Key 為必填欄位！");
+            try {
+                localStorage.setItem('study_group_firebase_config', JSON.stringify({ apiKey }));
+                alert("設定已儲存！系統將重新啟動。");
+                window.location.reload();
+            } catch(e) {
+                alert("儲存失敗！您的瀏覽器可能阻擋了本地儲存 (LocalStorage)，請確認是否開啟了無痕模式。");
+            }
+        };
+
+        window.logout = () => {
+            username = ''; viewingUser = 'ALL'; isAdmin = false;
+            
+            if(unsubDates) unsubDates();
+            if(unsubSchedules) unsubSchedules();
+            if(unsubChat) unsubChat();
+            if(unsubUsers) unsubUsers();
+            if(unsubProfile) unsubProfile();
+            if(unsubTextbooks) unsubTextbooks();
+            
+            allSchedules = {}; chatMessages = []; importantDates = [];
+            try { localStorage.removeItem('study_group_user'); } catch(e) {}
+            setupLoginListener();
+            window.renderLogin();
+        };
+
+        window.sendChat = async () => {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            const newMsg = { user: username, text: text, timestamp: new Date().toISOString() };
+            const newChat = [...chatMessages, newMsg];
+            if(newChat.length > 50) newChat.shift();
+            
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), { messages: newChat });
+            input.value = '';
+        };
+
+        window.initiateLogin = (name) => {
+            const trimmed = name.trim();
+            if(!trimmed) return alert("請傳入名稱！");
+            
+            if (globalUsers.includes(trimmed) && usersProfile[trimmed]) {
+                document.getElementById('login-pwd-username').value = trimmed;
+                const dispName = usersProfile[trimmed]?.nickname || trimmed;
+                document.getElementById('login-pwd-username-display').innerText = `你好，${dispName}！請輸入密碼以繼續：`;
+                document.getElementById('login-pwd-input').value = '';
+                openGlobalModal('login-pwd-modal');
+                setTimeout(() => document.getElementById('login-pwd-input').focus(), 100);
+            }
+        };
+
+        window.confirmLoginPassword = () => {
+            const name = document.getElementById('login-pwd-username').value;
+            const pwd = document.getElementById('login-pwd-input').value;
+            if (name === 'Nick' && pwd !== '2iligloi') return alert("Nick 為管理員保留帳號，密碼錯誤！");
+            if (usersProfile[name] && usersProfile[name].password !== pwd) return alert("密碼錯誤，請重試！");
+            
+            closeGlobalModal('login-pwd-modal');
+            doCompleteLogin(name);
+        };
+
+        window.openProfileEditModal = (name = '', isRegister = false) => {
+            const nameInput = document.getElementById('prof-name');
+            nameInput.value = name;
+            
+            if (isRegister && !name) {
+                nameInput.disabled = false;
+                nameInput.classList.remove('bg-gray-100', 'text-gray-500');
+                nameInput.classList.add('bg-white', 'text-gray-700');
+                nameInput.placeholder = "請輸入真實姓名作為登入帳號";
+            } else {
+                nameInput.disabled = true;
+                nameInput.classList.remove('bg-white', 'text-gray-700');
+                nameInput.classList.add('bg-gray-100', 'text-gray-500');
+                nameInput.placeholder = "";
+            }
+            
+            const isNick = (name === 'Nick');
+            const currentPwd = usersProfile[name]?.password || (isNick ? '2iligloi' : '');
+            document.getElementById('prof-pwd').value = currentPwd;
+            document.getElementById('prof-pwd-confirm').value = currentPwd;
+
+            if (isNick && isRegister) {
+                document.getElementById('prof-pwd').disabled = true;
+                document.getElementById('prof-pwd-confirm').disabled = true;
+                document.getElementById('pwd-hint').innerText = "(管理員預設密碼不可修改)";
+            } else {
+                document.getElementById('prof-pwd').disabled = false;
+                document.getElementById('prof-pwd-confirm').disabled = false;
+                document.getElementById('pwd-hint').innerText = "";
+            }
+
+            document.getElementById('prof-nickname').value = usersProfile[name]?.nickname || name;
+            
+            document.getElementById('profile-modal-title').innerText = isRegister ? '🚀 歡迎加入！請建立專屬資料卡' : '📝 修改我的資料卡';
+            document.getElementById('profile-modal-close').style.display = isRegister ? 'none' : 'flex'; 
+            
+            openGlobalModal('profile-edit-modal');
+        };
+
+        window.saveProfile = async () => {
+            const nameInput = document.getElementById('prof-name');
+            const name = nameInput.value.trim();
+            const pwd = document.getElementById('prof-pwd').value.trim();
+            const pwdConfirm = document.getElementById('prof-pwd-confirm').value.trim();
+            const nickname = document.getElementById('prof-nickname').value.trim();
+            
+            if(!name) return alert("請輸入真實姓名作為登入帳號！");
+            if(!pwd) return alert("請務必設定登入密碼！");
+            if(pwd !== pwdConfirm) return alert("兩次輸入的密碼不一致，請重新檢查！");
+            if(!nickname) return alert("請輸入顯示暱稱！");
+
+            const isNewUser = !globalUsers.includes(name);
+
+            if (!nameInput.disabled && !isNewUser) {
+                return alert("此真實姓名已存在，請使用該名稱登入，或輸入另一個姓名！");
+            }
+
+            let assignedColor = usersProfile[name]?.color;
+            if (isNewUser) {
+                const usedColors = Object.values(usersProfile).map(p => p.color).filter(Boolean);
+                const availableColors = USER_COLORS.filter(c => !usedColors.includes(c));
+                if (availableColors.length > 0) assignedColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+                else assignedColor = USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)];
+            }
+
+            let updatedProfiles = JSON.parse(JSON.stringify(usersProfile));
+            updatedProfiles[name] = {
+                password: pwd, nickname: nickname,
+                color: assignedColor
+            };
+
+            try {
+                if (isNewUser) {
+                    const newUsers = [...globalUsers, name];
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers }, { merge: true });
+                }
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: updatedProfiles }, { merge: true });
+                
+                closeGlobalModal('profile-edit-modal');
+                
+                if(username !== name) {
+                    doCompleteLogin(name);
+                } else { 
+                    alert("資料卡更新成功！"); 
+                    window.renderMainContent(); 
+                }
+            } catch(e) {
+                console.error(e);
+                alert("儲存失敗！");
+            }
+        };
+
+        const doCompleteLogin = (name) => {
+            username = name; viewingUser = 'ALL'; 
+            isAdmin = (username === 'Nick'); 
+            try { localStorage.setItem('study_group_user', username); } catch(e) {}
+            window.renderMain();
+            setupListeners();
+        };
+
+        window.openPublicProfile = (name) => {
+            const prof = usersProfile[name] || {};
+            document.getElementById('vp-nickname').innerText = prof.nickname || name;
+            document.getElementById('vp-name').innerText = `@${name}`;
+            
+            const fallbackEl = document.getElementById('vp-avatar-fallback');
+            fallbackEl.innerText = getAvatarChar(name);
+            fallbackEl.className = `w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black mb-3 ${getUserColor(name)}`;
+            
+            openGlobalModal('view-profile-modal');
+        };
+
         window.viewOthersScore = (e, otherUser, dateStr) => {
             if(e) e.stopPropagation();
             const originalUser = viewingUser;
             viewingUser = otherUser; 
             window.openScheduleModal(dateStr);
-            // 恢復 viewingUser 狀態，以免影響主畫面日曆
             viewingUser = originalUser; 
         };
 
         // ==========================================
-        //  UI 渲染函式 - 月曆/動態/排行榜
-        // ==========================================
-        window.renderSidebar = () => {
-            const container = document.getElementById('sidebar-countdowns');
-            if(!container) return;
-            const examDaysLeft = getDaysLeft(EXAM_DATE);
-            let html = `
-                <div class="bg-gradient-to-br from-blue-500 to-sky-400 rounded-2xl p-5 text-center shadow-lg text-white mb-4 transform hover:scale-[1.02] transition-transform border border-sky-300 shrink-0 z-10 relative">
-                    <h3 class="text-sm font-bold text-sky-100 mb-1">會考大日子 (2027-05-22)</h3>
-                    <div class="text-5xl font-black drop-shadow-md mb-2">${examDaysLeft >= 0 ? examDaysLeft : 0} <span class="text-xl">天</span></div>
-                    <div class="text-xs bg-black/20 rounded-full inline-block px-3 py-1 font-bold">🎯 決戰時刻</div>
-                </div>
-                <h4 class="font-bold text-blue-800 mb-2 flex items-center gap-2 shrink-0 z-10 relative pl-1">🗓️ 考試日程提醒</h4>
-                <div class="marquee-container flex-1 w-full relative z-0 pb-1">
-                    <div class="marquee-content space-y-3 pt-2 px-1">
-            `;
-            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
-            sortedDates.forEach((item) => {
-                const days = getDaysLeft(item.date);
-                if (days >= 0) {
-                    html += `
-                        <div class="bg-white p-3 rounded-xl border border-sky-100 shadow-sm flex justify-between items-center relative overflow-hidden group">
-                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-400"></div>
-                            <div class="pl-2">
-                                <div class="text-sm font-bold text-gray-700">${item.title}</div>
-                                <div class="text-[10px] text-gray-400 font-mono mt-0.5">${item.date}</div>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-xl font-black ${days <= 7 ? 'text-red-500' : 'text-blue-500'}">${days}</span>
-                                <span class="text-xs text-gray-500">天</span>
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-            html += `</div></div>`;
-            container.innerHTML = html;
-        };
-
-        window.renderChat = () => {
-            const container = document.getElementById('chat-messages');
-            if(!container) return;
-            container.innerHTML = chatMessages.map(msg => {
-                const isMe = msg.user === username;
-                const displayName = usersProfile[msg.user]?.nickname || msg.user;
-                return `
-                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                        <span class="text-[10px] text-gray-400 mb-0.5 px-1">${displayName}</span>
-                        <div class="${isMe ? 'chat-bubble-me border border-blue-100' : 'chat-bubble-other border border-pink-100'} px-3 py-2 text-gray-700 shadow-sm inline-block max-w-[90%] break-words">
-                            ${msg.text}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            container.scrollTop = container.scrollHeight;
-        };
-
-        window.changeMonth = (delta) => {
-            currentMonth += delta;
-            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-            if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-            window.renderMainContent();
-        };
-
-        window.changeViewingUser = (user) => {
-            viewingUser = user;
-            window.renderCalendar();
-        };
-
-        window.renderCalendar = () => {
-            const container = document.getElementById('calendar-grid');
-            const headerContainer = document.getElementById('calendar-header-container');
-            if(!container || !headerContainer) return;
-
-            headerContainer.innerHTML = `
-                <h2 class="text-xl md:text-2xl font-black text-blue-600 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
-                <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-blue-800 bg-blue-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
-                    <option value="ALL" ${viewingUser === 'ALL' ? 'selected' : ''}>🌍 全員排程總覽</option>
-                    ${globalUsers.map((u, idx) => {
-                        const dispName = usersProfile[u]?.nickname || u;
-                        const isMe = u === username ? ' (我)' : '';
-                        return `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>👀 ${dispName}${isMe} 的排程</option>`;
-                    }).join('')}
-                </select>
-            `;
-
-            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            const startPad = firstDay === 0 ? 6 : firstDay - 1;
-
-            let html = `<div class="grid grid-cols-7 gap-1 md:gap-2 mb-2 shrink-0">`;
-            ['一', '二', '三', '四', '五', '六', '日'].forEach((d, idx) => {
-                const isWeekend = idx >= 5;
-                html += `<div class="text-center font-bold ${isWeekend ? 'text-blue-500 bg-blue-50' : 'text-gray-600 bg-gray-100'} py-1 md:py-1.5 text-sm md:text-base rounded-lg md:rounded-xl shadow-sm border border-gray-200">${d}</div>`;
-            });
-            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[100px] md:auto-rows-[130px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
-
-            for(let i=0; i<startPad; i++) html += `<div class="bg-transparent rounded-xl md:rounded-2xl border border-transparent"></div>`;
-
-            for(let d=1; d<=daysInMonth; d++) {
-                const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                const isToday = dateStr === formatDate(new Date());
-                const isImportant = importantDates.find(i => i.date === dateStr);
-                
-                let usersWithDataToday = [];
-                Object.entries(allSchedules).forEach(([u, dates]) => {
-                    if (dates[dateStr] && Object.keys(dates[dateStr].slots || {}).length > 0) {
-                        if (viewingUser === 'ALL' || u === viewingUser) usersWithDataToday.push(u);
-                    }
-                });
-
-                const headerClass = isToday 
-                    ? 'bg-gradient-to-r from-blue-500 to-sky-500 text-white shadow-md' 
-                    : isImportant 
-                        ? 'bg-gradient-to-r from-orange-400 to-red-400 text-white shadow-md' 
-                        : 'bg-white border border-gray-200 text-gray-600';
-
-                // 日曆點擊邏輯：ALL -> 看自己的排程框 (其他人從動態看)；看特定人 -> 看特定人的排程框
-                const clickAction = (viewingUser === 'ALL') 
-                    ? `openScheduleModal('${dateStr}')` 
-                    : `viewOthersScore(event, '${viewingUser}', '${dateStr}')`;
-
-                let cellHTML = '';
-
-                if (viewingUser === 'ALL') {
-                    // ALL View: Show tiny avatars of who scheduled today
-                    const avatarsHtml = usersWithDataToday.map(u => `
-                        <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
-                             class="${getUserColor(u)} w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-[9px] md:text-[11px] font-bold shadow-sm cursor-pointer hover:scale-125 transition-transform flex-shrink-0 border border-white" 
-                             title="查看 ${usersProfile[u]?.nickname || u} 的排程">
-                            ${getAvatarChar(u)}
-                        </div>
-                    `).join('');
-
-                    cellHTML = `
-                        <div onclick="${clickAction}" class="bg-white border-2 border-sky-100 p-1.5 md:p-2 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-blue-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
-                            <div class="flex justify-between items-start shrink-0 mb-1 w-full">
-                                <span class="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass} shrink-0 shadow-sm">${d}</span>
-                                ${isImportant ? `<span class="text-[10px] md:text-xs drop-shadow-sm mt-1 group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
-                            </div>
-                            <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-wrap content-start gap-1 justify-center pt-1">
-                                ${avatarsHtml}
-                                ${usersWithDataToday.length === 0 ? '<div class="text-[10px] text-gray-300 w-full text-center mt-2">無排程</div>' : ''}
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    // Single User View: Show their actual slots
-                    let cellContent = '';
-                    const dayData = (allSchedules[viewingUser] && allSchedules[viewingUser][dateStr]) ? allSchedules[viewingUser][dateStr] : {slots:{}};
-                    const slots = dayData.slots || {};
-                    
-                    if (Object.keys(slots).length > 0) {
-                        cellContent = `<div class="flex flex-col gap-0.5 md:gap-1 w-full mt-1">`;
-                        // 依照時間排序
-                        const sortedTimes = Object.keys(slots).sort();
-                        sortedTimes.forEach(time => {
-                            const info = slots[time];
-                            const hexColor = SUBJECT_HEX_COLORS[info.subject] || SUBJECT_HEX_COLORS['default'];
-                            const safeColor = getSafeTextColor(info.subject);
-                            
-                            cellContent += `
-                                <div class="text-[9px] md:text-[10px] truncate px-1 py-0.5 rounded shadow-sm border border-transparent font-bold flex gap-1" 
-                                     style="background-color: ${hexColor}15; border-color: ${hexColor}30; color: ${safeColor};" 
-                                     title="${time} ${info.subject}: ${info.chapter}">
-                                    <span class="shrink-0 grayscale opacity-80">${info.emoji||'🔹'}</span>
-                                    <span class="truncate">${info.chapter}</span>
-                                </div>
-                            `;
-                        });
-                        cellContent += `</div>`;
-                    } else {
-                        cellContent = `<div class="flex h-full items-center justify-center text-[10px] text-gray-300 font-bold">空閒</div>`;
-                    }
-
-                    cellHTML = `
-                        <div onclick="${clickAction}" class="bg-white border-2 border-sky-100 p-1 md:p-1.5 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-blue-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
-                            <div class="flex justify-between items-start shrink-0 mb-0.5 w-full">
-                                <span class="w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full text-xs font-bold ${headerClass} shrink-0 shadow-sm">${d}</span>
-                                ${isImportant ? `<span class="text-[10px] drop-shadow-sm group-hover:scale-125 transition-transform shrink-0" title="${isImportant.title}">🔥</span>` : ''}
-                            </div>
-                            <div class="flex-1 overflow-y-auto custom-scrollbar relative">
-                                ${cellContent}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                html += cellHTML;
-            }
-            html += `</div>`;
-            container.innerHTML = html;
-        };
-
-        window.renderTimeline = () => {
-            const container = document.getElementById('timeline-feed');
-            if(!container) return;
-
-            const feed = [];
-            Object.entries(allSchedules).forEach(([u, dates]) => {
-                Object.entries(dates).forEach(([d, dayData]) => {
-                    const updateTime = dayData.updatedAt || d;
-                    const slotCount = Object.keys(dayData.slots || {}).length;
-                    if(slotCount > 0) {
-                        // 只顯示某天安排了幾項，避免洗版
-                        feed.push({ user: u, date: d, count: slotCount, updatedAt: updateTime });
-                    }
-                });
-            });
-
-            feed.sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-
-            if (feed.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-70"><div class="text-4xl mb-2">🍃</div><div class="text-sm font-bold">尚無排程動態</div></div>`;
-                return;
-            }
-
-            let html = '';
-            feed.slice(0, 30).forEach(item => { // Limit to recent 30
-                const isMe = item.user === username;
-                const displayName = usersProfile[item.user]?.nickname || item.user;
-
-                html += `
-                    <div class="p-3 rounded-xl border border-sky-100 shadow-sm bg-white relative group cursor-pointer hover:-translate-y-0.5 hover:shadow transition-all" onclick="viewOthersScore(null, '${item.user}', '${item.date}')">
-                        <div class="flex justify-between items-center mb-1.5">
-                            <span class="font-bold text-gray-700 flex items-center gap-1.5 text-xs">
-                                <div class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] ${getUserColor(item.user)}">${getAvatarChar(item.user)}</div>
-                                ${isMe ? '我' : displayName}
-                            </span>
-                            <span class="text-[10px] text-gray-400 font-mono">${item.updatedAt ? new Date(item.updatedAt).toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'}) : ''}</span>
-                        </div>
-                        <div class="text-sm text-gray-600 font-bold pl-5">
-                            更新了 <span class="text-blue-600 font-black">${item.date}</span> 的排程
-                            <span class="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded ml-1 text-xs border border-blue-100">共 ${item.count} 項</span>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        };
-
-        window.renderLeaderboard = () => {
-            const container = document.getElementById('leaderboard-feed');
-            if(!container) return;
-
-            let userStats = [];
-            globalUsers.forEach(u => {
-                let stats = { user: u, totalSlots: 0, lifeSlots: 0, studySlots: 0 };
-                const uSched = allSchedules[u] || {};
-                Object.values(uSched).forEach(dayObj => {
-                    const slots = dayObj.slots || {};
-                    Object.values(slots).forEach(item => {
-                        stats.totalSlots++;
-                        if(item.subject === '生活類') stats.lifeSlots++;
-                        else stats.studySlots++;
-                    });
-                });
-                userStats.push(stats);
-            });
-
-            // 依據「讀書時段數量」排序
-            userStats.sort((a, b) => b.studySlots - a.studySlots);
-
-            if (userStats.length === 0 || userStats[0].totalSlots === 0) {
-                container.innerHTML = `<div class="text-center text-gray-400 text-sm mt-4 font-bold">尚未有人建立排程</div>`;
-                return;
-            }
-
-            let html = '';
-            userStats.forEach((stat, index) => {
-                if (stat.totalSlots === 0) return;
-                let rankMedal = '';
-                if (index === 0) rankMedal = '🔥';
-                else if (index === 1) rankMedal = '🚀';
-                else if (index === 2) rankMedal = '⭐';
-                else rankMedal = `<span class="text-blue-700 bg-blue-100 rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-black shadow-inner">${index + 1}</span>`;
-
-                const displayName = usersProfile[stat.user]?.nickname || stat.user;
-
-                html += `
-                    <div onclick="openPublicProfile('${stat.user}')" class="bg-white rounded-xl p-2.5 border border-sky-100 shadow-sm flex items-center gap-2 relative hover:scale-[1.02] transition-transform cursor-pointer hover:border-blue-300">
-                        <div class="text-lg w-6 flex justify-center drop-shadow-sm shrink-0">${rankMedal}</div>
-                        <div class="flex-1 min-w-0 flex items-center gap-2">
-                            <div class="${getUserColor(stat.user)} w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0">
-                                ${getAvatarChar(stat.user)}
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="font-black text-gray-700 text-sm truncate">${displayName}</div>
-                                <div class="text-[10px] text-gray-400 flex gap-1 mt-0.5">
-                                    <span class="text-blue-500 font-bold">讀書 ${stat.studySlots}</span> |
-                                    <span class="text-purple-500 font-bold">生活 ${stat.lifeSlots}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        };
-
-        window.renderMainContent = () => {
-            if(window.renderCalendar) window.renderCalendar();
-            if(window.renderTimeline) window.renderTimeline();
-            if(window.renderLeaderboard) window.renderLeaderboard();
-            if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) {
-                window.renderAdminUsers();
-                window.renderAdminTextbookList();
-            }
-        };
-
-        // ==========================================
-        //  管理員面板邏輯 (含教科書編輯)
+        //  管理員面板邏輯
         // ==========================================
         window.openAdminPanel = () => {
             renderAdminDates();
@@ -1288,7 +1260,6 @@
             });
         };
 
-        // ... (Dates and Users admin functions remain the same as previous)
         window.renderAdminDates = () => {
             const container = document.getElementById('admin-dates-list');
             const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -1369,7 +1340,6 @@
                 delete newProfiles[userToDelete];
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: newProfiles });
                 
-                // Optional: Delete user's schedules
                 if (allSchedules[userToDelete]) {
                     const dates = Object.keys(allSchedules[userToDelete]);
                     for(let dateStr of dates) {
@@ -1383,13 +1353,12 @@
             }
         };
 
-        // Admin Textbook Management
         window.renderAdminTextbookList = () => {
             const sub = document.getElementById('admin-tb-subject-sel').value;
             const container = document.getElementById('admin-tb-list');
             const books = globalTextbooks[sub] || [];
             
-            document.getElementById('admin-tb-form').classList.add('hidden'); // Hide form initially
+            document.getElementById('admin-tb-form').classList.add('hidden'); 
             
             if (books.length === 0) {
                 container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold text-sm">此科目尚未建立任何書籍</div>`;
@@ -1487,7 +1456,6 @@
             if (!currentUser) return;
             const errHandler = (err) => console.warn("Firestore Listener Error:", err);
 
-            // Users
             if(unsubUsers) unsubUsers();
             unsubUsers = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), (snap) => {
                 globalUsers = snap.exists() ? (snap.data().users || []) : [];
@@ -1497,14 +1465,12 @@
                 }
             }, errHandler);
 
-            // Profiles
             if(unsubProfile) unsubProfile();
             unsubProfile = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), (snap) => {
                 usersProfile = snap.exists() ? (snap.data().profiles || {}) : {};
                 if(username) window.renderMainContent();
             }, errHandler);
 
-            // Dates
             if(unsubDates) unsubDates();
             unsubDates = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), (snap) => {
                 if(snap.exists()) {
@@ -1521,14 +1487,12 @@
                 if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) window.renderAdminDates();
             }, errHandler);
 
-            // Chat
             if(unsubChat) unsubChat();
             unsubChat = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), (snap) => {
                 if(snap.exists()) chatMessages = snap.data().messages || [];
                 if(username) window.renderChat();
             }, errHandler);
 
-            // Textbooks
             if(unsubTextbooks) unsubTextbooks();
             unsubTextbooks = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Textbooks'), (snap) => {
                 if(snap.exists()) {
@@ -1540,7 +1504,6 @@
                 if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) window.renderAdminTextbookList();
             }, errHandler);
 
-            // Schedules (New Structure)
             const schedCol = collection(db, 'artifacts', appId, 'public', 'data', 'Schedules');
             if(unsubSchedules) unsubSchedules();
             unsubSchedules = onSnapshot(schedCol, (snap) => {
@@ -1557,13 +1520,11 @@
                 allSchedules = newAllSchedules;
                 if(username) {
                     window.renderMainContent();
-                    // Re-render modal if open
                     if(!document.getElementById('schedule-modal').classList.contains('hidden')) {
-                        // Soft update to not interrupt user editing too aggressively, but sync read-only view
                         const isReadonly = (viewingUser !== 'ALL' && viewingUser !== username);
                         if (isReadonly) {
                             const targetDayData = (allSchedules[viewingUser] && allSchedules[viewingUser][scheduleModalState.date]) ? allSchedules[viewingUser][scheduleModalState.date] : {};
-                            scheduleModalState.currentDayData = JSON.parse(JSON.stringify(targetDayData));
+                            scheduleModalState.currentDayData = JSON.parse(JSON.stringify(targetDayData.slots || {}));
                             renderScheduleRightPanel();
                         }
                     }
@@ -1586,7 +1547,19 @@
         const initApp = async () => {
             window.renderApp();
 
+            const config = getStoredConfig();
+            if (!config || !config.apiKey) {
+                window.renderSetup();
+                return;
+            }
+
+            const fullConfig = { ...BASE_FIREBASE_CONFIG, apiKey: config.apiKey };
+
             try {
+                appInstance = initializeApp(fullConfig);
+                auth = getAuth(appInstance);
+                db = getFirestore(appInstance);
+
                 const initAuth = async () => {
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                         await signInWithCustomToken(auth, __initial_auth_token);
@@ -1599,13 +1572,27 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         currentUser = user;
-                        setupLoginListener();
-                        window.renderLogin();
+                        let savedUser = null;
+                        try { savedUser = localStorage.getItem('study_group_user'); } catch(e) {}
+                        
+                        if (savedUser) {
+                            doCompleteLogin(savedUser);
+                        } else {
+                            setupLoginListener();
+                            window.renderLogin();
+                        }
                     }
                 });
             } catch (error) {
                 console.error("Firebase 連線失敗:", error);
-                document.getElementById('app').innerHTML = `<div class="p-8 text-red-500 font-bold bg-white text-center">系統連線失敗，請稍後再試。<br>${error.message}</div>`;
+                document.getElementById('app').innerHTML = `
+                    <div class="p-8 flex flex-col items-center justify-center h-full">
+                        <div class="text-red-500 font-bold bg-white p-6 rounded-2xl shadow-lg border border-red-200 text-center">
+                            <div class="text-4xl mb-3">⚠️</div>
+                            系統連線失敗，請檢查 API Key 是否正確。<br><span class="text-xs text-gray-500 mt-2 block">${error.message}</span>
+                            <button onclick="try{localStorage.removeItem('study_group_firebase_config');}catch(e){} window.location.reload();" class="mt-4 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg font-bold border border-red-200 transition-colors">重新設定 API Key</button>
+                        </div>
+                    </div>`;
             }
         };
 
