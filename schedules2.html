@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>國中會考複習進度排程</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (用於在瀏覽器中編譯 JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* 隱藏捲軸但保留滾動功能 */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+    <div id="root"></div>
+
+    <!-- React 應用程式代碼 -->
+    <script type="text/babel" data-type="module">
+        const { useState, useEffect, useCallback, useMemo } = React;
+
+        // --- 1. SVG 圖示元件 (無須依賴外部套件) ---
+        const Icon = ({ children, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+        const SettingsIcon = (p) => <Icon {...p}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></Icon>;
+        const SaveIcon = (p) => <Icon {...p}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></Icon>;
+        const CheckCircleIcon = (p) => <Icon {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></Icon>;
+        const CircleIcon = (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/></Icon>;
+        const BookOpenIcon = (p) => <Icon {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></Icon>;
+        const AlertCircleIcon = (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></Icon>;
+        const RefreshIcon = (p) => <Icon {...p}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></Icon>;
+        const LogOutIcon = (p) => <Icon {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></Icon>;
+
+        // --- 2. 應用程式設定與資料 ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-scheduler-app';
+        const BASE_FIREBASE_CONFIG = {
+            authDomain: "chinese-learning-47f4d.firebaseapp.com",
+            projectId: "chinese-learning-47f4d",
+            storageBucket: "chinese-learning-47f4d.firebasestorage.app",
+            messagingSenderId: "76289812052",
+            appId: "1:76289812052:web:898384a916f9f341f62fc1"
+        };
+
+        const TEXTBOOKS = {
+            "國文": [
+                { "id": "c1", "name": "麻辣講義", "chapters": [
+                    "單元1 第一冊 (1~5課)", "單元2 第一冊 (6~10課 自學課)", "單元3 第一冊 (主題專區 含語文常識)",
+                    "單元4 第二冊 (1~5課)", "單元5 第二冊 (6~10課 自學課)", "單元6 第二冊 (主題專區 含語文常識)",
+                    "會考模擬試題 1~2冊", "單元7 第三冊 (1~5課)", "單元8 第三冊 (6~10課 自學課)",
+                    "單元9 第三冊 (主題專區 含語文常識)", "單元10 第四冊 (1~5課)", "單元11 第四冊 (6~10課 自學課)",
+                    "單元12 第四冊 (主題專區 含語文常識)", "會考模擬試題 1~4冊", "單元13 第五冊 (1~5課)",
+                    "單元14 第五冊 (6~10課 自學課)", "單元15 第五冊 (主題專區 含語文常識)", "會考模擬試題 1~5冊",
+                    "單元16 第六冊 (1~5課)", "單元17 第六冊 (6課 自學課)", "單元18 第六冊 (主題專區)",
+                    "會考模擬試題 1~6冊"
+                ]}
+            ],
+            "英文": [
+                { "id": "e1", "name": "超會考", "chapters": [
+                    "單元1 第一冊 (1~3課)", "單元2 第一冊 (4~6課)", 
+                    "單元3 第二冊 (1~2課)", "單元4 第二冊 (3~4課)", "單元5 第二冊 (5~6課)", 
+                    "會考模擬試題 1~2冊", 
+                    "單元6 第三冊 (1~2課)", "單元7 第三冊 (3~4課)", "單元8 第三冊 (5~6課)", 
+                    "會考模擬試題 1~3冊", 
+                    "單元9 第四冊 (1~2課)", "單元10 第四冊 (3~4課)", "單元11 第四冊 (5~6課)", 
+                    "會考模擬試題 1~4冊", 
+                    "單元12 第五冊 (1~2課)", "單元13 第五冊 (3~4課)", "單元14 第五冊 (5~6課)", 
+                    "會考模擬試題 1~5冊", 
+                    "單元15 第六冊 (1~2課)", "單元16 第六冊 (3~4課)", 
+                    "會考模擬試題 1~6冊"
+                ]}
+            ],
+            "數學": [
+                { "id": "m1", "name": "麻辣講義", "chapters": [
+                    "單元1 第一冊 (整數的運算)", "單元2 第一冊 (分數的運算)", "單元3 第一冊 (一元一次方程式)",
+                    "單元4 第二冊 (二元一次聯立方程式)", "單元5 第二冊 (二元一次方程式的圖形)", "單元6 第二冊 (比與比例式)",
+                    "單元7 第二冊 (一元一次不等式)", "單元8 第二冊 (線對稱與三視圖)", "單元9 第二冊 (統計圖表與資料整理)",
+                    "會考模擬試題 1~2冊",
+                    "單元10 第三冊 (乘法公式與多項式)", "單元11 第三冊 (平方根與畢氏定理)", "單元12 第三冊 (因式分解與一元二次方程式)",
+                    "單元13 第四冊 (數列與級數)", "單元14 第四冊 (線型函數)", "單元15 第四冊 (三角形的基本性質)", "單元16 第四冊 (平行與四邊形)",
+                    "會考模擬試題 1~4冊",
+                    "單元17 第五冊 (連比例與相似形)", "單元18 第五冊 (圓)", "單元19 第五冊 (推理證明與三角形的心)",
+                    "單元20 第六冊 (二次函數)", "單元21 第六冊 (統計與機率)", "單元22 第六冊 (立體圖形)",
+                    "會考模擬試題 1~6冊"
+                ]}
+            ],
+            "生物": [
+                { "id": "b1", "name": "麻辣講義", "chapters": [
+                    "單元1 第一冊 (生命世界)", "單元2 第一冊 (養分)", "單元3 第一冊 (生物的運輸與防禦)",
+                    "單元4 第一冊 (生物的協調作用)", "單元5 第一冊 (生物的恆定性)", "單元6 第二冊 (生殖)",
+                    "單元7 第二冊 (遺傳)", "單元8 第二冊 (地球上的生物)", "單元9 第二冊 (生物與環境)"
+                ]},
+                { "id": "b2", "name": "大滿貫", "chapters": [
+                    "單元1 第一冊 (科學方法與生命的組成)", "單元2 第一冊 (養分)", "單元3 第一冊 (運輸與防禦)",
+                    "單元4 第一冊 (協調作用)", "單元5 第一冊 (恆定)", "單元6 第二冊 (生殖)",
+                    "單元7 第二冊 (遺傳)", "單元8 第二冊 (演化與分類)", "單元9 第二冊 (生態系與環境保護)",
+                    "會考模擬試題 1~2冊"
+                ]}
+            ],
+            "理化": [
+                { "id": "p1", "name": "大滿貫", "chapters": [
+                    "單元1 第三冊 (基本測量與科學方法)", "單元2 第三冊 (物質與能)", "單元3 第三冊 (波動與聲音)",
+                    "單元4 第三冊 (光)", "單元5 第三冊 (溫度與熱)", "單元6 第三冊 (原子與分子的反應世界)",
+                    "單元7 第四冊 (化學計量/化學反應/氧化還原)", "單元8 第四冊 (酸鹼鹽)", "單元9 第四冊 (反應速率與反應平衡)",
+                    "單元10 第四冊 (有機化合物)", "單元11 第四冊 (力與壓力)", "會考模擬試題 3~4冊",
+                    "單元12 第五冊 (直線運動)", "單元13 第五冊 (力與運動)", "單元14 第五冊 (功與能)",
+                    "單元15 第五冊 (電)", "單元16 第六冊 (電與生活)", "單元17 第六冊 (電化學與電池)",
+                    "單元18 第六冊 (磁)", "會考模擬試題 5~6冊"
+                ]}
+            ],
+            "地球科學": [
+                { "id": "earth1", "name": "大滿貫", "chapters": [
+                    "單元1 第五冊 地表環境與資源", "單元2 第五冊 固體地球的變動", "單元3 第五冊 我們的宇宙",
+                    "單元4 第六冊 大氣變化", "單元5 第六冊 永續的地球", "會考模擬試題 5~6冊"
+                ]}
+            ],
+            "歷史": [
+                { "id": "h1", "name": "大滿貫", "chapters": [
+                    "單元1 第一冊 (史前~大航海時代的台灣)", "單元2 第一冊 (清帝國統治下的台灣)", "單元3 第二冊 (日治時期的台灣)",
+                    "單元4 第二冊 (戰後台灣)", "會考模擬試題 1~2冊",
+                    "單元5 第三冊 (商周至隋唐時期)", "單元6 第三冊 (宋元與明清時期)", "單元7 第三冊 (西力衝擊下的晚清與東亞)",
+                    "單元8 第四冊 (中華民國的建立與社會變遷)", "單元9 第四冊 (現代國家的挑戰與變局)", "單元10 第四冊 (共黨政權在中國與當代東亞的局勢)",
+                    "會考模擬試題 1~4冊",
+                    "單元11 第五冊 (多元並立的古代文化)", "單元12 第五冊 (普世宗教與近代歐洲的興起)", "單元13 第五冊 (近代歐洲的變革與現代世界的形成)",
+                    "單元14 第六冊 (現代國家的誕生與第一次世界大戰)", "單元15 第六冊 (第二次世界大戰與戰後發展)",
+                    "會考模擬試題 1~6冊"
+                ]}
+            ],
+            "地理": [
+                { "id": "g1", "name": "KO會考", "chapters": [
+                    "單元1 第一冊 臺灣的位置與範圍", "單元2 第一冊 臺灣的地形、海岸與離島", "單元3 第一冊 臺灣的天氣、氣候與水文",
+                    "單元4 第二冊 臺灣的人口與文化", "單元5 第二冊 臺灣的產業", "單元6 第二冊 臺灣的聚落、交通與區域發展",
+                    "會考模擬試題 1~2冊", "單元7 第三冊 中國的自然環境與人口", "單元8 第三冊 中國的產業、經濟發展與全球關聯",
+                    "單元9 第三冊 全球氣候概述、東北亞", "單元10 第四冊 東南亞與南亞", "單元11 第四冊 西亞與北非", "單元12 第四冊 漠南非洲",
+                    "會考模擬試題 1~4冊", "單元13 第五冊 歐洲與俄羅斯", "單元14 第五冊 美洲", "單元15 第五冊 大洋洲、兩極與氣候變遷",
+                    "單元16 第六冊 臺灣的地名文化、產業與食品安全", "會考模擬試題 1~6冊"
+                ]}
+            ],
+            "公民": [
+                { "id": "ct1", "name": "大滿貫", "chapters": [
+                    "單元1 第一冊 公民身分、人性尊嚴與性別", "單元2 第一冊 家庭、學校與部落", "單元3 第二冊 文化與社會規範、結社",
+                    "單元4 第二冊 公共意見、公平正義與社會福利", "會考模擬試題 1~2冊", "單元5 第三冊 國家、憲法與基本權利",
+                    "單元6 第三冊 法治與權力分立、中央政府", "單元7 第三冊 地方政府與政治參與", "單元8 第四冊 民法、刑法與行政法",
+                    "單元9 第四冊 權利救濟", "單元10 第四冊 青少年法律", "會考模擬試題 1~4冊", "單元11 第五冊 消費與生產",
+                    "單元12 第五冊 市場競爭與勞動參與", "單元13 第五冊 貨幣與國際貿易", "會考模擬試題 1~5冊",
+                    "單元14 第六冊 科技發展、全球化與國際參與", "會考模擬試題 1~6冊"
+                ]}
+            ]
+        };
+
+        const SUBJECT_COLORS = {
+            "國文": "bg-red-100 text-red-800 border-red-200",
+            "英文": "bg-orange-100 text-orange-800 border-orange-200",
+            "數學": "bg-blue-100 text-blue-800 border-blue-200",
+            "生物": "bg-green-100 text-green-800 border-green-200",
+            "理化": "bg-teal-100 text-teal-800 border-teal-200",
+            "地球科學": "bg-cyan-100 text-cyan-800 border-cyan-200",
+            "歷史": "bg-yellow-100 text-yellow-800 border-yellow-200",
+            "地理": "bg-lime-100 text-lime-800 border-lime-200",
+            "公民": "bg-purple-100 text-purple-800 border-purple-200",
+        };
+
+        // --- 3. React 主元件 ---
+        function App() {
+            const [apiKey, setApiKey] = useState(localStorage.getItem('study_firebase_api_key') || '');
+            const [showSettings, setShowSettings] = useState(!apiKey);
+            const [tempApiKey, setTempApiKey] = useState(apiKey);
+            
+            const [firebaseDb, setFirebaseDb] = useState(null);
+            const [user, setUser] = useState(null);
+            const [syncStatus, setSyncStatus] = useState('offline');
+            
+            const [activeSubject, setActiveSubject] = useState("國文");
+            const [progressData, setProgressData] = useState({});
+
+            // 初始化 Firebase
+            useEffect(() => {
+                if (!apiKey) return;
+                
+                let isMounted = true;
+                let unsubscribeAuth = null;
+
+                const initFirebase = async () => {
+                    try {
+                        setSyncStatus('syncing');
+                        // 動態載入 Firebase 模組
+                        const { initializeApp, getApps, getApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+                        const { getAuth, signInAnonymously, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+                        const { getFirestore } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+                        const config = { ...BASE_FIREBASE_CONFIG, apiKey };
+                        const app = getApps().length === 0 ? initializeApp(config) : getApp();
+                        const auth = getAuth(app);
+                        const db = getFirestore(app);
+                        
+                        if (isMounted) setFirebaseDb(db);
+
+                        // 先進行匿名登入 (遵循 RULE 3)
+                        await signInAnonymously(auth);
+
+                        unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+                            if (isMounted) setUser(currentUser);
+                        });
+                    } catch (error) {
+                        console.error("Firebase 初始設定失敗:", error);
+                        if (isMounted) setSyncStatus('error');
+                    }
+                };
+
+                initFirebase();
+
+                return () => {
+                    isMounted = false;
+                    if (unsubscribeAuth) unsubscribeAuth();
+                };
+            }, [apiKey]);
+
+            // 監聽 Firestore 資料
+            useEffect(() => {
+                if (!user || !firebaseDb) return;
+                
+                let isMounted = true;
+                let unsubscribeSnapshot = null;
+
+                const startSync = async () => {
+                    try {
+                        setSyncStatus('syncing');
+                        const { doc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                        
+                        // 遵循 RULE 1: 使用專屬的 user 路徑
+                        const docRef = doc(firebaseDb, 'artifacts', appId, 'users', user.uid, 'study_data', 'progress');
+
+                        unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
+                            if (docSnap.exists() && isMounted) {
+                                const data = docSnap.data();
+                                if (data && data.progress) {
+                                    setProgressData(data.progress);
+                                }
+                            }
+                            if (isMounted) setSyncStatus('synced');
+                        }, (error) => {
+                            console.error("Firestore 讀取失敗:", error);
+                            if (isMounted) setSyncStatus('error');
+                        });
+                    } catch (err) {
+                        console.error(err);
+                    }
+                };
+
+                startSync();
+
+                return () => {
+                    isMounted = false;
+                    if (unsubscribeSnapshot) unsubscribeSnapshot();
+                };
+            }, [user, firebaseDb]);
+
+            // 處理 API Key 儲存
+            const handleSaveApiKey = () => {
+                if (tempApiKey.trim()) {
+                    localStorage.setItem('study_firebase_api_key', tempApiKey.trim());
+                    setApiKey(tempApiKey.trim());
+                    setShowSettings(false);
+                    // 重新載入頁面以確保 Firebase 狀態乾淨重置
+                    window.location.reload(); 
+                }
+            };
+
+            // 清除 API Key 並登出
+            const handleClearApiKey = () => {
+                localStorage.removeItem('study_firebase_api_key');
+                setApiKey('');
+                setTempApiKey('');
+                setUser(null);
+                setFirebaseDb(null);
+                setSyncStatus('offline');
+                setProgressData({});
+                setShowSettings(true);
+            };
+
+            // 切換章節完成狀態
+            const toggleChapter = async (textbookId, chapterIndex) => {
+                const key = `${textbookId}_${chapterIndex}`;
+                const newValue = !progressData[key];
+                
+                // 樂觀更新 UI
+                const newProgressData = { ...progressData, [key]: newValue };
+                setProgressData(newProgressData);
+
+                // 同步至 Firestore
+                if (user && firebaseDb) {
+                    setSyncStatus('syncing');
+                    try {
+                        const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                        const docRef = doc(firebaseDb, 'artifacts', appId, 'users', user.uid, 'study_data', 'progress');
+                        // 使用 merge: true 避免覆蓋未來的其他欄位
+                        await setDoc(docRef, { progress: newProgressData }, { merge: true });
+                        setSyncStatus('synced');
+                    } catch (error) {
+                        console.error("進度儲存失敗:", error);
+                        setSyncStatus('error');
+                        // 失敗則還原進度
+                        setProgressData(progressData);
+                    }
+                }
+            };
+
+            // 計算科目整體進度
+            const getSubjectProgress = (subjectName) => {
+                const textbooks = TEXTBOOKS[subjectName];
+                let total = 0;
+                let completed = 0;
+
+                textbooks.forEach(tb => {
+                    tb.chapters.forEach((_, idx) => {
+                        total++;
+                        if (progressData[`${tb.id}_${idx}`]) {
+                            completed++;
+                        }
+                    });
+                });
+
+                return { total, completed, percentage: total === 0 ? 0 : Math.round((completed / total) * 100) };
+            };
+
+            // 內部小元件：進度條
+            const ProgressBar = ({ percentage, colorClass }) => (
+                <div className="w-full bg-slate-200 rounded-full h-2.5 mt-2 overflow-hidden">
+                    <div className={`h-2.5 rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${percentage}%` }}></div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen pb-20 md:pb-6">
+                    {/* 頂部導航列 */}
+                    <header className="bg-white shadow-sm sticky top-0 z-10">
+                        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-indigo-600">
+                                <BookOpenIcon size={24} className="stroke-[2.5]" />
+                                <h1 className="font-bold text-lg md:text-xl tracking-tight">會考複習進度</h1>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                                {/* 同步狀態指示器 */}
+                                <div className="hidden md:flex items-center gap-1.5 text-xs font-medium px-2 py-1.5 rounded-md bg-slate-100">
+                                    {syncStatus === 'offline' && <><AlertCircleIcon size={14} className="text-slate-400"/> 未連線</>}
+                                    {syncStatus === 'syncing' && <><RefreshIcon size={14} className="text-blue-500 animate-spin"/> 同步中</>}
+                                    {syncStatus === 'synced' && <><CheckCircleIcon size={14} className="text-green-600"/> 已同步</>}
+                                    {syncStatus === 'error' && <><AlertCircleIcon size={14} className="text-red-500"/> 同步失敗</>}
+                                </div>
+                                
+                                <button 
+                                    onClick={() => setShowSettings(true)}
+                                    className="p-2 text-slate-500 hover:bg-slate-100 hover:text-indigo-600 rounded-full transition-colors relative"
+                                    title="設定"
+                                >
+                                    <SettingsIcon size={22} />
+                                    {!apiKey && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>}
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-5xl mx-auto px-4 py-6">
+                        
+                        {/* 科目選擇標籤 (橫向滾動) */}
+                        <div className="flex overflow-x-auto pb-4 mb-6 hide-scrollbar gap-2.5 snap-x">
+                            {Object.keys(TEXTBOOKS).map(subject => {
+                                const progress = getSubjectProgress(subject);
+                                const isActive = activeSubject === subject;
+                                const colors = SUBJECT_COLORS[subject];
+                                
+                                return (
+                                    <button
+                                        key={subject}
+                                        onClick={() => setActiveSubject(subject)}
+                                        className={`snap-start shrink-0 px-4 py-3 rounded-xl border-2 transition-all flex flex-col items-start min-w-[120px] shadow-sm
+                                            ${isActive ? colors : 'border-slate-200 bg-white hover:border-slate-300 text-slate-600'}
+                                        `}
+                                    >
+                                        <span className="font-bold mb-1 text-[15px]">{subject}</span>
+                                        <div className="w-full flex items-center justify-between text-xs mt-auto">
+                                            <span>{progress.completed}/{progress.total}</span>
+                                            <span className="font-semibold">{progress.percentage}%</span>
+                                        </div>
+                                        <ProgressBar 
+                                            percentage={progress.percentage} 
+                                            colorClass={isActive ? 'bg-current opacity-50' : 'bg-slate-300'} 
+                                        />
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* 當前科目的章節內容 */}
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-2xl font-bold flex items-center gap-2">
+                                    <span className="w-1.5 h-6 bg-indigo-500 rounded-full inline-block"></span>
+                                    {activeSubject} 清單
+                                </h2>
+                                <span className="text-slate-500 text-sm font-medium bg-slate-100 px-3 py-1 rounded-full">
+                                    共 {getSubjectProgress(activeSubject).total} 個進度
+                                </span>
+                            </div>
+
+                            {TEXTBOOKS[activeSubject].map((textbook) => {
+                                // 計算單一講義的進度
+                                let tbCompleted = 0;
+                                textbook.chapters.forEach((_, idx) => {
+                                    if (progressData[`${textbook.id}_${idx}`]) tbCompleted++;
+                                });
+                                const tbTotal = textbook.chapters.length;
+                                const tbPercentage = Math.round((tbCompleted / tbTotal) * 100);
+
+                                return (
+                                    <div key={textbook.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                        <div className="bg-slate-50 px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            <div>
+                                                <h3 className="font-bold text-lg text-slate-800">{textbook.name}</h3>
+                                                <p className="text-xs text-slate-500 mt-1 font-mono">ID: {textbook.id.toUpperCase()}</p>
+                                            </div>
+                                            <div className="flex items-center gap-4 w-full sm:w-auto bg-white p-2 sm:p-0 sm:bg-transparent rounded-lg border sm:border-0 border-slate-100">
+                                                <div className="text-right flex-1 sm:flex-none">
+                                                    <div className="text-sm font-bold text-indigo-700">{tbPercentage}%</div>
+                                                    <div className="text-xs text-slate-500">{tbCompleted} / {tbTotal}</div>
+                                                </div>
+                                                <div className="w-24 shrink-0 hidden sm:block">
+                                                    <ProgressBar percentage={tbPercentage} colorClass="bg-indigo-500" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="p-3 sm:p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+                                            {textbook.chapters.map((chapter, index) => {
+                                                const isChecked = !!progressData[`${textbook.id}_${index}`];
+                                                return (
+                                                    <button
+                                                        key={index}
+                                                        onClick={() => toggleChapter(textbook.id, index)}
+                                                        className={`flex items-start gap-3 p-3.5 rounded-xl transition-all text-left border shadow-sm
+                                                            ${isChecked 
+                                                                ? 'bg-indigo-50 border-indigo-200 text-indigo-900' 
+                                                                : 'bg-white border-slate-100 hover:border-slate-300 text-slate-700'
+                                                            }
+                                                        `}
+                                                    >
+                                                        <div className="mt-0.5 shrink-0">
+                                                            {isChecked ? (
+                                                                <CheckCircleIcon className="text-indigo-600 drop-shadow-sm" size={20} />
+                                                            ) : (
+                                                                <CircleIcon className="text-slate-300" size={20} />
+                                                            )}
+                                                        </div>
+                                                        <span className={`text-[15px] leading-snug ${isChecked ? 'line-through opacity-60' : 'font-medium'}`}>
+                                                            {chapter}
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </main>
+
+                    {/* 設定面板 Modal */}
+                    {showSettings && (
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+                                <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-5 text-white">
+                                    <h3 className="font-bold text-xl flex items-center gap-2">
+                                        <SettingsIcon size={22} />
+                                        雲端同步設定
+                                    </h3>
+                                    <p className="text-indigo-100 text-sm mt-1.5">輸入 Firebase API Key 來啟用跨裝置進度同步。</p>
+                                </div>
+                                
+                                <div className="p-6 space-y-5">
+                                    {!apiKey && (
+                                        <div className="bg-amber-50 text-amber-800 p-4 rounded-xl flex gap-3 items-start border border-amber-200">
+                                            <AlertCircleIcon size={20} className="shrink-0 mt-0.5 text-amber-600" />
+                                            <div className="text-sm">
+                                                <p className="font-bold mb-1">尚未設定 API Key</p>
+                                                <p className="text-amber-700/90 leading-relaxed">目前資料僅暫存於記憶體，重新載入將會遺失。請填入您的 API Key 啟用雲端功能。</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-slate-700 block">Firebase API Key</label>
+                                        <input 
+                                            type="text" 
+                                            value={tempApiKey}
+                                            onChange={(e) => setTempApiKey(e.target.value)}
+                                            placeholder="請輸入 AIzaSyB... 格式的金鑰"
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white outline-none font-mono text-sm transition-all"
+                                        />
+                                        <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1">
+                                            <Icon size={14}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></Icon>
+                                            金鑰將安全地儲存在您的瀏覽器中 (localStorage)。
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                                    {apiKey ? (
+                                        <button 
+                                            onClick={handleClearApiKey}
+                                            className="text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5"
+                                        >
+                                            <LogOutIcon size={18} />
+                                            清除並登出
+                                        </button>
+                                    ) : <div></div>}
+                                    
+                                    <div className="flex gap-2">
+                                        {apiKey && (
+                                            <button 
+                                                onClick={() => setShowSettings(false)}
+                                                className="px-4 py-2 text-slate-600 hover:bg-slate-200 bg-slate-100 rounded-xl text-sm font-bold transition-colors"
+                                            >
+                                                取消
+                                            </button>
+                                        )}
+                                        <button 
+                                            onClick={handleSaveApiKey}
+                                            disabled={!tempApiKey.trim()}
+                                            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <SaveIcon size={18} />
+                                            儲存設定
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // 渲染 React 應用
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
