@@ -79,11 +79,125 @@
             color: #FF0000 !important;
             text-shadow: 0 0 5px #FFFF00, 0 0 10px #FFFF00, 0 0 15px #FFFF00 !important;
         }
-
-        /* 新增：隱藏橫向滾動條，適用於手機版導覽列 */
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
+
+    <script type="application/json" id="app-data">
+    {
+      "EXAM_DATE": "2027-05-22T00:00:00",
+      "SUBJECTS": ["國文", "英文", "數學", "生物", "理化", "地球科學", "歷史", "地理", "公民", "自然", "社會"],
+      "SUB_SUBJECTS": {
+        "自然": ["自然合科", "地科"],
+        "社會": ["社會合科", "地理", "公民"]
+      },
+      "TEXTBOOKS": {
+        "國文": [
+          { "id": "c1", "name": "麻辣講義", "img": "images/c1.jpg", "chapters": [
+            "單元1 第一冊 (1~5課)", "單元2 第一冊 (6~10課 自學課)", "單元3 第一冊 (主題專區 含語文常識)",
+            "單元4 第二冊 (1~5課)", "單元5 第二冊 (6~10課 自學課)", "單元6 第二冊 (主題專區 含語文常識)",
+            "會考模擬試題 1~2冊", "單元7 第三冊 (1~5課)", "單元8 第三冊 (6~10課 自學課)",
+            "單元9 第三冊 (主題專區 含語文常識)", "單元10 第四冊 (1~5課)", "單元11 第四冊 (6~10課 自學課)",
+            "單元12 第四冊 (主題專區 含語文常識)", "會考模擬試題 1~4冊", "單元13 第五冊 (1~5課)",
+            "單元14 第五冊 (6~10課 自學課)", "單元15 第五冊 (主題專區 含語文常識)", "會考模擬試題 1~5冊",
+            "單元16 第六冊 (1~5課)", "單元17 第六冊 (6課 自學課)", "單元18 第六冊 (主題專區)",
+            "會考模擬試題 1~6冊"
+          ]}
+        ],
+        "英文": [
+          { "id": "e1", "name": "超會考", "img": "images/e1.jpg", "chapters": [
+            "單元1 第一冊 (1~3課)", "單元2 第一冊 (4~6課)", 
+            "單元3 第二冊 (1~2課)", "單元4 第二冊 (3~4課)", "單元5 第二冊 (5~6課)", 
+            "會考模擬試題 1~2冊", 
+            "單元6 第三冊 (1~2課)", "單元7 第三冊 (3~4課)", "單元8 第三冊 (5~6課)", 
+            "會考模擬試題 1~3冊", 
+            "單元9 第四冊 (1~2課)", "單元10 第四冊 (3~4課)", "單元11 第四冊 (5~6課)", 
+            "會考模擬試題 1~4冊", 
+            "單元12 第五冊 (1~2課)", "單元13 第五冊 (3~4課)", "單元14 第五冊 (5~6課)", 
+            "會考模擬試題 1~5冊", 
+            "單元15 第六冊 (1~2課)", "單元16 第六冊 (3~4課)", 
+            "會考模擬試題 1~6冊"
+          ]}
+        ],
+        "數學": [
+          { "id": "m1", "name": "麻辣講義", "img": "images/m1.jpg", "chapters": [
+            "單元1 第一冊 (整數的運算)", "單元2 第一冊 (分數的運算)", "單元3 第一冊 (一元一次方程式)",
+            "單元4 第二冊 (二元一次聯立方程式)", "單元5 第二冊 (二元一次方程式的圖形)", "單元6 第二冊 (比與比例式)",
+            "單元7 第二冊 (一元一次不等式)", "單元8 第二冊 (線對稱與三視圖)", "單元9 第二冊 (統計圖表與資料整理)",
+            "會考模擬試題 1~2冊",
+            "單元10 第三冊 (乘法公式與多項式)", "單元11 第三冊 (平方根與畢氏定理)", "單元12 第三冊 (因式分解與一元二次方程式)",
+            "單元13 第四冊 (數列與級數)", "單元14 第四冊 (線型函數)", "單元15 第四冊 (三角形的基本性質)", "單元16 第四冊 (平行與四邊形)",
+            "會考模擬試題 1~4冊",
+            "單元17 第五冊 (連比例與相似形)", "單元18 第五冊 (圓)", "單元19 第五冊 (推理證明與三角形的心)",
+            "單元20 第六冊 (二次函數)", "單元21 第六冊 (統計與機率)", "單元22 第六冊 (立體圖形)",
+            "會考模擬試題 1~6冊"
+          ]}
+        ],
+        "生物": [
+          { "id": "b1", "name": "麻辣講義", "img": "images/b1.jpg", "chapters": [
+            "單元1 第一冊 (生命世界)", "單元2 第一冊 (養分)", "單元3 第一冊 (生物的運輸與防禦)",
+            "單元4 第一冊 (生物的協調作用)", "單元5 第一冊 (生物的恆定性)", "單元6 第二冊 (生殖)",
+            "單元7 第二冊 (遺傳)", "單元8 第二冊 (地球上的生物)", "單元9 第二冊 (生物與環境)"
+          ]},
+          { "id": "b2", "name": "大滿貫", "img": "images/b2.jpg", "chapters": [
+            "單元1 第一冊 (科學方法與生命的組成)", "單元2 第一冊 (養分)", "單元3 第一冊 (運輸與防禦)",
+            "單元4 第一冊 (協調作用)", "單元5 第一冊 (恆定)", "單元6 第二冊 (生殖)",
+            "單元7 第二冊 (遺傳)", "單元8 第二冊 (演化與分類)", "單元9 第二冊 (生態系與環境保護)",
+            "會考模擬試題 1~2冊"
+          ]}
+        ],
+        "理化": [
+          { "id": "p1", "name": "大滿貫", "img": "images/p1.jpg", "chapters": [
+            "單元1 第三冊 (基本測量與科學方法)", "單元2 第三冊 (物質與能)", "單元3 第三冊 (波動與聲音)",
+            "單元4 第三冊 (光)", "單元5 第三冊 (溫度與熱)", "單元6 第三冊 (原子與分子的反應世界)",
+            "單元7 第四冊 (化學計量/化學反應/氧化還原)", "單元8 第四冊 (酸鹼鹽)", "單元9 第四冊 (反應速率與反應平衡)",
+            "單元10 第四冊 (有機化合物)", "單元11 第四冊 (力與壓力)", "會考模擬試題 3~4冊",
+            "單元12 第五冊 (直線運動)", "單元13 第五冊 (力與運動)", "單元14 第五冊 (功與能)",
+            "單元15 第五冊 (電)", "單元16 第六冊 (電與生活)", "單元17 第六冊 (電化學與電池)",
+            "單元18 第六冊 (磁)", "會考模擬試題 5~6冊"
+          ]}
+        ],
+        "地球科學": [
+          { "id": "earth1", "name": "大滿貫", "img": "images/earth1.jpg", "chapters": [
+            "單元1 第五冊 地表環境與資源", "單元2 第五冊 固體地球的變動", "單元3 第五冊 我們的宇宙",
+            "單元4 第六冊 大氣變化", "單元5 第六冊 永續的地球", "會考模擬試題 5~6冊"
+          ]}
+        ],
+        "歷史": [
+          { "id": "h1", "name": "大滿貫", "img": "images/h1.jpg", "chapters": [
+            "單元1 第一冊 (史前~大航海時代的台灣)", "單元2 第一冊 (清帝國統治下的台灣)", "單元3 第二冊 (日治時期的台灣)",
+            "單元4 第二冊 (戰後台灣)", "會考模擬試題 1~2冊",
+            "單元5 第三冊 (商周至隋唐時期)", "單元6 第三冊 (宋元與明清時期)", "單元7 第三冊 (西力衝擊下的晚清與東亞)",
+            "單元8 第四冊 (中華民國的建立與社會變遷)", "單元9 第四冊 (現代國家的挑戰與變局)", "單元10 第四冊 (共黨政權在中國與當代東亞的局勢)",
+            "會考模擬試題 1~4冊",
+            "單元11 第五冊 (多元並立的古代文化)", "單元12 第五冊 (普世宗教與近代歐洲的興起)", "單元13 第五冊 (近代歐洲的變革與現代世界的形成)",
+            "單元14 第六冊 (現代國家的誕生與第一次世界大戰)", "單元15 第六冊 (第二次世界大戰與戰後發展)",
+            "會考模擬試題 1~6冊"
+          ]}
+        ],
+        "地理": [
+          { "id": "g1", "name": "KO會考", "img": "images/g1.jpg", "chapters": [
+            "單元1 第一冊 臺灣的位置與範圍", "單元2 第一冊 臺灣的地形、海岸與離島", "單元3 第一冊 臺灣的天氣、氣候與水文",
+            "單元4 第二冊 臺灣的人口與文化", "單元5 第二冊 臺灣的產業", "單元6 第二冊 臺灣的聚落、交通與區域發展",
+            "會考模擬試題 1~2冊", "單元7 第三冊 中國的自然環境與人口", "單元8 第三冊 中國的產業、經濟發展與全球關聯",
+            "單元9 第三冊 全球氣候概述、東北亞", "單元10 第四冊 東南亞與南亞", "單元11 第四冊 西亞與北非", "單元12 第四冊 漠南非洲",
+            "會考模擬試題 1~4冊", "單元13 第五冊 歐洲與俄羅斯", "單元14 第五冊 美洲", "單元15 第五冊 大洋洲、兩極與氣候變遷",
+            "單元16 第六冊 臺灣的地名文化、產業與食品安全", "會考模擬試題 1~6冊"
+          ]}
+        ],
+        "公民": [
+          { "id": "ct1", "name": "大滿貫", "img": "images/ct1.jpg", "chapters": [
+            "單元1 第一冊 公民身分、人性尊嚴與性別", "單元2 第一冊 家庭、學校與部落", "單元3 第二冊 文化與社會規範、結社",
+            "單元4 第二冊 公共意見、公平正義與社會福利", "會考模擬試題 1~2冊", "單元5 第三冊 國家、憲法與基本權利",
+            "單元6 第三冊 法治與權力分立、中央政府", "單元7 第三冊 地方政府與政治參與", "單元8 第四冊 民法、刑法與行政法",
+            "單元9 第四冊 權利救濟", "單元10 第四冊 青少年法律", "會考模擬試題 1~4冊", "單元11 第五冊 消費與生產",
+            "單元12 第五冊 市場競爭與勞動參與", "單元13 第五冊 貨幣與國際貿易", "會考模擬試題 1~5冊",
+            "單元14 第六冊 科技發展、全球化與國際參與", "會考模擬試題 1~6冊"
+          ]}
+        ]
+      },
+      "GRADES": ["A++", "A+", "A", "B++", "B+", "B", "C"],
+      "GRADE_WEIGHT": {"A++": 7, "A+": 6, "A": 5, "B++": 4, "B+": 3, "B": 2, "C": 1}
+    }
+    </script>
 </head>
 <body class="w-full flex flex-col overflow-hidden">
 
@@ -96,124 +210,8 @@
         import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ==========================================
-        //  系統設定與常數 (已修正空白字元解析問題，直接改為 JS Object)
+        //  系統設定與常數
         // ==========================================
-        const appData = {
-            "EXAM_DATE": "2027-05-22T00:00:00",
-            "SUBJECTS": ["國文", "英文", "數學", "生物", "理化", "地球科學", "歷史", "地理", "公民", "自然", "社會"],
-            "SUB_SUBJECTS": {
-                "自然": ["自然合科", "地科"],
-                "社會": ["社會合科", "地理", "公民"]
-            },
-            "TEXTBOOKS": {
-                "國文": [
-                    { "id": "c1", "name": "麻辣講義", "img": "images/c1.jpg", "chapters": [
-                        "單元1 第一冊 (1~5課)", "單元2 第一冊 (6~10課 自學課)", "單元3 第一冊 (主題專區 含語文常識)",
-                        "單元4 第二冊 (1~5課)", "單元5 第二冊 (6~10課 自學課)", "單元6 第二冊 (主題專區 含語文常識)",
-                        "會考模擬試題 1~2冊", "單元7 第三冊 (1~5課)", "單元8 第三冊 (6~10課 自學課)",
-                        "單元9 第三冊 (主題專區 含語文常識)", "單元10 第四冊 (1~5課)", "單元11 第四冊 (6~10課 自學課)",
-                        "單元12 第四冊 (主題專區 含語文常識)", "會考模擬試題 1~4冊", "單元13 第五冊 (1~5課)",
-                        "單元14 第五冊 (6~10課 自學課)", "單元15 第五冊 (主題專區 含語文常識)", "會考模擬試題 1~5冊",
-                        "單元16 第六冊 (1~5課)", "單元17 第六冊 (6課 自學課)", "單元18 第六冊 (主題專區)",
-                        "會考模擬試題 1~6冊"
-                    ]}
-                ],
-                "英文": [
-                    { "id": "e1", "name": "超會考", "img": "images/e1.jpg", "chapters": [
-                        "單元1 第一冊 (1~3課)", "單元2 第一冊 (4~6課)", 
-                        "單元3 第二冊 (1~2課)", "單元4 第二冊 (3~4課)", "單元5 第二冊 (5~6課)", 
-                        "會考模擬試題 1~2冊", 
-                        "單元6 第三冊 (1~2課)", "單元7 第三冊 (3~4課)", "單元8 第三冊 (5~6課)", 
-                        "會考模擬試題 1~3冊", 
-                        "單元9 第四冊 (1~2課)", "單元10 第四冊 (3~4課)", "單元11 第四冊 (5~6課)", 
-                        "會考模擬試題 1~4冊", 
-                        "單元12 第五冊 (1~2課)", "單元13 第五冊 (3~4課)", "單元14 第五冊 (5~6課)", 
-                        "會考模擬試題 1~5冊", 
-                        "單元15 第六冊 (1~2課)", "單元16 第六冊 (3~4課)", 
-                        "會考模擬試題 1~6冊"
-                    ]}
-                ],
-                "數學": [
-                    { "id": "m1", "name": "麻辣講義", "img": "images/m1.jpg", "chapters": [
-                        "單元1 第一冊 (整數的運算)", "單元2 第一冊 (分數的運算)", "單元3 第一冊 (一元一次方程式)",
-                        "單元4 第二冊 (二元一次聯立方程式)", "單元5 第二冊 (二元一次方程式的圖形)", "單元6 第二冊 (比與比例式)",
-                        "單元7 第二冊 (一元一次不等式)", "單元8 第二冊 (線對稱與三視圖)", "單元9 第二冊 (統計圖表與資料整理)",
-                        "會考模擬試題 1~2冊",
-                        "單元10 第三冊 (乘法公式與多項式)", "單元11 第三冊 (平方根與畢氏定理)", "單元12 第三冊 (因式分解與一元二次方程式)",
-                        "單元13 第四冊 (數列與級數)", "單元14 第四冊 (線型函數)", "單元15 第四冊 (三角形的基本性質)", "單元16 第四冊 (平行與四邊形)",
-                        "會考模擬試題 1~4冊",
-                        "單元17 第五冊 (連比例與相似形)", "單元18 第五冊 (圓)", "單元19 第五冊 (推理證明與三角形的心)",
-                        "單元20 第六冊 (二次函數)", "單元21 第六冊 (統計與機率)", "單元22 第六冊 (立體圖形)",
-                        "會考模擬試題 1~6冊"
-                    ]}
-                ],
-                "生物": [
-                    { "id": "b1", "name": "麻辣講義", "img": "images/b1.jpg", "chapters": [
-                        "單元1 第一冊 (生命世界)", "單元2 第一冊 (養分)", "單元3 第一冊 (生物的運輸與防禦)",
-                        "單元4 第一冊 (生物的協調作用)", "單元5 第一冊 (生物的恆定性)", "單元6 第二冊 (生殖)",
-                        "單元7 第二冊 (遺傳)", "單元8 第二冊 (地球上的生物)", "單元9 第二冊 (生物與環境)"
-                    ]},
-                    { "id": "b2", "name": "大滿貫", "img": "images/b2.jpg", "chapters": [
-                        "單元1 第一冊 (科學方法與生命的組成)", "單元2 第一冊 (養分)", "單元3 第一冊 (運輸與防禦)",
-                        "單元4 第一冊 (協調作用)", "單元5 第一冊 (恆定)", "單元6 第二冊 (生殖)",
-                        "單元7 第二冊 (遺傳)", "單元8 第二冊 (演化與分類)", "單元9 第二冊 (生態系與環境保護)",
-                        "會考模擬試題 1~2冊"
-                    ]}
-                ],
-                "理化": [
-                    { "id": "p1", "name": "大滿貫", "img": "images/p1.jpg", "chapters": [
-                        "單元1 第三冊 (基本測量與科學方法)", "單元2 第三冊 (物質與能)", "單元3 第三冊 (波動與聲音)",
-                        "單元4 第三冊 (光)", "單元5 第三冊 (溫度與熱)", "單元6 第三冊 (原子與分子的反應世界)",
-                        "單元7 第四冊 (化學計量/化學反應/氧化還原)", "單元8 第四冊 (酸鹼鹽)", "單元9 第四冊 (反應速率與反應平衡)",
-                        "單元10 第四冊 (有機化合物)", "單元11 第四冊 (力與壓力)", "會考模擬試題 3~4冊",
-                        "單元12 第五冊 (直線運動)", "單元13 第五冊 (力與運動)", "單元14 第五冊 (功與能)",
-                        "單元15 第五冊 (電)", "單元16 第六冊 (電與生活)", "單元17 第六冊 (電化學與電池)",
-                        "單元18 第六冊 (磁)", "會考模擬試題 5~6冊"
-                    ]}
-                ],
-                "地球科學": [
-                    { "id": "earth1", "name": "大滿貫", "img": "images/earth1.jpg", "chapters": [
-                        "單元1 第五冊 地表環境與資源", "單元2 第五冊 固體地球的變動", "單元3 第五冊 我們的宇宙",
-                        "單元4 第六冊 大氣變化", "單元5 第六冊 永續的地球", "會考模擬試題 5~6冊"
-                    ]}
-                ],
-                "歷史": [
-                    { "id": "h1", "name": "大滿貫", "img": "images/h1.jpg", "chapters": [
-                        "單元1 第一冊 (史前~大航海時代的台灣)", "單元2 第一冊 (清帝國統治下的台灣)", "單元3 第二冊 (日治時期的台灣)",
-                        "單元4 第二冊 (戰後台灣)", "會考模擬試題 1~2冊",
-                        "單元5 第三冊 (商周至隋唐時期)", "單元6 第三冊 (宋元與明清時期)", "單元7 第三冊 (西力衝擊下的晚清與東亞)",
-                        "單元8 第四冊 (中華民國的建立與社會變遷)", "單元9 第四冊 (現代國家的挑戰與變局)", "單元10 第四冊 (共黨政權在中國與當代東亞的局勢)",
-                        "會考模擬試題 1~4冊",
-                        "單元11 第五冊 (多元並立的古代文化)", "單元12 第五冊 (普世宗教與近代歐洲的興起)", "單元13 第五冊 (近代歐洲的變革與現代世界的形成)",
-                        "單元14 第六冊 (現代國家的誕生與第一次世界大戰)", "單元15 第六冊 (第二次世界大戰與戰後發展)",
-                        "會考模擬試題 1~6冊"
-                    ]}
-                ],
-                "地理": [
-                    { "id": "g1", "name": "KO會考", "img": "images/g1.jpg", "chapters": [
-                        "單元1 第一冊 臺灣的位置與範圍", "單元2 第一冊 臺灣的地形、海岸與離島", "單元3 第一冊 臺灣的天氣、氣候與水文",
-                        "單元4 第二冊 臺灣的人口與文化", "單元5 第二冊 臺灣的產業", "單元6 第二冊 臺灣的聚落、交通與區域發展",
-                        "會考模擬試題 1~2冊", "單元7 第三冊 中國的自然環境與人口", "單元8 第三冊 中國的產業、經濟發展與全球關聯",
-                        "單元9 第三冊 全球氣候概述、東北亞", "單元10 第四冊 東南亞與南亞", "單元11 第四冊 西亞與北非", "單元12 第四冊 漠南非洲",
-                        "會考模擬試題 1~4冊", "單元13 第五冊 歐洲與俄羅斯", "單元14 第五冊 美洲", "單元15 第五冊 大洋洲、兩極與氣候變遷",
-                        "單元16 第六冊 臺灣的地名文化、產業與食品安全", "會考模擬試題 1~6冊"
-                    ]}
-                ],
-                "公民": [
-                    { "id": "ct1", "name": "大滿貫", "img": "images/ct1.jpg", "chapters": [
-                        "單元1 第一冊 公民身分、人性尊嚴與性別", "單元2 第一冊 家庭、學校與部落", "單元3 第二冊 文化與社會規範、結社",
-                        "單元4 第二冊 公共意見、公平正義與社會福利", "會考模擬試題 1~2冊", "單元5 第三冊 國家、憲法與基本權利",
-                        "單元6 第三冊 法治與權力分立、中央政府", "單元7 第三冊 地方政府與政治參與", "單元8 第四冊 民法、刑法與行政法",
-                        "單元9 第四冊 權利救濟", "單元10 第四冊 青少年法律", "會考模擬試題 1~4冊", "單元11 第五冊 消費與生產",
-                        "單元12 第五冊 市場競爭與勞動參與", "單元13 第五冊 貨幣與國際貿易", "會考模擬試題 1~5冊",
-                        "單元14 第六冊 科技發展、全球化與國際參與", "會考模擬試題 1~6冊"
-                    ]}
-                ]
-            },
-            "GRADES": ["A++", "A+", "A", "B++", "B+", "B", "C"],
-            "GRADE_WEIGHT": {"A++": 7, "A+": 6, "A": 5, "B++": 4, "B+": 3, "B": 2, "C": 1}
-        };
-
         const BASE_FIREBASE_CONFIG = {
             authDomain: "chinese-learning-47f4d.firebaseapp.com",
             projectId: "chinese-learning-47f4d",
@@ -222,6 +220,8 @@
             appId: "1:76289812052:web:898384a916f9f341f62fc1"
         };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-group-app';
+        
+        const appData = JSON.parse(document.getElementById('app-data').textContent);
         
         const EXAM_DATE = new Date(appData.EXAM_DATE);
         const SUBJECTS = appData.SUBJECTS;
@@ -399,14 +399,8 @@
         // ==========================================
         //  UI 渲染函式 - 系統框架與登入
         // ==========================================
-        // 增強：加上初始狀態的 Loading 動畫提示
         window.renderApp = () => { 
-            document.getElementById('app').innerHTML = `
-                <div id="view-container" class="w-full h-full flex flex-col items-center justify-center relative overflow-hidden bg-white/20">
-                    <div class="text-teal-600 text-xl font-bold animate-pulse tracking-widest flex items-center gap-3">
-                        <span class="text-3xl">✨</span> 系統載入中，請稍候... <span class="text-3xl">🚀</span>
-                    </div>
-                </div>`; 
+            document.getElementById('app').innerHTML = `<div id="view-container" class="w-full h-full flex flex-col relative overflow-hidden bg-white/20"></div>`; 
             renderGlobalModals();
         };
 
@@ -438,7 +432,7 @@
         window.renderLogin = () => {
             const container = document.getElementById('view-container');
             container.innerHTML = `
-                <div class="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-y-auto w-full h-full">
+                <div class="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-y-auto">
                     <div class="glass-panel p-8 md:p-12 rounded-[2.5rem] shadow-2xl z-10 w-[36rem] max-w-[95vw] text-center border-4 border-pink-200 relative overflow-hidden">
                         <div class="absolute top-4 left-4 text-4xl animate-bounce-slow">✨</div>
                         <div class="absolute bottom-4 right-4 text-4xl animate-bounce-slow" style="animation-delay: 1s;">🎓</div>
@@ -488,94 +482,78 @@
         window.renderMain = () => {
             const container = document.getElementById('view-container');
             container.innerHTML = `
-                <!-- Desktop Floating Wrapper -->
-                <div class="w-full h-full md:p-4 lg:p-6 flex justify-center items-center bg-transparent">
-                    <div class="w-full h-full max-w-[1600px] flex flex-col md:rounded-[2.5rem] md:shadow-[0_10px_40px_rgba(255,192,203,0.4)] bg-white/80 backdrop-blur-xl md:border border-white overflow-hidden relative">
+                <div class="bg-white/80 backdrop-blur-md border-b-2 border-pink-200 p-3 flex justify-between items-center shadow-sm shrink-0 z-20 relative">
+                    <div class="flex items-center gap-4 pl-2">
+                        <div class="flex gap-2">
+                            <img src="school1.jpg" alt="雄中" class="w-full h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-10 bg-rose-50" onerror="this.style.display='none'">
+                            <img src="school2.jpg" alt="雄女" class="w-full h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-white shadow-sm z-0 bg-rose-50" onerror="this.style.display='none'">
+                        </div>
+                        <h1 class="text-2xl md:text-3xl font-black text-rose-500 tracking-wider hidden sm:block">邁向5A10+ 讀書會 🏆</h1>
+                        <h1 class="text-xl font-black text-rose-500 tracking-wider block sm:hidden">邁向5A10+</h1>
+                    </div>
+                    <div class="flex items-center gap-2 md:gap-3 pr-2 flex-wrap justify-end">
+                        ${isAdmin ? `<button onclick="openAdminPanel()" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-transform text-sm shrink-0 hidden lg:block">👑 管理員面板</button>` : ''}
                         
-                        <!-- Header -->
-                        <div class="bg-white/60 backdrop-blur-md border-b border-pink-200/60 p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center shadow-sm shrink-0 z-20 gap-3 sm:gap-0">
-                            <div class="flex items-center gap-3 pl-2 w-full sm:w-auto shrink-0 justify-between sm:justify-start">
-                                <div class="flex items-center gap-3">
-                                    <div class="flex gap-1">
-                                        <img src="school1.jpg" alt="雄中" class="w-10 h-10 md:w-14 md:h-14 object-contain rounded-full border-2 border-white shadow-sm z-10 bg-rose-50" onerror="this.style.display='none'">
-                                        <img src="school2.jpg" alt="雄女" class="w-10 h-10 md:w-14 md:h-14 object-contain rounded-full border-2 border-white shadow-sm z-0 bg-rose-50 -ml-3" onerror="this.style.display='none'">
-                                    </div>
-                                    <h1 class="text-xl md:text-2xl lg:text-3xl font-black text-rose-500 tracking-wider">邁向5A10+ <span class="hidden sm:inline">讀書會 🏆</span></h1>
-                                </div>
-                            </div>
-                            
-                            <!-- 橫向滑動的按鈕區 (針對手機優化) -->
-                            <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar w-full sm:w-auto pb-1 sm:pb-0 px-1 snap-x scroll-smooth justify-start sm:justify-end shrink-0">
-                                ${isAdmin ? `<button onclick="openAdminPanel()" class="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold px-3 py-1.5 rounded-xl shadow-sm hover:scale-105 transition-transform text-sm shrink-0 snap-start">👑 管理員面板</button>` : ''}
-                                
-                                <button onclick="openWeaknessModal()" class="font-bold text-red-700 bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 shadow-sm hover:bg-red-100 transition-colors text-sm flex items-center gap-1 shrink-0 snap-start">
-                                    🔥 <span class="inline">弱點集中營</span>
-                                </button>
+                        <button onclick="openWeaknessModal()" class="font-bold text-red-700 bg-red-50 px-2 md:px-3 py-1.5 rounded-lg border border-red-200 shadow-sm hover:bg-red-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            🔥 <span class="hidden md:inline">弱點集中營</span>
+                        </button>
 
-                                <button onclick="openProgressModal()" class="font-bold text-orange-700 bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-200 shadow-sm hover:bg-orange-100 transition-colors text-sm flex items-center gap-1 shrink-0 snap-start">
-                                    📈 <span class="inline">進度追蹤</span>
-                                </button>
-                                
-                                <button onclick="openAnalysisModal()" class="font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-200 shadow-sm hover:bg-indigo-100 transition-colors text-sm flex items-center gap-1 shrink-0 snap-start">
-                                    📊 <span class="inline">學科分析</span>
-                                </button>
-                                
-                                <button onclick="openProfileEditModal('${username}')" class="font-bold text-teal-700 bg-teal-50 px-3 py-1.5 rounded-xl border border-teal-200 shadow-sm hover:bg-teal-100 transition-colors text-sm flex items-center gap-1.5 shrink-0 snap-start">
-                                    <div class="${getUserColor(username)} w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-inner">${getAvatarChar(username)}</div>
-                                    <span class="inline">我的資料卡</span>
-                                </button>
-                                
-                                <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-3 py-1.5 rounded-xl transition-colors text-sm border border-rose-200 bg-white shadow-sm shrink-0 snap-start">登出 👋</button>
+                        <button onclick="openProgressModal()" class="font-bold text-orange-700 bg-orange-50 px-2 md:px-3 py-1.5 rounded-lg border border-orange-200 shadow-sm hover:bg-orange-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            📈 <span class="hidden md:inline">進度追蹤</span>
+                        </button>
+                        
+                        <button onclick="openAnalysisModal()" class="font-bold text-indigo-700 bg-indigo-50 px-2 md:px-3 py-1.5 rounded-lg border border-indigo-200 shadow-sm hover:bg-indigo-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            📊 <span class="hidden md:inline">學科分析</span>
+                        </button>
+                        
+                        <button onclick="openProfileEditModal('${username}')" class="font-bold text-teal-700 bg-teal-50 px-2 md:px-3 py-1.5 rounded-lg border border-teal-200 shadow-sm hover:bg-teal-100 transition-colors text-sm flex items-center gap-1 shrink-0">
+                            <div class="${getUserColor(username)} w-5 h-5 rounded-full flex items-center justify-center text-[10px]">${getAvatarChar(username)}</div>
+                            <span class="hidden md:inline">我的資料卡</span>
+                        </button>
+                        
+                        <button onclick="logout()" class="text-rose-500 hover:bg-rose-50 font-bold px-2 md:px-3 py-1.5 rounded-lg transition-colors text-sm border border-rose-200 bg-white shadow-sm shrink-0">登出 👋</button>
+                    </div>
+                </div>
+
+                <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                    <div class="w-full md:w-60 lg:w-72 flex flex-col bg-white/50 border-b-2 md:border-b-0 md:border-r-2 border-pink-100 z-10 shrink-0 h-full min-h-0">
+                        <div id="sidebar-countdowns" class="p-4 flex flex-col border-b-2 border-pink-100 shrink-0 h-[45%] min-h-[250px] relative overflow-hidden"></div>
+                        <div class="flex-1 flex flex-col bg-white/60 overflow-hidden relative min-h-0">
+                            <div class="bg-pink-100/50 p-2 text-center font-bold text-pink-600 border-b border-pink-100 text-sm shadow-sm shrink-0">💬 加油打氣留言板</div>
+                            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-sm relative min-h-0"></div>
+                            
+                            <div class="p-2 bg-white flex flex-col border-t border-pink-100 relative shrink-0">
+                                <div id="emoji-picker" class="hidden absolute bottom-full left-2 mb-2 bg-white border border-pink-200 p-2 rounded-xl shadow-lg grid grid-cols-5 gap-2 z-50">
+                                    ${['😀','😂','🥰','😎','🥺','💪','🔥','💯','📚','🎓','✨','🎉','📝','🏆','💖'].map(e => `<button onclick="insertEmoji('${e}')" class="text-xl hover:scale-125 transition-transform">${e}</button>`).join('')}
+                                </div>
+                                <div class="flex gap-1.5 items-center w-full">
+                                    <button id="emoji-toggle-btn" onclick="toggleEmojiPicker(event)" class="text-2xl hover:bg-pink-50 px-1 rounded-lg transition-colors shrink-0">😀</button>
+                                    <div class="flex-1 min-w-0">
+                                        <input type="text" id="chatInput" placeholder="說點什麼..." class="w-full px-3 py-2 rounded-lg border border-pink-200 focus:outline-none focus:border-pink-400 bg-gray-50 text-sm" onkeypress="if(event.key === 'Enter') sendChat()">
+                                    </div>
+                                    <button onclick="sendChat()" class="bg-pink-400 text-white px-3 py-2 rounded-lg font-bold hover:bg-pink-500 transition-colors shrink-0 whitespace-nowrap text-sm">送出</button>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Body Structure: Scrollable on mobile, fixed 3-columns on desktop -->
-                        <div class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden custom-scrollbar bg-gradient-to-br from-white/30 to-pink-50/20">
-                            
-                            <!-- Left Sidebar -->
-                            <div class="w-full md:w-60 lg:w-72 xl:w-80 flex flex-col bg-white/40 border-b md:border-b-0 md:border-r border-pink-200/50 z-10 shrink-0 md:h-full min-h-0">
-                                <div id="sidebar-countdowns" class="p-4 flex flex-col border-b border-pink-200/50 shrink-0 md:h-[45%] min-h-[250px] relative overflow-hidden"></div>
-                                <div class="flex-1 flex flex-col bg-white/20 overflow-hidden relative min-h-[400px] md:min-h-0">
-                                    <div class="bg-pink-100/40 p-2 text-center font-bold text-pink-600 border-b border-pink-100 text-sm shadow-sm shrink-0 backdrop-blur-sm">💬 加油打氣留言板</div>
-                                    <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-sm relative min-h-0"></div>
-                                    
-                                    <div class="p-2 bg-white/80 backdrop-blur-md flex flex-col border-t border-pink-100 relative shrink-0">
-                                        <div id="emoji-picker" class="hidden absolute bottom-full left-2 mb-2 bg-white border border-pink-200 p-2 rounded-xl shadow-lg grid grid-cols-5 gap-2 z-50">
-                                            ${['😀','😂','🥰','😎','🥺','💪','🔥','💯','📚','🎓','✨','🎉','📝','🏆','💖'].map(e => `<button onclick="insertEmoji('${e}')" class="text-xl hover:scale-125 transition-transform">${e}</button>`).join('')}
-                                        </div>
-                                        <div class="flex gap-1.5 items-center w-full">
-                                            <button id="emoji-toggle-btn" onclick="toggleEmojiPicker(event)" class="text-2xl hover:bg-pink-50 px-1 rounded-lg transition-colors shrink-0">😀</button>
-                                            <div class="flex-1 min-w-0">
-                                                <input type="text" id="chatInput" placeholder="說點什麼..." class="w-full px-3 py-2 rounded-xl border border-pink-200 focus:outline-none focus:border-pink-400 bg-white shadow-inner text-sm" onkeypress="if(event.key === 'Enter') sendChat()">
-                                            </div>
-                                            <button onclick="sendChat()" class="bg-gradient-to-r from-pink-400 to-rose-400 text-white px-3 py-2 rounded-xl font-bold hover:shadow-md transition-all shrink-0 whitespace-nowrap text-sm">送出</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="flex-1 bg-white/30 p-4 flex flex-col relative z-0 min-w-0">
+                        <div class="flex justify-between items-center mb-4 bg-white/80 p-3 rounded-2xl border border-pink-100 shadow-sm shrink-0">
+                            <button onclick="changeMonth(-1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">◀ 上個月</button>
+                            <div class="flex flex-col items-center flex-1 mx-2 overflow-hidden" id="calendar-header-container"></div>
+                            <button onclick="changeMonth(1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">下個月 ▶</button>
+                        </div>
+                        <div id="calendar-grid" class="flex-1 flex flex-col min-h-0"></div>
+                    </div>
 
-                            <!-- Center Content (Calendar) -->
-                            <div class="flex-1 p-3 md:p-5 flex flex-col relative z-0 min-w-0 min-h-[600px] md:min-h-0">
-                                <div class="flex justify-between items-center mb-4 bg-white/70 backdrop-blur-sm p-3 rounded-2xl border border-pink-100 shadow-sm shrink-0">
-                                    <button onclick="changeMonth(-1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-white border border-pink-200 hover:bg-pink-50 text-pink-700 rounded-xl font-bold transition-all shadow-sm text-sm md:text-base whitespace-nowrap active:scale-95">◀ <span class="hidden sm:inline">上個月</span></button>
-                                    <div class="flex flex-col items-center flex-1 mx-2 overflow-hidden" id="calendar-header-container"></div>
-                                    <button onclick="changeMonth(1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-white border border-pink-200 hover:bg-pink-50 text-pink-700 rounded-xl font-bold transition-all shadow-sm text-sm md:text-base whitespace-nowrap active:scale-95"><span class="hidden sm:inline">下個月</span> ▶</button>
-                                </div>
-                                <div id="calendar-grid" class="flex-1 flex flex-col min-h-[500px] md:min-h-0 bg-white/50 backdrop-blur-md rounded-[1.5rem] border border-white shadow-sm p-2 md:p-3"></div>
-                            </div>
-
-                            <!-- Right Sidebar -->
-                            <div class="w-full md:w-60 lg:w-72 xl:w-80 flex flex-col bg-white/40 border-t md:border-t-0 md:border-l border-pink-200/50 z-10 shrink-0 md:h-full min-h-0">
-                                <div class="flex-1 flex flex-col min-h-[400px] md:min-h-0 border-b border-pink-200/50">
-                                    <div class="bg-gradient-to-r from-rose-100/80 to-pink-100/80 backdrop-blur-sm p-2 text-center font-bold text-rose-700 shadow-sm shrink-0 text-sm">🌟 最新戰況動態</div>
-                                    <div id="timeline-feed" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar bg-white/20"></div>
-                                </div>
-                                <div class="flex-1 flex flex-col min-h-[400px] md:min-h-0">
-                                    <div class="bg-gradient-to-r from-teal-100/80 to-emerald-100/80 backdrop-blur-sm p-2 text-center font-bold text-teal-800 shadow-sm shrink-0 text-sm">🏆 榮譽排行榜</div>
-                                    <div id="leaderboard-feed" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-teal-50/20"></div>
-                                </div>
-                            </div>
-
+                    <div class="w-full md:w-60 lg:w-72 flex flex-col bg-white/60 z-10 shrink-0 border-l-2 border-pink-100 min-h-0 h-full">
+                        <div class="flex-1 flex flex-col min-h-0 border-b-2 border-pink-100">
+                            <div class="bg-gradient-to-r from-rose-100 to-pink-100 p-2 text-center font-bold text-rose-600 shadow-sm shrink-0 text-sm">🌟 最新戰況動態</div>
+                            <div id="timeline-feed" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar"></div>
+                        </div>
+                        <div class="flex-1 flex flex-col min-h-0">
+                            <div class="bg-gradient-to-r from-teal-100 to-emerald-100 p-2 text-center font-bold text-teal-700 shadow-sm shrink-0 text-sm">🏆 榮譽排行榜</div>
+                            <div id="leaderboard-feed" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-teal-50/30"></div>
                         </div>
                     </div>
                 </div>
@@ -742,7 +720,7 @@
                     </div>
                 </div>
                 
-                <!-- 弱點集中營 Modal -->
+                <!-- 弱點集中營 Modal (強化寬度) -->
                 <div id="weakness-modal" class="fixed inset-0 bg-gray-900/70 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('weakness-modal')">
                     <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-7xl overflow-hidden border-4 border-red-300 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
                         <div class="bg-gradient-to-r from-red-500 to-orange-500 p-4 flex justify-between items-center text-white shrink-0">
@@ -1289,22 +1267,6 @@
             input.value = '';
         };
 
-        // 表情符號彈出視窗切換
-        window.toggleEmojiPicker = (e) => {
-            e.stopPropagation();
-            const picker = document.getElementById('emoji-picker');
-            if(picker) picker.classList.toggle('hidden');
-        };
-
-        // 插入表情符號
-        window.insertEmoji = (emoji) => {
-            const input = document.getElementById('chatInput');
-            if(input) {
-                input.value += emoji;
-                input.focus();
-            }
-        };
-
         document.addEventListener('click', (e) => {
             const emojiPicker = document.getElementById('emoji-picker');
             const toggleBtn = document.getElementById('emoji-toggle-btn');
@@ -1481,8 +1443,8 @@
             username = name; viewingUser = 'ALL'; 
             isAdmin = (username === 'Nick'); 
             localStorage.setItem('study_group_user', username);
-            window.renderMain(); 
-            setupListeners();    
+            window.renderMain(); // 確保 DOM 骨架先建立
+            setupListeners();    // 啟動監聽並在獲取資料後填充畫面
         };
 
         window.openPublicProfile = (name) => {
@@ -1674,6 +1636,753 @@
         };
 
         // ==========================================
+        //  UI 渲染函式 - 個別區塊 (月曆/動態/排行)
+        // ==========================================
+        window.renderSidebar = () => {
+            const container = document.getElementById('sidebar-countdowns');
+            if(!container) return;
+            const examDaysLeft = getDaysLeft(EXAM_DATE);
+            let html = `
+                <div class="bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl p-5 text-center shadow-lg text-white mb-4 transform hover:scale-[1.02] transition-transform border border-pink-300 shrink-0 z-10 relative">
+                    <h3 class="text-sm font-bold text-pink-100 mb-1">會考大日子 (2027-05-22)</h3>
+                    <div class="text-5xl font-black drop-shadow-md mb-2">${examDaysLeft >= 0 ? examDaysLeft : 0} <span class="text-xl">天</span></div>
+                    <div class="text-xs bg-black/20 rounded-full inline-block px-3 py-1 font-bold">🎯 決戰時刻</div>
+                </div>
+                <h4 class="font-bold text-teal-700 mb-2 flex items-center gap-2 shrink-0 z-10 relative">🗓️ 重要考試里程碑</h4>
+                <div class="marquee-container flex-1 w-full relative z-0 pb-1">
+                    <div class="marquee-content space-y-3 pt-2">
+            `;
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            sortedDates.forEach((item) => {
+                const days = getDaysLeft(item.date);
+                if (days >= 0) {
+                    html += `
+                        <div class="bg-white p-3 rounded-xl border border-teal-100 shadow-sm flex justify-between items-center relative overflow-hidden group">
+                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-teal-300"></div>
+                            <div class="pl-2">
+                                <div class="text-sm font-bold text-gray-700">${item.title}</div>
+                                <div class="text-xs text-gray-400">${item.date}</div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xl font-black ${days <= 7 ? 'text-rose-500' : 'text-teal-500'}">${days}</span>
+                                <span class="text-xs text-gray-500">天</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            html += `</div></div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderChat = () => {
+            const container = document.getElementById('chat-messages');
+            if(!container) return;
+            container.innerHTML = chatMessages.map(msg => {
+                const isMe = msg.user === username;
+                const displayName = usersProfile[msg.user]?.nickname || msg.user;
+                return `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        <span class="text-[10px] text-gray-400 mb-0.5 px-1">${displayName}</span>
+                        <div class="${isMe ? 'chat-bubble-me border border-blue-100' : 'chat-bubble-other border border-pink-100'} px-3 py-2 text-gray-700 shadow-sm inline-block max-w-[90%] break-words">
+                            ${msg.text}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        };
+
+        window.changeMonth = (delta) => {
+            currentMonth += delta;
+            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+            if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+            window.renderMainContent();
+        };
+
+        window.changeViewingUser = (user) => {
+            viewingUser = user;
+            window.renderCalendar();
+        };
+
+        window.renderCalendar = () => {
+            const container = document.getElementById('calendar-grid');
+            const headerContainer = document.getElementById('calendar-header-container');
+            if(!container || !headerContainer) return;
+
+            headerContainer.innerHTML = `
+                <h2 class="text-xl md:text-2xl font-black text-rose-500 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
+                <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-teal-700 bg-teal-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
+                    <option value="ALL" ${viewingUser === 'ALL' ? 'selected' : ''}>🌍 全部進度</option>
+                    ${globalUsers.map((u, idx) => {
+                        const dispName = usersProfile[u]?.nickname || u;
+                        const circleNum = getCircleNum(idx);
+                        return `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>${circleNum} ${dispName} 的進度</option>`;
+                    }).join('')}
+                </select>
+            `;
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const startPad = firstDay === 0 ? 6 : firstDay - 1;
+
+            let html = `<div class="grid grid-cols-7 gap-1 md:gap-2 mb-2 shrink-0">`;
+            ['一', '二', '三', '四', '五', '六', '日'].forEach((d, idx) => {
+                const isWeekend = idx >= 5;
+                html += `<div class="text-center font-bold ${isWeekend ? 'text-rose-500 bg-rose-50' : 'text-teal-700 bg-teal-50'} py-1 md:py-2 text-sm md:text-base rounded-lg md:rounded-xl shadow-sm border border-gray-100">${d}</div>`;
+            });
+            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[100px] md:auto-rows-[120px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
+
+            for(let i=0; i<startPad; i++) html += `<div class="bg-white/30 rounded-xl md:rounded-2xl border border-transparent"></div>`;
+
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const isToday = dateStr === formatDate(new Date());
+                const isImportant = importantDates.find(i => i.date === dateStr);
+                
+                let usersWithDataToday = [];
+                Object.entries(allGrades).forEach(([u, dates]) => {
+                    if (dates[dateStr] && Object.keys(dates[dateStr]).length > 0) {
+                        if (viewingUser === 'ALL' || u === viewingUser) usersWithDataToday.push(u);
+                    }
+                });
+
+                const headerClass = isToday 
+                    ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-white shadow-md' 
+                    : isImportant 
+                        ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md' 
+                        : 'bg-pink-50 text-pink-700';
+
+                const clickAction = (viewingUser === username || viewingUser === 'ALL') 
+                    ? `openScoreModal('${dateStr}')` 
+                    : `viewOthersScore(event, '${viewingUser}', '${dateStr}')`;
+
+                let cellHTML = '';
+
+                if (viewingUser === 'ALL') {
+                    // ALL View: 縮小大頭貼，減少間距
+                    const avatarsHtml = usersWithDataToday.map(u => `
+                        <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
+                             class="${getUserColor(u)} w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center text-[8px] md:text-[10px] font-bold shadow-sm cursor-pointer hover:scale-125 transition-transform flex-shrink-0" 
+                             title="查看 ${usersProfile[u]?.nickname || u} 的成績">
+                            ${getAvatarChar(u)}
+                        </div>
+                    `).join('');
+
+                    cellHTML = `
+                        <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-1.5 rounded-xl md:rounded-2xl shadow-sm flex flex-row transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
+                            <div class="flex flex-col items-center shrink-0 w-6 md:w-7">
+                                <span class="w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full text-[10px] md:text-[12px] font-bold ${headerClass} shrink-0 shadow-sm">${d}</span>
+                                ${isImportant ? `<span class="text-[10px] md:text-xs drop-shadow-sm mt-1 group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar h-full pl-1">
+                                ${usersWithDataToday.length > 0 ? `
+                                    <div class="grid grid-cols-3 md:grid-cols-4 gap-0.5 justify-items-center pb-1 pr-0.5 mt-0.5">
+                                        ${avatarsHtml}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    let cellContent = '';
+                    const userGrades = (allGrades[viewingUser] && allGrades[viewingUser][dateStr]) ? allGrades[viewingUser][dateStr] : null;
+                    if (userGrades && Object.keys(userGrades).length > 0) {
+                        cellContent = `<div class="flex flex-col gap-1 w-full mt-1 pb-1">`;
+                        Object.entries(userGrades).forEach(([subKey, info]) => {
+                            let mainSub = info.mainSubject || subKey;
+                            let hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
+                            let safeTextColor = getSafeTextColor(mainSub);
+                            let shortName = mainSub;
+                            if(shortName === '自然合科') shortName = '自然';
+                            if(shortName === '社會合科') shortName = '社會';
+                            if(shortName === '地球科學') shortName = '地科';
+
+                            cellContent += `
+                                <div class="text-[9px] md:text-[11px] font-bold border px-1 py-0.5 rounded flex items-center justify-between shadow-sm" style="background-color: ${hexColor}20; border-color: ${hexColor}50; color: ${safeTextColor};">
+                                    <span class="truncate">${shortName} <span class="font-black ml-0.5">${info.grade}</span></span>
+                                    ${info.photo ? '<span class="text-[8px] md:text-[9px] text-purple-500 shrink-0 ml-0.5">📸</span>' : ''}
+                                </div>
+                            `;
+                        });
+                        cellContent += `</div>`;
+                    }
+
+                    cellHTML = `
+                        <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-2 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
+                            <div class="flex justify-between items-start shrink-0 mb-0.5 md:mb-1 w-full">
+                                <span class="w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass} shrink-0">${d}</span>
+                                
+                                <div class="flex flex-wrap justify-end content-start gap-1 flex-1 mx-1 mt-0.5 overflow-y-auto custom-scrollbar max-h-12 md:max-h-14 pr-1">
+                                    ${usersWithDataToday.map(u => `
+                                        <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
+                                             class="${getUserColor(u)} w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center text-[9px] md:text-[11px] font-bold shadow-sm cursor-pointer hover:scale-110 transition-transform flex-shrink-0" 
+                                             title="查看 ${usersProfile[u]?.nickname || u} 的成績">
+                                            ${getAvatarChar(u)}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                ${isImportant ? `<span class="text-xs md:text-sm drop-shadow-sm group-hover:scale-125 transition-transform shrink-0" title="${isImportant.title}">🔥</span>` : ''}
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                                ${cellContent}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += cellHTML;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderTimeline = () => {
+            const container = document.getElementById('timeline-feed');
+            if(!container) return;
+
+            const feed = [];
+            Object.entries(allGrades).forEach(([u, dates]) => {
+                Object.entries(dates).forEach(([d, subjects]) => {
+                    Object.entries(subjects).forEach(([s, info]) => {
+                        feed.push({ user: u, date: d, subject: s, ...info });
+                    });
+                });
+            });
+
+            feed.sort((a,b) => {
+                const timeA = a.updatedAt ? new Date(a.updatedAt) : new Date(a.date);
+                const timeB = b.updatedAt ? new Date(b.updatedAt) : new Date(b.date);
+                return timeB - timeA;
+            });
+
+            if (feed.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-70"><div class="text-4xl mb-2">🍃</div><div class="text-sm font-bold">尚無戰況紀錄，趕快搶頭香！</div></div>`;
+                return;
+            }
+
+            let html = '';
+            feed.forEach(item => {
+                const isMe = item.user === username;
+                const isA = item.grade.includes('A');
+                const emoji = isA ? '🏆' : '💪';
+                
+                const mainSub = item.mainSubject || item.subject;
+                const hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
+                const safeTextColor = getSafeTextColor(mainSub);
+                const displayName = usersProfile[item.user]?.nickname || item.user;
+
+                const mainSubStr = item.mainSubject && item.mainSubject !== item.subject ? `${item.mainSubject} ` : '';
+                const fullSubStr = `${mainSubStr}${item.subject}`;
+
+                html += `
+                    <div class="p-3 rounded-2xl border-2 shadow-sm relative group cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all" style="background-color: ${hexColor}15; border-color: ${hexColor}50;" onclick="viewOthersScore(null, '${item.user}', '${item.date}')">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-gray-700 bg-white px-2 py-0.5 rounded shadow-sm text-xs border border-gray-100 flex items-center gap-1.5">
+                                <div class="w-3 h-3 rounded-full flex items-center justify-center text-[8px] ${getUserColor(item.user)}">${getAvatarChar(item.user)}</div>
+                                ${isMe ? '我' : displayName}
+                            </span>
+                            <span class="text-[10px] text-gray-400 font-mono">${item.date}</span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            在 <span class="font-bold text-gray-800" title="${fullSubStr}">${fullSubStr.length > 20 ? fullSubStr.substring(0,18)+'...' : fullSubStr}</span> 獲得 <span class="font-black text-lg mx-1" style="color: ${safeTextColor}">${item.grade}</span> ${emoji}
+                        </div>
+                        ${item.photo ? `<div class="absolute right-3 bottom-2 text-purple-400 text-lg opacity-40 group-hover:opacity-100 transition-opacity">📸</div>` : ''}
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        };
+
+        window.renderLeaderboard = () => {
+            const container = document.getElementById('leaderboard-feed');
+            if(!container) return;
+
+            let userStats = [];
+            globalUsers.forEach(u => {
+                let stats = { user: u, totalScore: 0, totalEntries: 0 };
+                const uGrades = allGrades[u] || {};
+                Object.values(uGrades).forEach(dayGrades => {
+                    Object.values(dayGrades).forEach(item => {
+                        stats.totalEntries++;
+                        stats.totalScore += GRADE_WEIGHT[item.grade] || 0;
+                    });
+                });
+                stats.average = stats.totalEntries > 0 ? (stats.totalScore / stats.totalEntries) : 0;
+                userStats.push(stats);
+            });
+
+            userStats.sort((a, b) => b.average - a.average || b.totalEntries - a.totalEntries);
+
+            if (userStats.length === 0 || userStats[0].totalEntries === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 text-sm mt-4 font-bold">目前無人上榜</div>`;
+                return;
+            }
+
+            let html = '';
+            userStats.forEach((stat, index) => {
+                if (stat.totalEntries === 0) return;
+                let rankMedal = '';
+                if (index === 0) rankMedal = '🥇';
+                else if (index === 1) rankMedal = '🥈';
+                else if (index === 2) rankMedal = '🥉';
+                else rankMedal = `<span class="text-teal-700 bg-teal-100 rounded-full w-6 h-6 flex items-center justify-center text-xs font-black shadow-inner">${index + 1}</span>`;
+
+                const displayName = usersProfile[stat.user]?.nickname || stat.user;
+
+                html += `
+                    <div onclick="openPublicProfile('${stat.user}')" class="bg-white rounded-xl p-2.5 border border-teal-100 shadow-sm flex items-center gap-3 relative hover:scale-[1.02] transition-transform cursor-pointer hover:border-teal-300">
+                        <div class="text-2xl w-8 flex justify-center drop-shadow-sm">${rankMedal}</div>
+                        <div class="flex-1 min-w-0 flex items-center gap-2">
+                            <div class="${getUserColor(stat.user)} w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm flex-shrink-0">
+                                ${getAvatarChar(stat.user)}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-black text-gray-700 text-sm mb-0.5 truncate">${displayName}</div>
+                                <div class="text-[10px] text-gray-500 flex gap-2 items-center mt-1">
+                                    <span class="text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 shadow-sm">平均 ${stat.average.toFixed(2)} 分</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center bg-gray-50 p-1.5 rounded-lg border border-gray-100 shrink-0">
+                            <div class="text-[10px] text-gray-400 font-bold">總刷題</div>
+                            <div class="font-black text-teal-600 text-base leading-none">${stat.totalEntries}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        };
+
+        window.renderMainContent = () => {
+            if(window.renderCalendar) window.renderCalendar();
+            if(window.renderTimeline) window.renderTimeline();
+            if(window.renderLeaderboard) window.renderLeaderboard();
+            if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) window.renderAdminUsers();
+        };
+
+        // ==========================================
+        //  輸入成績邏輯 (全面升級版 5 Steps)
+        // ==========================================
+        window.openScoreModal = (dateStr) => {
+            modalState = { date: dateStr, mainSubject: '', textbook: '', subSubject: '', grade: '', photoBase64: '' };
+            document.getElementById('modal-date').innerText = dateStr;
+            
+            // 狀態還原：清除所有強調樣式
+            SUBJECTS.forEach(s => { 
+                const el = document.getElementById(`btn-sub-${s}`);
+                if (el) {
+                    el.classList.remove('bg-teal-600', 'text-white', 'shadow-md', 'ring-4', 'ring-teal-200', 'border-teal-600', 'scale-105');
+                    el.classList.add('bg-white', 'text-teal-700', 'border-teal-200');
+                }
+            });
+            GRADES.forEach(g => { 
+                const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                if (el) {
+                    el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                    el.classList.add('bg-white', 'text-rose-700', 'border-rose-200');
+                }
+            });
+            
+            // 隱藏 2~5 步驟與弱點區塊
+            document.getElementById('step-2-container').classList.add('hidden');
+            document.getElementById('step-3-container').classList.add('hidden');
+            document.getElementById('step-4-container').classList.add('hidden');
+            document.getElementById('step-5-container').classList.add('hidden');
+            document.getElementById('weakness-container').classList.add('hidden');
+            document.getElementById('is-weakness-check').checked = false;
+            document.getElementById('weakness-note').value = '';
+            
+            document.getElementById('photo-upload').value = '';
+            document.getElementById('photo-preview-container').classList.add('hidden');
+            document.getElementById('photo-preview-container').classList.remove('flex');
+            document.getElementById('photo-placeholder').classList.remove('hidden');
+            document.getElementById('btn-delete-grade').classList.add('hidden');
+
+            // 復原 Step 5 上傳區域樣式
+            const dropzone = document.getElementById('step-5-dropzone');
+            if (dropzone) {
+                dropzone.classList.remove('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid');
+                dropzone.classList.add('border-dashed', 'bg-white');
+            }
+            
+            openGlobalModal('score-modal');
+        };
+
+        window.selectSubject = (sub) => {
+            modalState.mainSubject = sub;
+            modalState.textbook = '';
+            modalState.subSubject = '';
+            modalState.grade = '';
+
+            // 按鈕高亮
+            SUBJECTS.forEach(s => {
+                const el = document.getElementById(`btn-sub-${s}`);
+                if(el) {
+                    if(s === sub) {
+                        el.classList.add('bg-teal-600', 'text-white', 'shadow-md', 'ring-4', 'ring-teal-200', 'border-teal-600', 'scale-105');
+                        el.classList.remove('bg-white', 'text-teal-700', 'border-teal-200');
+                    } else {
+                        el.classList.remove('bg-teal-600', 'text-white', 'shadow-md', 'ring-4', 'ring-teal-200', 'border-teal-600', 'scale-105');
+                        el.classList.add('bg-white', 'text-teal-700', 'border-teal-200');
+                    }
+                }
+            });
+
+            // 清除 Grade 按鈕與弱點狀態
+            GRADES.forEach(g => { 
+                const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                if (el) {
+                    el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                    el.classList.add('bg-white', 'text-rose-700', 'border-rose-200');
+                }
+            });
+            document.getElementById('weakness-container').classList.add('hidden');
+            document.getElementById('is-weakness-check').checked = false;
+            document.getElementById('weakness-note').value = '';
+
+            // 流程控制
+            const step2 = document.getElementById('step-2-container');
+            const step3 = document.getElementById('step-3-container');
+            const step4 = document.getElementById('step-4-container');
+            const step5 = document.getElementById('step-5-container');
+
+            step2.classList.add('hidden');
+            step3.classList.add('hidden');
+            step4.classList.add('hidden');
+            step5.classList.add('hidden');
+
+            if (TEXTBOOKS[sub]) {
+                // 有定義教科書，跳轉 Step 2
+                step2.classList.remove('hidden');
+                document.getElementById('textbook-selector').innerHTML = TEXTBOOKS[sub].map(tb => `
+                    <div onclick="selectTextbook('${tb.id}')" id="btn-tb-${tb.id}" class="cursor-pointer border-4 border-transparent bg-white hover:border-blue-400 rounded-xl p-2 text-center transition-all shadow-sm w-32 md:w-36 group">
+                        <img src="${tb.img}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2YxZjVmOSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM5Y2EzYWYiPueEoeWcluAHfTwvdGV4dD48L3N2Zz4='" class="w-full h-32 md:h-36 object-cover rounded-lg mb-2 shadow-sm border border-gray-200 pointer-events-none group-hover:shadow-md transition-shadow">
+                        <div class="font-bold text-sm text-gray-700 pointer-events-none">${tb.name}</div>
+                    </div>
+                `).join('');
+            } else if (SUB_SUBJECTS[sub]) {
+                // 有定義細項 (如自然、社會)，跳轉 Step 3
+                step3.classList.remove('hidden');
+                document.getElementById('sub-subject-selector').innerHTML = SUB_SUBJECTS[sub].map(sItem => 
+                    `<button onclick="selectSubSubject('${sItem}')" id="btn-subitem-${sItem}" class="block w-full text-left py-3 px-4 rounded-xl border-2 border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-50 transition-all bg-white shadow-sm text-sm md:text-base hover:scale-[1.02] whitespace-nowrap overflow-hidden text-ellipsis">${formatStep3Text(sItem)}</button>`
+                ).join('');
+                
+                // 自動預選第一個或舊有的
+                let subToSelect = SUB_SUBJECTS[sub][0];
+                for (let sItem of SUB_SUBJECTS[sub]) {
+                    if (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][sItem]) {
+                        subToSelect = sItem; break;
+                    }
+                }
+                window.selectSubSubject(subToSelect);
+            } else {
+                // 只有主科 (如英文、數學)，直接跳轉 Step 4 & 5
+                modalState.subSubject = sub;
+                step4.classList.remove('hidden');
+                step5.classList.remove('hidden');
+                checkExistingGrade(sub);
+            }
+        };
+
+        window.selectTextbook = (tbId) => {
+            modalState.textbook = tbId;
+            modalState.subSubject = '';
+            
+            // Highlight
+            const tbs = TEXTBOOKS[modalState.mainSubject];
+            if(tbs) {
+                tbs.forEach(tb => {
+                    const el = document.getElementById(`btn-tb-${tb.id}`);
+                    if(el) {
+                        if(tb.id === tbId) {
+                            el.classList.add('border-blue-500', 'bg-blue-50', 'ring-4', 'ring-blue-200', 'scale-105', 'shadow-md');
+                            el.classList.remove('border-transparent', 'bg-white');
+                        } else {
+                            el.classList.remove('border-blue-500', 'bg-blue-50', 'ring-4', 'ring-blue-200', 'scale-105', 'shadow-md');
+                            el.classList.add('border-transparent', 'bg-white');
+                        }
+                    }
+                });
+            }
+
+            // Show Step 3
+            document.getElementById('step-3-container').classList.remove('hidden');
+            const tbObj = tbs.find(t => t.id === tbId);
+            if(tbObj && tbObj.chapters) {
+                document.getElementById('sub-subject-selector').innerHTML = tbObj.chapters.map((ch, idx) => 
+                    `<button onclick="selectSubSubject('${ch}', ${idx})" id="btn-subitem-${idx}" class="block w-full text-left py-3 px-4 rounded-xl border-2 border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-50 transition-all bg-white shadow-sm text-sm md:text-base hover:scale-[1.02] whitespace-nowrap overflow-hidden text-ellipsis">${formatStep3Text(ch)}</button>`
+                ).join('');
+            }
+            
+            // Hide 4 & 5 until chapter selected
+            document.getElementById('step-4-container').classList.add('hidden');
+            document.getElementById('step-5-container').classList.add('hidden');
+        };
+
+        window.selectSubSubject = (subItem, indexId = null) => {
+            modalState.subSubject = subItem;
+            
+            // Highlight
+            if (TEXTBOOKS[modalState.mainSubject] && indexId !== null) {
+                const tbObj = TEXTBOOKS[modalState.mainSubject].find(t => t.id === modalState.textbook);
+                if (tbObj && tbObj.chapters) {
+                    tbObj.chapters.forEach((_, idx) => {
+                        const el = document.getElementById(`btn-subitem-${idx}`);
+                        if(el) {
+                            if(idx === indexId) {
+                                el.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]');
+                                el.classList.remove('bg-white', 'text-indigo-700', 'border-indigo-200');
+                            } else {
+                                el.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]');
+                                el.classList.add('bg-white', 'text-indigo-700', 'border-indigo-200');
+                            }
+                        }
+                    });
+                }
+            } else if (SUB_SUBJECTS[modalState.mainSubject]) {
+                SUB_SUBJECTS[modalState.mainSubject].forEach(s => {
+                    const el = document.getElementById(`btn-subitem-${s}`);
+                    if (el) {
+                        if(s === subItem) {
+                            el.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]');
+                            el.classList.remove('bg-white', 'text-indigo-700', 'border-indigo-200');
+                        } else {
+                            el.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'ring-4', 'ring-indigo-200', 'border-indigo-600', 'scale-[1.02]');
+                            el.classList.add('bg-white', 'text-indigo-700', 'border-indigo-200');
+                        }
+                    }
+                });
+            }
+
+            // Show Step 4 & 5
+            document.getElementById('step-4-container').classList.remove('hidden');
+            document.getElementById('step-5-container').classList.remove('hidden');
+            
+            checkExistingGrade(subItem);
+
+            // 自動平滑滾動到 Step 4
+            setTimeout(() => {
+                const step4Container = document.getElementById('step-4-container');
+                if(step4Container) {
+                    step4Container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        };
+
+        const checkExistingGrade = (subKey) => {
+            let existing = (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][subKey]) ? allGrades[username][modalState.date][subKey] : null;
+
+            if (existing) {
+                window.selectGrade(existing.grade);
+                // 復原弱點狀態
+                if (['B++', 'B+', 'B', 'C'].includes(existing.grade)) {
+                    document.getElementById('weakness-container').classList.remove('hidden');
+                    document.getElementById('is-weakness-check').checked = existing.isWeakness || false;
+                    document.getElementById('weakness-note').value = existing.weaknessNote || '';
+                }
+
+                if (existing.photo) setPhotoPreview(existing.photo);
+                else {
+                     modalState.photoBase64 = '';
+                     document.getElementById('photo-preview-container').classList.add('hidden');
+                     document.getElementById('photo-preview-container').classList.remove('flex');
+                     document.getElementById('photo-placeholder').classList.remove('hidden');
+                     
+                     const dropzone = document.getElementById('step-5-dropzone');
+                     if (dropzone) {
+                         dropzone.classList.remove('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid');
+                         dropzone.classList.add('border-dashed', 'bg-white');
+                     }
+                }
+                document.getElementById('btn-delete-grade').classList.remove('hidden');
+            } else {
+                modalState.grade = '';
+                modalState.photoBase64 = '';
+                GRADES.forEach(g => { 
+                    const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                    if (el) {
+                        el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                        el.classList.add('bg-white', 'text-rose-700', 'border-rose-200');
+                    }
+                });
+                document.getElementById('weakness-container').classList.add('hidden');
+                document.getElementById('is-weakness-check').checked = false;
+                document.getElementById('weakness-note').value = '';
+
+                document.getElementById('photo-preview-container').classList.add('hidden');
+                document.getElementById('photo-preview-container').classList.remove('flex');
+                document.getElementById('photo-placeholder').classList.remove('hidden');
+                
+                const dropzone = document.getElementById('step-5-dropzone');
+                if (dropzone) {
+                    dropzone.classList.remove('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid');
+                    dropzone.classList.add('border-dashed', 'bg-white');
+                }
+                document.getElementById('btn-delete-grade').classList.add('hidden');
+            }
+        };
+
+        window.selectGrade = (grade) => {
+            modalState.grade = grade;
+            GRADES.forEach(g => {
+                const el = document.getElementById(`btn-grade-${g.replace('+','p').replace('+','p')}`);
+                if(el) {
+                    if(g === grade) {
+                        el.classList.add('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                        el.classList.remove('bg-white', 'text-rose-700', 'border-rose-200');
+                    } else {
+                        el.classList.remove('bg-rose-600', 'text-white', 'shadow-md', 'ring-4', 'ring-rose-200', 'border-rose-600', 'scale-110');
+                        el.classList.add('bg-white', 'text-rose-700', 'border-rose-200');
+                    }
+                }
+            });
+
+            // 判斷是否顯示弱點標記區塊
+            const weaknessContainer = document.getElementById('weakness-container');
+            if (['B++', 'B+', 'B', 'C'].includes(grade)) {
+                weaknessContainer.classList.remove('hidden');
+            } else {
+                weaknessContainer.classList.add('hidden');
+                document.getElementById('is-weakness-check').checked = false;
+                document.getElementById('weakness-note').value = '';
+            }
+        };
+
+        window.handlePhotoUpload = (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 600; 
+                    const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const base64 = canvas.toDataURL('image/jpeg', 0.6);
+                    setPhotoPreview(base64);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        const setPhotoPreview = (base64) => {
+            modalState.photoBase64 = base64;
+            const preview = document.getElementById('photo-preview');
+            preview.src = base64;
+            document.getElementById('photo-placeholder').classList.add('hidden');
+            document.getElementById('photo-preview-container').classList.remove('hidden');
+            document.getElementById('photo-preview-container').classList.add('flex');
+            
+            // 加入明顯的 Step 5 完成狀態框線與底色
+            const dropzone = document.getElementById('step-5-dropzone');
+            if (dropzone) {
+                dropzone.classList.add('ring-4', 'ring-purple-200', 'border-purple-500', 'bg-purple-50', 'border-solid');
+                dropzone.classList.remove('border-dashed', 'bg-white');
+            }
+        };
+
+        window.saveGrade = async () => {
+            if(!modalState.subSubject) return alert("請完整選擇科目與章節細項！");
+            if(!modalState.grade) return alert("請選擇您的成績等級！");
+
+            const isWeakness = document.getElementById('is-weakness-check').checked;
+            const weaknessNote = document.getElementById('weakness-note').value.trim();
+
+            let existingReviews = [false, false, false, false, false];
+            if (allGrades[username] && allGrades[username][modalState.date] && allGrades[username][modalState.date][modalState.subSubject]) {
+                existingReviews = allGrades[username][modalState.date][modalState.subSubject].reviews || existingReviews;
+            }
+
+            try {
+                // 將成績獨立儲存為一個 Document，ID 命名規則為: 帳號_日期_科目細項
+                const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
+                const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
+                
+                await setDoc(gradeRef, {
+                    user: username,
+                    date: modalState.date,
+                    mainSubject: modalState.mainSubject,
+                    subSubject: modalState.subSubject,
+                    grade: modalState.grade,
+                    photo: modalState.photoBase64 || null,
+                    isWeakness: isWeakness,
+                    weaknessNote: weaknessNote,
+                    reviews: existingReviews,
+                    updatedAt: new Date().toISOString() 
+                }, { merge: true });
+                
+                closeGlobalModal('score-modal');
+            } catch(e) {
+                console.error(e);
+                alert("儲存失敗，請確認圖片是否過大！");
+            }
+        };
+
+        window.deleteGradeRecord = async () => {
+            if(!modalState.subSubject) return;
+            if(!confirm(`確定要刪除 ${modalState.date} 的 ${modalState.subSubject} 紀錄嗎？`)) return;
+
+            try {
+                const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
+                const gradeRef = doc(db, 'artifacts', appId, 'public', 'data', 'Grades', docId);
+                await deleteDoc(gradeRef);
+
+                closeGlobalModal('score-modal');
+            } catch(e) { console.error(e); }
+        };
+
+        window.viewOthersScore = (e, otherUser, dateStr) => {
+            if (e) e.stopPropagation(); 
+            const data = (allGrades[otherUser] && allGrades[otherUser][dateStr]) ? allGrades[otherUser][dateStr] : null;
+            if(!data || Object.keys(data).length === 0) {
+                alert(`${usersProfile[otherUser]?.nickname || otherUser} 在 ${dateStr} 尚未登錄成績！`);
+                return; 
+            }
+            
+            document.getElementById('view-modal-date').innerText = dateStr;
+            let contentHtml = `
+                <div class="flex items-center gap-3 mb-4 border-b-2 border-teal-200 pb-3">
+                    <div class="${getUserColor(otherUser)} w-10 h-10 rounded-full flex items-center justify-center text-lg font-black shadow-sm">
+                        ${getAvatarChar(otherUser)}
+                    </div>
+                    <h3 class="font-black text-xl text-teal-800">${usersProfile[otherUser]?.nickname || otherUser} 的戰果</h3>
+                    </div>
+            `;
+            
+            Object.entries(data).forEach(([subKey, item]) => {
+                const mainSub = item.mainSubject || subKey;
+                const hexColor = SUBJECT_HEX_COLORS[mainSub] || SUBJECT_HEX_COLORS['default'];
+                const safeTextColor = getSafeTextColor(mainSub);
+                const isWeak = item.isWeakness;
+                const weakIndicator = isWeak ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded border border-red-200 ml-2 shadow-sm whitespace-nowrap">🔥 弱點標記</span>' : '';
+                
+                contentHtml += `
+                    <div class="mb-5 bg-white p-4 rounded-2xl shadow-sm border-2 relative" style="background-color: ${hexColor}0A; border-color: ${hexColor}50;">
+                        <div class="flex justify-between items-start mb-2 gap-2 flex-wrap" style="color: ${safeTextColor}">
+                            <span class="font-bold text-base md:text-lg whitespace-pre-line leading-tight pt-1 flex items-center flex-wrap">📌 [${mainSub}] ${subKey} ${weakIndicator}</span>
+                            <span class="font-black text-xl md:text-2xl shrink-0">${item.grade}</span>
+                        </div>
+                        ${isWeak && item.weaknessNote ? `
+                            <div class="mt-2 mb-3 bg-white/80 p-2 rounded border border-white text-sm text-gray-700 shadow-sm">
+                                <div class="text-xs font-bold mb-1" style="color: ${safeTextColor}">📝 錯題筆記：</div>
+                                ${item.weaknessNote.replace(/\n/g, '<br>')}
+                            </div>
+                        ` : ''}
+                        ${item.photo ? `<div class="mt-3"><img src="${item.photo}" class="w-full rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-90" onclick="window.open('${item.photo}', '_blank')" alt="考卷照片" title="點擊查看大圖"></div>` : '<div class="text-xs text-gray-400 text-center mt-2">（無附照片）</div>'}
+                    </div>
+                `;
+            });
+            document.getElementById('view-score-content').innerHTML = contentHtml;
+            openGlobalModal('view-score-modal');
+        };
+
+        // ==========================================
         //  Firebase 監聽與初始化
         // ==========================================
         const setupLoginListener = () => {
@@ -1781,14 +2490,14 @@
 
         const initApp = async () => {
             window.renderApp();
-            try {
-                const config = getStoredConfig();
-                if (!config || !config.apiKey) {
-                    window.renderSetup();
-                    return;
-                }
+            const config = getStoredConfig();
+            if (!config || !config.apiKey) {
+                window.renderSetup();
+                return;
+            }
 
-                const fullConfig = { ...BASE_FIREBASE_CONFIG, apiKey: config.apiKey };
+            const fullConfig = { ...BASE_FIREBASE_CONFIG, apiKey: config.apiKey };
+            try {
                 if (!appInstance) {
                     appInstance = initializeApp(fullConfig);
                     auth = getAuth(appInstance);
@@ -1818,7 +2527,7 @@
                 });
             } catch (error) {
                 console.error("Firebase 連線失敗:", error);
-                alert("系統初始化失敗：" + error.message + "\n請檢查系統設定參數是否正確！");
+                alert("Firebase 連線失敗，請檢查系統設定參數是否正確！");
                 window.renderSetup();
             }
         };
