@@ -62,9 +62,6 @@
         .marquee-container:active .marquee-content {
             animation-play-state: paused;
         }
-        
-        .chat-bubble-me { background: #e0f2fe; border-radius: 1rem 1rem 0 1rem; }
-        .chat-bubble-other { background: #fce7f3; border-radius: 1rem 1rem 1rem 0; }
 
         .time-slot-active {
             border-color: #3b82f6 !important;
@@ -158,7 +155,6 @@
         let globalUsers = [];
         let importantDates = [];
         let allSchedules = {}; 
-        let chatMessages = [];
         let usersProfile = {}; 
         
         let currentYear = new Date().getFullYear();
@@ -173,7 +169,7 @@
             selectedBookId: ''
         };
         
-        let unsubUsers, unsubDates, unsubSchedules, unsubChat, unsubProfile, unsubTextbooks;
+        let unsubUsers, unsubDates, unsubSchedules, unsubProfile, unsubTextbooks;
         let radarChartInstance = null;
 
         // Firebase 基礎設定 (不含 API Key)
@@ -193,7 +189,7 @@
             try {
                 const stored = localStorage.getItem('study_group_firebase_config');
                 if (stored) return JSON.parse(stored);
-            } catch(e) {} // 處理預覽模式下阻擋 localStorage 的情況
+            } catch(e) {} 
             return null;
         };
 
@@ -354,27 +350,17 @@
                 </div>
 
                 <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-                    <div class="w-full md:w-64 lg:w-72 flex flex-col bg-white/60 border-b-2 md:border-b-0 md:border-r-2 border-sky-100 z-10 shrink-0 h-full min-h-0">
-                        <div id="sidebar-countdowns" class="p-4 flex flex-col border-b-2 border-sky-100 shrink-0 h-[45%] min-h-[250px] relative overflow-hidden"></div>
+                    
+                    <!-- 左側：倒數計時與排行榜 -->
+                    <div class="w-full md:w-60 lg:w-72 flex flex-col bg-white/60 border-b-2 md:border-b-0 md:border-r-2 border-sky-100 z-10 shrink-0 h-full min-h-0">
+                        <div id="sidebar-countdowns" class="p-4 flex flex-col border-b-2 border-sky-100 shrink-0 relative overflow-hidden"></div>
                         <div class="flex-1 flex flex-col bg-white/80 overflow-hidden relative min-h-0">
-                            <div class="bg-sky-100/50 p-2 text-center font-bold text-sky-700 border-b border-sky-100 text-sm shadow-sm shrink-0">💬 留言板</div>
-                            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-sm relative min-h-0"></div>
-                            
-                            <div class="p-2 bg-white flex flex-col border-t border-sky-100 relative shrink-0">
-                                <div id="emoji-picker" class="hidden absolute bottom-full left-2 mb-2 bg-white border border-sky-200 p-2 rounded-xl shadow-lg grid grid-cols-5 gap-2 z-50">
-                                    ${['😀','😂','🥰','😎','🥺','💪','🔥','💯','📚','🎓','✨','🎉','📝','🏆','💖'].map(e => `<button onclick="insertChatEmoji('${e}')" class="text-xl hover:scale-125 transition-transform">${e}</button>`).join('')}
-                                </div>
-                                <div class="flex gap-1.5 items-center w-full">
-                                    <button id="emoji-toggle-btn" onclick="toggleEmojiPicker('emoji-picker', event)" class="text-2xl hover:bg-sky-50 px-1 rounded-lg transition-colors shrink-0">😀</button>
-                                    <div class="flex-1 min-w-0">
-                                        <input type="text" id="chatInput" placeholder="說點什麼..." class="w-full px-3 py-2 rounded-lg border border-sky-200 focus:outline-none focus:border-sky-400 bg-gray-50 text-sm" onkeypress="if(event.key === 'Enter') sendChat()">
-                                    </div>
-                                    <button onclick="sendChat()" class="bg-blue-500 text-white px-3 py-2 rounded-lg font-bold hover:bg-blue-600 transition-colors shrink-0 whitespace-nowrap text-sm">送出</button>
-                                </div>
-                            </div>
+                            <div class="bg-sky-100/50 p-2 text-center font-bold text-sky-700 border-b border-sky-100 text-sm shadow-sm shrink-0">🏆 榮譽排行榜</div>
+                            <div id="leaderboard-feed" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar relative min-h-0"></div>
                         </div>
                     </div>
 
+                    <!-- 中間：月曆 -->
                     <div class="flex-1 bg-white/40 p-4 flex flex-col relative z-0 min-w-0">
                         <div class="flex justify-between items-center mb-4 bg-white/90 p-3 rounded-2xl border border-sky-100 shadow-sm shrink-0">
                             <button onclick="changeMonth(-1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-sky-50 border border-sky-200 hover:bg-sky-100 text-sky-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">◀ 上月</button>
@@ -383,18 +369,25 @@
                         </div>
                         <div id="calendar-grid" class="flex-1 flex flex-col min-h-0 bg-white/50 rounded-2xl p-2 border border-sky-50 shadow-inner"></div>
                     </div>
+
+                    <!-- 右側：里程碑與動態 -->
+                    <div class="w-full md:w-60 lg:w-72 flex flex-col bg-white/60 border-t-2 md:border-t-0 md:border-l-2 border-sky-100 z-10 shrink-0 h-full min-h-0">
+                        <div id="sidebar-milestones" class="p-4 flex flex-col border-b-2 border-sky-100 shrink-0 relative overflow-hidden"></div>
+                        <div class="flex-1 flex flex-col bg-white/80 overflow-hidden relative min-h-0">
+                            <div class="bg-blue-100/50 p-2 text-center font-bold text-blue-700 border-b border-blue-100 text-sm shadow-sm shrink-0">🌟 最新排程動態</div>
+                            <div id="timeline-feed" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar relative min-h-0"></div>
+                        </div>
+                    </div>
                 </div>
             `;
             if (username) {
                 window.renderSidebar();
                 window.renderMainContent();
-                window.renderChat();
             }
         };
 
         const renderGlobalModals = () => {
             const container = document.getElementById('modals-container');
-            // 已移除舊有的 score-modal, progress-modal, weakness-modal
             container.innerHTML = `
                 <!-- 輸入密碼登入 Modal -->
                 <div id="login-pwd-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0">
@@ -928,13 +921,6 @@
             }
         };
 
-        window.insertChatEmoji = (emoji) => {
-            const input = document.getElementById('chatInput');
-            input.value += emoji;
-            input.focus();
-            document.getElementById('emoji-picker').classList.add('hidden');
-        };
-
         window.schSetEmoji = (emoji) => {
             const slotId = document.getElementById('sch-emoji-target-slot').value;
             if(slotId && scheduleModalState.currentDayData[slotId]) {
@@ -945,7 +931,7 @@
         };
 
         document.addEventListener('click', (e) => {
-            const pickers = ['emoji-picker', 'sch-emoji-picker'];
+            const pickers = ['sch-emoji-picker'];
             pickers.forEach(pid => {
                 const el = document.getElementById(pid);
                 if (el && !el.classList.contains('hidden')) {
@@ -1062,28 +1048,14 @@
             
             if(unsubDates) unsubDates();
             if(unsubSchedules) unsubSchedules();
-            if(unsubChat) unsubChat();
             if(unsubUsers) unsubUsers();
             if(unsubProfile) unsubProfile();
             if(unsubTextbooks) unsubTextbooks();
             
-            allSchedules = {}; chatMessages = []; importantDates = [];
+            allSchedules = {}; importantDates = [];
             try { localStorage.removeItem('study_group_user'); } catch(e) {}
             setupLoginListener();
             window.renderLogin();
-        };
-
-        window.sendChat = async () => {
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            if(!text) return;
-            
-            const newMsg = { user: username, text: text, timestamp: new Date().toISOString() };
-            const newChat = [...chatMessages, newMsg];
-            if(newChat.length > 50) newChat.shift();
-            
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), { messages: newChat });
-            input.value = '';
         };
 
         window.initiateLogin = (name) => {
@@ -1210,33 +1182,13 @@
             setupListeners();
         };
 
-        window.openPublicProfile = (name) => {
-            const prof = usersProfile[name] || {};
-            document.getElementById('vp-nickname').innerText = prof.nickname || name;
-            document.getElementById('vp-name').innerText = `@${name}`;
-            
-            const fallbackEl = document.getElementById('vp-avatar-fallback');
-            fallbackEl.innerText = getAvatarChar(name);
-            fallbackEl.className = `w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black mb-3 ${getUserColor(name)}`;
-            
-            openGlobalModal('view-profile-modal');
-        };
-
-        window.viewOthersScore = (e, otherUser, dateStr) => {
-            if(e) e.stopPropagation();
-            const originalUser = viewingUser;
-            viewingUser = otherUser; 
-            window.openScheduleModal(dateStr);
-            viewingUser = originalUser; 
-        };
-
         // ==========================================
         //  管理員面板邏輯
         // ==========================================
         window.openAdminPanel = () => {
-            renderAdminDates();
-            renderAdminUsers();
-            renderAdminTextbookList();
+            try { window.renderAdminDates(); } catch(e){}
+            try { window.renderAdminUsers(); } catch(e){}
+            try { window.renderAdminTextbookList(); } catch(e){}
             switchAdminTab('dates');
             openGlobalModal('admin-panel-modal');
         };
@@ -1262,7 +1214,8 @@
 
         window.renderAdminDates = () => {
             const container = document.getElementById('admin-dates-list');
-            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            if(!container) return;
+            const sortedDates = [...(importantDates || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
             container.innerHTML = sortedDates.map((item, index) => `
                 <div class="bg-white p-3 rounded-lg border border-gray-200 flex justify-between items-center shadow-sm">
                     <div>
@@ -1280,13 +1233,13 @@
             const title = document.getElementById('admin-new-date-title').value.trim();
             const date = document.getElementById('admin-new-date-value').value;
             if(!title || !date) return alert("請填寫完整");
-            const newDates = [...importantDates, { title, date }];
+            const newDates = [...(importantDates || []), { title, date }];
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
             document.getElementById('admin-new-date-title').value = '';
             document.getElementById('admin-new-date-value').value = '';
         };
         window.adminEditDate = (index) => {
-            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const sortedDates = [...(importantDates || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
             const item = sortedDates[index];
             const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
             document.getElementById('edit-date-index').value = realIndex;
@@ -1299,24 +1252,25 @@
             const title = document.getElementById('edit-date-title').value.trim();
             const date = document.getElementById('edit-date-value').value;
             if(!title || !date) return alert("不可留空");
-            let newDates = [...importantDates];
+            let newDates = [...(importantDates || [])];
             newDates[idx] = { title, date };
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
             closeGlobalModal('edit-date-modal');
         };
         window.adminDeleteDate = async (index) => {
             if(!confirm("確定刪除此日程？")) return;
-            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const sortedDates = [...(importantDates || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
             const item = sortedDates[index];
             const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
-            const newDates = [...importantDates];
+            const newDates = [...(importantDates || [])];
             newDates.splice(realIndex, 1);
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
         };
 
         window.renderAdminUsers = () => {
             const tbody = document.getElementById('admin-users-list');
-            tbody.innerHTML = globalUsers.map(u => {
+            if(!tbody) return;
+            tbody.innerHTML = (globalUsers || []).map(u => {
                 const prof = usersProfile[u] || {};
                 return `
                     <tr class="hover:bg-gray-50">
@@ -1336,7 +1290,7 @@
             try {
                 const newUsers = globalUsers.filter(u => u !== userToDelete);
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), { users: newUsers });
-                let newProfiles = JSON.parse(JSON.stringify(usersProfile));
+                let newProfiles = JSON.parse(JSON.stringify(usersProfile || {}));
                 delete newProfiles[userToDelete];
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), { profiles: newProfiles });
                 
@@ -1356,6 +1310,7 @@
         window.renderAdminTextbookList = () => {
             const sub = document.getElementById('admin-tb-subject-sel').value;
             const container = document.getElementById('admin-tb-list');
+            if(!container) return;
             const books = globalTextbooks[sub] || [];
             
             document.getElementById('admin-tb-form').classList.add('hidden'); 
@@ -1468,13 +1423,13 @@
             if(unsubProfile) unsubProfile();
             unsubProfile = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), (snap) => {
                 usersProfile = snap.exists() ? (snap.data().profiles || {}) : {};
-                if(username) window.renderMainContent();
+                try { if(username) window.renderMainContent(); } catch(e) {}
             }, errHandler);
 
             if(unsubDates) unsubDates();
             unsubDates = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), (snap) => {
-                if(snap.exists()) {
-                    importantDates = snap.data().list || [];
+                if(snap.exists() && Array.isArray(snap.data().list)) {
+                    importantDates = snap.data().list;
                 } else {
                     importantDates = [
                         { date: '2027-05-22', title: '國中教育會考' },
@@ -1483,14 +1438,10 @@
                     ];
                     setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: importantDates }).catch(errHandler);
                 }
-                if(username) window.renderSidebar();
-                if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) window.renderAdminDates();
-            }, errHandler);
-
-            if(unsubChat) unsubChat();
-            unsubChat = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Chat'), (snap) => {
-                if(snap.exists()) chatMessages = snap.data().messages || [];
-                if(username) window.renderChat();
+                try {
+                    if(username) window.renderSidebar();
+                    if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) window.renderAdminDates();
+                } catch(e) {}
             }, errHandler);
 
             if(unsubTextbooks) unsubTextbooks();
@@ -1501,7 +1452,9 @@
                     globalTextbooks = appData.TEXTBOOKS;
                     setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Textbooks'), { data: globalTextbooks }).catch(errHandler);
                 }
-                if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) window.renderAdminTextbookList();
+                try {
+                    if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) window.renderAdminTextbookList();
+                } catch(e) {}
             }, errHandler);
 
             const schedCol = collection(db, 'artifacts', appId, 'public', 'data', 'Schedules');
@@ -1518,26 +1471,34 @@
                     };
                 });
                 allSchedules = newAllSchedules;
-                if(username) {
-                    window.renderMainContent();
-                    if(!document.getElementById('schedule-modal').classList.contains('hidden')) {
-                        const isReadonly = (viewingUser !== 'ALL' && viewingUser !== username);
-                        if (isReadonly) {
-                            const targetDayData = (allSchedules[viewingUser] && allSchedules[viewingUser][scheduleModalState.date]) ? allSchedules[viewingUser][scheduleModalState.date] : {};
-                            scheduleModalState.currentDayData = JSON.parse(JSON.stringify(targetDayData.slots || {}));
-                            renderScheduleRightPanel();
+                
+                try {
+                    if(username) {
+                        window.renderMainContent();
+                        const scheduleModal = document.getElementById('schedule-modal');
+                        if(scheduleModal && !scheduleModal.classList.contains('hidden')) {
+                            const isReadonly = (viewingUser !== 'ALL' && viewingUser !== username);
+                            if (isReadonly) {
+                                const targetDayData = (allSchedules[viewingUser] && allSchedules[viewingUser][scheduleModalState.date]) ? allSchedules[viewingUser][scheduleModalState.date] : {};
+                                scheduleModalState.currentDayData = JSON.parse(JSON.stringify(targetDayData.slots || {}));
+                                renderScheduleRightPanel();
+                            }
                         }
                     }
+                } catch(e) {
+                    console.error('Render post-schedule update error', e);
                 }
             }, errHandler);
         };
 
         const setupLoginListener = () => {
             if (!currentUser) return;
+            if(unsubUsers) unsubUsers();
             unsubUsers = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList'), (snap) => {
                 globalUsers = snap.exists() ? (snap.data().users || []) : [];
                 if(!username && window.renderLogin) window.renderLogin();
             });
+            if(unsubProfile) unsubProfile();
             unsubProfile = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersProfile'), (snap) => {
                 usersProfile = snap.exists() ? (snap.data().profiles || {}) : {};
                 if(!username && window.renderLogin) window.renderLogin();
