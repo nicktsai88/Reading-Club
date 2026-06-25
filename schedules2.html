@@ -15,6 +15,11 @@
     <!-- Babel (用於在瀏覽器中編譯 JSX) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- Firebase Compat SDK (解決 ES Modules 在本地端 HTML 無法載入的問題) -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
     <style>
         /* 隱藏捲軸但保留滾動功能 */
         .hide-scrollbar::-webkit-scrollbar {
@@ -33,7 +38,7 @@
     <div id="root"></div>
 
     <!-- React 應用程式代碼 -->
-    <script type="text/babel" data-type="module">
+    <script type="text/babel">
         const { useState, useEffect, useCallback, useMemo } = React;
 
         // --- 1. SVG 圖示元件 (無須依賴外部套件) ---
@@ -194,84 +199,67 @@
 
             // 初始化 Firebase
             useEffect(() => {
-                if (!apiKey) return;
+                if (!apiKey || !window.firebase) return;
                 
-                let isMounted = true;
-                let unsubscribeAuth = null;
-
-                const initFirebase = async () => {
-                    try {
-                        setSyncStatus('syncing');
-                        // 動態載入 Firebase 模組
-                        const { initializeApp, getApps, getApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
-                        const { getAuth, signInAnonymously, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-                        const { getFirestore } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-
-                        const config = { ...BASE_FIREBASE_CONFIG, apiKey };
-                        const app = getApps().length === 0 ? initializeApp(config) : getApp();
-                        const auth = getAuth(app);
-                        const db = getFirestore(app);
-                        
-                        if (isMounted) setFirebaseDb(db);
-
-                        // 先進行匿名登入 (遵循 RULE 3)
-                        await signInAnonymously(auth);
-
-                        unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-                            if (isMounted) setUser(currentUser);
-                        });
-                    } catch (error) {
-                        console.error("Firebase 初始設定失敗:", error);
-                        if (isMounted) setSyncStatus('error');
+                try {
+                    setSyncStatus('syncing');
+                    const config = { ...BASE_FIREBASE_CONFIG, apiKey };
+                    
+                    // 確保沒有重複初始化
+                    if (!window.firebase.apps.length) {
+                        window.firebase.initializeApp(config);
                     }
-                };
+                    
+                    const auth = window.firebase.auth();
+                    const db = window.firebase.firestore();
+                    
+                    setFirebaseDb(db);
 
-                initFirebase();
+                    // 先進行匿名登入
+                    auth.signInAnonymously().catch(error => {
+                        console.error("Firebase 登入失敗:", error);
+                        setSyncStatus('error');
+                    });
 
-                return () => {
-                    isMounted = false;
-                    if (unsubscribeAuth) unsubscribeAuth();
-                };
+                    const unsubscribeAuth = auth.onAuthStateChanged((currentUser) => {
+                        setUser(currentUser);
+                    });
+
+                    return () => unsubscribeAuth();
+                } catch (error) {
+                    console.error("Firebase 初始設定失敗:", error);
+                    setSyncStatus('error');
+                }
             }, [apiKey]);
 
             // 監聽 Firestore 資料
             useEffect(() => {
                 if (!user || !firebaseDb) return;
                 
-                let isMounted = true;
-                let unsubscribeSnapshot = null;
+                setSyncStatus('syncing');
+                
+                // 遵循 RULE 1: 使用專屬的 user 路徑
+                const docRef = firebaseDb.collection('artifacts')
+                                        .doc(appId)
+                                        .collection('users')
+                                        .doc(user.uid)
+                                        .collection('study_data')
+                                        .doc('progress');
 
-                const startSync = async () => {
-                    try {
-                        setSyncStatus('syncing');
-                        const { doc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                        
-                        // 遵循 RULE 1: 使用專屬的 user 路徑
-                        const docRef = doc(firebaseDb, 'artifacts', appId, 'users', user.uid, 'study_data', 'progress');
-
-                        unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
-                            if (docSnap.exists() && isMounted) {
-                                const data = docSnap.data();
-                                if (data && data.progress) {
-                                    setProgressData(data.progress);
-                                }
-                            }
-                            if (isMounted) setSyncStatus('synced');
-                        }, (error) => {
-                            console.error("Firestore 讀取失敗:", error);
-                            if (isMounted) setSyncStatus('error');
-                        });
-                    } catch (err) {
-                        console.error(err);
+                const unsubscribeSnapshot = docRef.onSnapshot((docSnap) => {
+                    if (docSnap.exists) {
+                        const data = docSnap.data();
+                        if (data && data.progress) {
+                            setProgressData(data.progress);
+                        }
                     }
-                };
+                    setSyncStatus('synced');
+                }, (error) => {
+                    console.error("Firestore 讀取失敗:", error);
+                    setSyncStatus('error');
+                });
 
-                startSync();
-
-                return () => {
-                    isMounted = false;
-                    if (unsubscribeSnapshot) unsubscribeSnapshot();
-                };
+                return () => unsubscribeSnapshot();
             }, [user, firebaseDb]);
 
             // 處理 API Key 儲存
@@ -310,10 +298,14 @@
                 if (user && firebaseDb) {
                     setSyncStatus('syncing');
                     try {
-                        const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                        const docRef = doc(firebaseDb, 'artifacts', appId, 'users', user.uid, 'study_data', 'progress');
+                        const docRef = firebaseDb.collection('artifacts')
+                                                .doc(appId)
+                                                .collection('users')
+                                                .doc(user.uid)
+                                                .collection('study_data')
+                                                .doc('progress');
                         // 使用 merge: true 避免覆蓋未來的其他欄位
-                        await setDoc(docRef, { progress: newProgressData }, { merge: true });
+                        await docRef.set({ progress: newProgressData }, { merge: true });
                         setSyncStatus('synced');
                     } catch (error) {
                         console.error("進度儲存失敗:", error);
