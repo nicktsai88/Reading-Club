@@ -324,6 +324,7 @@
 
         window.renderMain = () => {
             const container = document.getElementById('view-container');
+            // 全新雙欄設計：左側為倒數與里程碑，右側為月曆
             container.innerHTML = `
                 <div class="bg-white/90 backdrop-blur-md border-b-2 border-sky-200 p-3 flex justify-between items-center shadow-sm shrink-0 z-20 relative">
                     <div class="flex items-center gap-4 pl-2">
@@ -351,16 +352,12 @@
 
                 <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
                     
-                    <!-- 左側：倒數計時與排行榜 -->
-                    <div class="w-full md:w-60 lg:w-72 flex flex-col bg-white/60 border-b-2 md:border-b-0 md:border-r-2 border-sky-100 z-10 shrink-0 h-full min-h-0">
-                        <div id="sidebar-countdowns" class="p-4 flex flex-col border-b-2 border-sky-100 shrink-0 relative overflow-hidden"></div>
-                        <div class="flex-1 flex flex-col bg-white/80 overflow-hidden relative min-h-0">
-                            <div class="bg-sky-100/50 p-2 text-center font-bold text-sky-700 border-b border-sky-100 text-sm shadow-sm shrink-0">🏆 榮譽排行榜</div>
-                            <div id="leaderboard-feed" class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar relative min-h-0"></div>
-                        </div>
+                    <!-- 左欄：倒數計時與里程碑 -->
+                    <div class="w-full md:w-72 lg:w-80 flex flex-col bg-white/60 border-b-2 md:border-b-0 md:border-r-2 border-sky-100 z-10 shrink-0 h-full min-h-0 overflow-y-auto custom-scrollbar">
+                        <div id="sidebar-countdowns" class="p-4 flex flex-col shrink-0 relative overflow-hidden"></div>
                     </div>
 
-                    <!-- 中間：月曆 -->
+                    <!-- 右欄：核心月曆 -->
                     <div class="flex-1 bg-white/40 p-4 flex flex-col relative z-0 min-w-0">
                         <div class="flex justify-between items-center mb-4 bg-white/90 p-3 rounded-2xl border border-sky-100 shadow-sm shrink-0">
                             <button onclick="changeMonth(-1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-sky-50 border border-sky-200 hover:bg-sky-100 text-sky-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">◀ 上月</button>
@@ -368,15 +365,6 @@
                             <button onclick="changeMonth(1)" class="px-3 py-1.5 md:px-4 md:py-2 bg-sky-50 border border-sky-200 hover:bg-sky-100 text-sky-700 rounded-xl font-bold transition-colors shadow-sm text-sm md:text-base whitespace-nowrap">下月 ▶</button>
                         </div>
                         <div id="calendar-grid" class="flex-1 flex flex-col min-h-0 bg-white/50 rounded-2xl p-2 border border-sky-50 shadow-inner"></div>
-                    </div>
-
-                    <!-- 右側：里程碑與動態 -->
-                    <div class="w-full md:w-60 lg:w-72 flex flex-col bg-white/60 border-t-2 md:border-t-0 md:border-l-2 border-sky-100 z-10 shrink-0 h-full min-h-0">
-                        <div id="sidebar-milestones" class="p-4 flex flex-col border-b-2 border-sky-100 shrink-0 relative overflow-hidden"></div>
-                        <div class="flex-1 flex flex-col bg-white/80 overflow-hidden relative min-h-0">
-                            <div class="bg-blue-100/50 p-2 text-center font-bold text-blue-700 border-b border-blue-100 text-sm shadow-sm shrink-0">🌟 最新排程動態</div>
-                            <div id="timeline-feed" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar relative min-h-0"></div>
-                        </div>
                     </div>
                 </div>
             `;
@@ -582,7 +570,7 @@
                                 </div>
                             </div>
 
-                            <!-- Tab: Textbooks (New) -->
+                            <!-- Tab: Textbooks -->
                             <div id="admin-tab-textbooks" class="hidden flex flex-col h-full gap-4">
                                 <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-sm flex items-center gap-3 shrink-0">
                                     <label class="font-bold text-blue-800 shrink-0">選擇科目：</label>
@@ -677,7 +665,7 @@
         // ==========================================
         window.openScheduleModal = (dateStr) => {
             scheduleModalState.date = dateStr;
-            scheduleModalState.activeSlot = '08:00 - 09:00'; // Default
+            scheduleModalState.activeSlot = '08:00 - 09:00'; 
             scheduleModalState.selectedSubject = '';
             scheduleModalState.selectedBookId = '';
             
@@ -1029,6 +1017,186 @@
         };
 
         // ==========================================
+        //  UI 渲染函式 - 雙欄版面配置 (月曆/動態)
+        // ==========================================
+        window.renderSidebar = () => {
+            const container = document.getElementById('sidebar-countdowns');
+            if(!container) return;
+            const examDaysLeft = getDaysLeft(EXAM_DATE);
+            let html = `
+                <div class="bg-gradient-to-br from-blue-500 to-sky-400 rounded-2xl p-5 text-center shadow-lg text-white mb-6 transform hover:scale-[1.02] transition-transform border border-sky-300 shrink-0 z-10 relative">
+                    <h3 class="text-sm font-bold text-sky-100 mb-1">會考大日子 (2027-05-22)</h3>
+                    <div class="text-5xl font-black drop-shadow-md mb-2">${examDaysLeft >= 0 ? examDaysLeft : 0} <span class="text-xl">天</span></div>
+                    <div class="text-xs bg-black/20 rounded-full inline-block px-3 py-1 font-bold">🎯 決戰時刻</div>
+                </div>
+                <h4 class="font-bold text-blue-800 mb-3 flex items-center gap-2 shrink-0 z-10 relative pl-1">🗓️ 考試日程里程碑</h4>
+                <div class="space-y-3 pb-6">
+            `;
+            const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+            sortedDates.forEach((item) => {
+                const days = getDaysLeft(item.date);
+                if (days >= 0) {
+                    html += `
+                        <div class="bg-white p-4 rounded-xl border border-sky-100 shadow-sm flex justify-between items-center relative overflow-hidden group hover:shadow-md transition-shadow">
+                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-400"></div>
+                            <div class="pl-3">
+                                <div class="text-sm font-black text-gray-800">${item.title}</div>
+                                <div class="text-[11px] text-gray-500 font-mono mt-1">${item.date}</div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-2xl font-black ${days <= 7 ? 'text-red-500' : 'text-blue-500'}">${days}</span>
+                                <span class="text-xs text-gray-500">天</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+        };
+
+        window.changeMonth = (delta) => {
+            currentMonth += delta;
+            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+            if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+            window.renderMainContent();
+        };
+
+        window.changeViewingUser = (user) => {
+            viewingUser = user;
+            window.renderCalendar();
+        };
+
+        window.renderCalendar = () => {
+            const container = document.getElementById('calendar-grid');
+            const headerContainer = document.getElementById('calendar-header-container');
+            if(!container || !headerContainer) return;
+
+            headerContainer.innerHTML = `
+                <h2 class="text-xl md:text-2xl font-black text-blue-600 tracking-wide">${currentYear} 年 ${currentMonth + 1} 月</h2>
+                <select onchange="changeViewingUser(this.value)" class="text-xs md:text-sm font-bold text-blue-800 bg-blue-50 pl-3 pr-7 py-1 md:py-1.5 rounded-full mt-1 border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer shadow-sm w-auto max-w-full text-ellipsis overflow-hidden">
+                    <option value="ALL" ${viewingUser === 'ALL' ? 'selected' : ''}>🌍 全員排程總覽</option>
+                    ${globalUsers.map((u, idx) => {
+                        const dispName = usersProfile[u]?.nickname || u;
+                        const isMe = u === username ? ' (我)' : '';
+                        return `<option value="${u}" ${u === viewingUser ? 'selected' : ''}>👀 ${dispName}${isMe} 的排程</option>`;
+                    }).join('')}
+                </select>
+            `;
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const startPad = firstDay === 0 ? 6 : firstDay - 1;
+
+            let html = `<div class="grid grid-cols-7 gap-1 md:gap-2 mb-2 shrink-0">`;
+            ['一', '二', '三', '四', '五', '六', '日'].forEach((d, idx) => {
+                const isWeekend = idx >= 5;
+                html += `<div class="text-center font-bold ${isWeekend ? 'text-blue-500 bg-blue-50' : 'text-gray-600 bg-gray-100'} py-1 md:py-1.5 text-sm md:text-base rounded-lg md:rounded-xl shadow-sm border border-gray-200">${d}</div>`;
+            });
+            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[100px] md:auto-rows-[130px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
+
+            for(let i=0; i<startPad; i++) html += `<div class="bg-transparent rounded-xl md:rounded-2xl border border-transparent"></div>`;
+
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const isToday = dateStr === formatDate(new Date());
+                const isImportant = importantDates.find(i => i.date === dateStr);
+                
+                let usersWithDataToday = [];
+                Object.entries(allSchedules).forEach(([u, dates]) => {
+                    if (dates[dateStr] && Object.keys(dates[dateStr].slots || {}).length > 0) {
+                        if (viewingUser === 'ALL' || u === viewingUser) usersWithDataToday.push(u);
+                    }
+                });
+
+                const headerClass = isToday 
+                    ? 'bg-gradient-to-r from-blue-500 to-sky-500 text-white shadow-md' 
+                    : isImportant 
+                        ? 'bg-gradient-to-r from-orange-400 to-red-400 text-white shadow-md' 
+                        : 'bg-white border border-gray-200 text-gray-600';
+
+                const clickAction = (viewingUser === 'ALL') 
+                    ? `openScheduleModal('${dateStr}')` 
+                    : `viewOthersScore(event, '${viewingUser}', '${dateStr}')`;
+
+                let cellHTML = '';
+
+                if (viewingUser === 'ALL') {
+                    const avatarsHtml = usersWithDataToday.map(u => `
+                        <div onclick="viewOthersScore(event, '${u}', '${dateStr}')" 
+                             class="${getUserColor(u)} w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-[9px] md:text-[11px] font-bold shadow-sm cursor-pointer hover:scale-125 transition-transform flex-shrink-0 border border-white" 
+                             title="查看 ${usersProfile[u]?.nickname || u} 的排程">
+                            ${getAvatarChar(u)}
+                        </div>
+                    `).join('');
+
+                    cellHTML = `
+                        <div onclick="${clickAction}" class="bg-white border-2 border-sky-100 p-1.5 md:p-2 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-blue-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
+                            <div class="flex justify-between items-start shrink-0 mb-1 w-full">
+                                <span class="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass} shrink-0 shadow-sm">${d}</span>
+                                ${isImportant ? `<span class="text-[10px] md:text-xs drop-shadow-sm mt-1 group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-wrap content-start gap-1 justify-center pt-1">
+                                ${avatarsHtml}
+                                ${usersWithDataToday.length === 0 ? '<div class="text-[10px] text-gray-300 w-full text-center mt-2">無排程</div>' : ''}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    let cellContent = '';
+                    const dayData = (allSchedules[viewingUser] && allSchedules[viewingUser][dateStr]) ? allSchedules[viewingUser][dateStr] : {slots:{}};
+                    const slots = dayData.slots || {};
+                    
+                    if (Object.keys(slots).length > 0) {
+                        cellContent = `<div class="flex flex-col gap-0.5 md:gap-1 w-full mt-1">`;
+                        const sortedTimes = Object.keys(slots).sort();
+                        sortedTimes.forEach(time => {
+                            const info = slots[time];
+                            const hexColor = SUBJECT_HEX_COLORS[info.subject] || SUBJECT_HEX_COLORS['default'];
+                            const safeColor = getSafeTextColor(info.subject);
+                            
+                            cellContent += `
+                                <div class="text-[9px] md:text-[10px] truncate px-1 py-0.5 rounded shadow-sm border border-transparent font-bold flex gap-1" 
+                                     style="background-color: ${hexColor}15; border-color: ${hexColor}30; color: ${safeColor};" 
+                                     title="${time} ${info.subject}: ${info.chapter}">
+                                    <span class="shrink-0 grayscale opacity-80">${info.emoji||'🔹'}</span>
+                                    <span class="truncate">${info.chapter}</span>
+                                </div>
+                            `;
+                        });
+                        cellContent += `</div>`;
+                    } else {
+                        cellContent = `<div class="flex h-full items-center justify-center text-[10px] text-gray-300 font-bold">空閒</div>`;
+                    }
+
+                    cellHTML = `
+                        <div onclick="${clickAction}" class="bg-white border-2 border-sky-100 p-1 md:p-1.5 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-blue-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
+                            <div class="flex justify-between items-start shrink-0 mb-0.5 w-full">
+                                <span class="w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full text-xs font-bold ${headerClass} shrink-0 shadow-sm">${d}</span>
+                                ${isImportant ? `<span class="text-[10px] drop-shadow-sm group-hover:scale-125 transition-transform shrink-0" title="${isImportant.title}">🔥</span>` : ''}
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar relative">
+                                ${cellContent}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += cellHTML;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        };
+
+        window.renderMainContent = () => {
+            if(window.renderCalendar) window.renderCalendar();
+            if(isAdmin && !document.getElementById('admin-panel-modal').classList.contains('hidden')) {
+                window.renderAdminUsers();
+                window.renderAdminTextbookList();
+            }
+        };
+
+        // ==========================================
         //  通用動作邏輯 (設定、登出等) 
         // ==========================================
         window.saveFirebaseConfig = () => {
@@ -1180,6 +1348,26 @@
             try { localStorage.setItem('study_group_user', username); } catch(e) {}
             window.renderMain();
             setupListeners();
+        };
+
+        window.openPublicProfile = (name) => {
+            const prof = usersProfile[name] || {};
+            document.getElementById('vp-nickname').innerText = prof.nickname || name;
+            document.getElementById('vp-name').innerText = `@${name}`;
+            
+            const fallbackEl = document.getElementById('vp-avatar-fallback');
+            fallbackEl.innerText = getAvatarChar(name);
+            fallbackEl.className = `w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-black mb-3 ${getUserColor(name)}`;
+            
+            openGlobalModal('view-profile-modal');
+        };
+
+        window.viewOthersScore = (e, otherUser, dateStr) => {
+            if(e) e.stopPropagation();
+            const originalUser = viewingUser;
+            viewingUser = otherUser; 
+            window.openScheduleModal(dateStr);
+            viewingUser = originalUser; 
         };
 
         // ==========================================
