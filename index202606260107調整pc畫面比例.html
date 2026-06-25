@@ -532,7 +532,7 @@
                         <div class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden custom-scrollbar bg-gradient-to-br from-white/30 to-pink-50/20">
                             
                             <!-- Left Sidebar -->
-                            <div class="w-full md:w-40 lg:w-52 xl:w-64 flex flex-col bg-white/40 border-b md:border-b-0 md:border-r border-pink-200/50 z-10 shrink-0 md:h-full min-h-0">
+                            <div class="w-full md:w-48 lg:w-60 xl:w-72 flex flex-col bg-white/40 border-b md:border-b-0 md:border-r border-pink-200/50 z-10 shrink-0 md:h-full min-h-0">
                                 <div id="sidebar-countdowns" class="p-4 flex flex-col border-b border-pink-200/50 shrink-0 md:h-[45%] min-h-[250px] relative overflow-hidden"></div>
                                 <div class="flex-1 flex flex-col bg-white/20 overflow-hidden relative min-h-[280px] md:min-h-0">
                                     <div class="bg-pink-100/40 p-2 text-center font-bold text-pink-600 border-b border-pink-100 text-sm shadow-sm shrink-0 backdrop-blur-sm">💬 加油打氣留言板</div>
@@ -564,7 +564,7 @@
                             </div>
 
                             <!-- Right Sidebar -->
-                            <div class="w-full md:w-40 lg:w-52 xl:w-64 flex flex-col bg-white/40 border-t md:border-t-0 md:border-l border-pink-200/50 z-10 shrink-0 md:h-full min-h-0">
+                            <div class="w-full md:w-48 lg:w-60 xl:w-72 flex flex-col bg-white/40 border-t md:border-t-0 md:border-l border-pink-200/50 z-10 shrink-0 md:h-full min-h-0">
                                 <div class="flex-1 flex flex-col min-h-[280px] md:min-h-0 border-b border-pink-200/50">
                                     <div class="bg-gradient-to-r from-rose-100/80 to-pink-100/80 backdrop-blur-sm p-2 text-center font-bold text-rose-700 shadow-sm shrink-0 text-sm">🌟 最新戰況動態</div>
                                     <div id="timeline-feed" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar bg-white/20"></div>
@@ -1768,9 +1768,9 @@
                 const isWeekend = idx >= 5;
                 html += `<div class="text-center font-bold ${isWeekend ? 'text-rose-500 bg-rose-50' : 'text-teal-700 bg-teal-50'} py-1 md:py-2 text-xs sm:text-sm lg:text-base rounded-lg md:rounded-xl shadow-sm border border-gray-100">${d}</div>`;
             });
-            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 flex-1 overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
+            html += `</div><div class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[100px] md:auto-rows-[120px] overflow-y-auto custom-scrollbar pb-4 pr-1 pl-1">`;
 
-            for(let i=0; i<startPad; i++) html += `<div class="bg-white/30 rounded-xl md:rounded-2xl border border-transparent h-[80px] sm:h-[90px] md:h-auto md:aspect-square"></div>`;
+            for(let i=0; i<startPad; i++) html += `<div class="bg-white/30 rounded-xl md:rounded-2xl border border-transparent"></div>`;
 
             for(let d=1; d<=daysInMonth; d++) {
                 const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -1807,14 +1807,14 @@
                     `).join('');
 
                     cellHTML = `
-                        <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-1.5 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-[80px] sm:h-[90px] md:h-auto md:aspect-square">
-                            <div class="flex justify-between items-start shrink-0 mb-0.5 w-full">
+                        <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-1.5 rounded-xl md:rounded-2xl shadow-sm flex flex-row transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
+                            <div class="flex flex-col items-center shrink-0 w-6 md:w-7">
                                 <span class="w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full text-[10px] md:text-[12px] font-bold ${headerClass} shrink-0 shadow-sm">${d}</span>
-                                ${isImportant ? `<span class="text-[10px] md:text-xs drop-shadow-sm group-hover:scale-125 transition-transform shrink-0" title="${isImportant.title}">🔥</span>` : ''}
+                                ${isImportant ? `<span class="text-[10px] md:text-xs drop-shadow-sm mt-1 group-hover:scale-125 transition-transform" title="${isImportant.title}">🔥</span>` : ''}
                             </div>
-                            <div class="flex-1 overflow-y-auto custom-scrollbar w-full mt-0.5">
+                            <div class="flex-1 overflow-y-auto custom-scrollbar h-full pl-1">
                                 ${usersWithDataToday.length > 0 ? `
-                                    <div class="flex flex-wrap justify-start md:justify-center content-start gap-1 pb-1 pr-0.5">
+                                    <div class="flex flex-wrap justify-center content-start gap-1 pb-1 pr-0.5 mt-0.5">
                                         ${avatarsHtml}
                                     </div>
                                 ` : ''}
@@ -1846,7 +1846,7 @@
                     }
 
                     cellHTML = `
-                        <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-2 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-[80px] sm:h-[90px] md:h-auto md:aspect-square">
+                        <div onclick="${clickAction}" class="bg-white border-2 border-pink-100 p-1 md:p-2 rounded-xl md:rounded-2xl shadow-sm flex flex-col transition-all cursor-pointer hover:border-teal-400 hover:shadow-md hover:-translate-y-1 overflow-hidden group relative h-full">
                             <div class="flex justify-between items-start shrink-0 mb-0.5 md:mb-1 w-full">
                                 <span class="w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-bold ${headerClass} shrink-0">${d}</span>
                                 
