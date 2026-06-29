@@ -670,10 +670,7 @@
                             <!-- Step 4 -->
                             <div id="step-4-container" class="hidden">
                                 <h3 class="text-rose-800 font-bold mb-3 border-l-4 border-rose-400 pl-2 text-lg shadow-sm bg-white/50 py-1">Step 4: 選擇成績等級</h3>
-                                <div class="grid grid-cols-4 sm:grid-cols-8 gap-2" id="grade-selector">
-                                    <button onclick="openGradeCalcModal()" class="py-2.5 rounded-xl border-2 border-indigo-200 text-indigo-700 font-black hover:bg-indigo-100 transition-all bg-indigo-50 shadow-sm hover:scale-[1.02] flex items-center justify-center gap-1 text-sm md:text-base">
-                                        🧮 計算
-                                    </button>
+                                <div class="grid grid-cols-4 sm:grid-cols-7 gap-2" id="grade-selector">
                                     ${GRADES.map(g => `<button onclick="selectGrade('${g}')" id="btn-grade-${g.replace('+','p').replace('+','p')}" class="py-2.5 rounded-xl border-2 border-rose-200 text-rose-700 font-bold hover:bg-rose-50 transition-all bg-white shadow-sm hover:scale-[1.02]">${g}</button>`).join('')}
                                 </div>
                                 <!-- 弱點手動標記區塊 -->
@@ -723,7 +720,7 @@
                     </div>
                 </div>
                 
-                <!-- 弱點集中營 Modal -->
+                <!-- 弱點集中營 Modal (強化寬度) -->
                 <div id="weakness-modal" class="fixed inset-0 bg-gray-900/70 backdrop-blur-sm hidden items-center justify-center z-[70] p-4 transition-opacity duration-200 opacity-0" onclick="if(event.target === this) closeGlobalModal('weakness-modal')">
                     <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-7xl overflow-hidden border-4 border-red-300 transform scale-95 transition-transform duration-200 flex flex-col relative" style="max-height: 90vh;">
                         <div class="bg-gradient-to-r from-red-500 to-orange-500 p-4 flex justify-between items-center text-white shrink-0">
@@ -845,64 +842,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- 成績計算機 Modal -->
-                <div id="grade-calc-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[9999] p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border-4 border-indigo-200 transform scale-95 transition-transform duration-200 flex flex-col p-6">
-                        <h2 class="text-xl font-black text-indigo-600 mb-2 text-center">🧮 成績等級換算</h2>
-                        <p class="text-center font-bold text-gray-500 mb-6 text-sm">輸入題數，系統將為您自動換算等級</p>
-                        
-                        <div class="space-y-4 mb-6">
-                            <div>
-                                <label class="block text-indigo-800 font-bold mb-1 text-sm">全部題數 (選填)</label>
-                                <input type="number" id="calc-total-q" min="0" placeholder="例如: 30" class="w-full px-4 py-2 rounded-xl border-2 border-indigo-100 focus:outline-none focus:border-indigo-400 font-bold text-gray-700 text-center">
-                            </div>
-                            <div>
-                                <label class="block text-rose-800 font-bold mb-1 text-sm">答錯題數 (必填)</label>
-                                <input type="number" id="calc-wrong-q" min="0" placeholder="例如: 5" class="w-full px-4 py-2 rounded-xl border-2 border-rose-200 focus:outline-none focus:border-rose-400 font-bold text-rose-600 text-center">
-                            </div>
-                        </div>
-
-                        <div class="flex gap-3">
-                            <button onclick="closeGlobalModal('grade-calc-modal')" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors">取消</button>
-                            <button onclick="calculateAndSelectGrade()" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-indigo-500 hover:bg-indigo-600 shadow-md transition-colors">換算並選擇</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Custom Alert Modal -->
-                <div id="custom-alert-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[9999] p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border-4 border-rose-200 transform scale-95 transition-transform duration-200 flex flex-col p-6">
-                        <h2 class="text-xl font-black text-rose-500 mb-2 text-center" id="custom-alert-title">提示</h2>
-                        <p class="text-center font-bold text-gray-700 mb-6 whitespace-pre-line" id="custom-alert-message"></p>
-                        <button onclick="closeCustomAlert()" class="w-full px-4 py-2.5 rounded-xl font-bold text-white bg-rose-400 hover:bg-rose-500 shadow-md">確定</button>
-                    </div>
-                </div>
-
-                <!-- Custom Confirm Modal -->
-                <div id="custom-confirm-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[9999] p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border-4 border-orange-200 transform scale-95 transition-transform duration-200 flex flex-col p-6">
-                        <h2 class="text-xl font-black text-orange-500 mb-2 text-center" id="custom-confirm-title">確認</h2>
-                        <p class="text-center font-bold text-gray-700 mb-6 whitespace-pre-line" id="custom-confirm-message"></p>
-                        <div class="flex gap-3">
-                            <button onclick="closeCustomConfirm(false)" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100">取消</button>
-                            <button onclick="closeCustomConfirm(true)" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-orange-400 hover:bg-orange-500 shadow-md">確定</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Custom Prompt Modal -->
-                <div id="custom-prompt-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-[9999] p-4 transition-opacity duration-200 opacity-0">
-                    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border-4 border-indigo-200 transform scale-95 transition-transform duration-200 flex flex-col p-6">
-                        <h2 class="text-xl font-black text-indigo-500 mb-2 text-center" id="custom-prompt-title">輸入</h2>
-                        <p class="text-center font-bold text-gray-700 mb-4 whitespace-pre-line" id="custom-prompt-message"></p>
-                        <input type="text" id="custom-prompt-input" class="w-full px-4 py-3 rounded-xl border-2 border-indigo-200 focus:outline-none focus:border-indigo-400 text-center font-bold text-lg mb-6">
-                        <div class="flex gap-3">
-                            <button onclick="closeCustomPrompt(null)" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100">取消</button>
-                            <button onclick="closeCustomPrompt(document.getElementById('custom-prompt-input').value)" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-indigo-400 hover:bg-indigo-500 shadow-md">確定</button>
-                        </div>
-                    </div>
-                </div>
             `;
         };
 
@@ -928,89 +867,6 @@
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
             }, 200);
-        };
-
-        // Custom Dialog Handlers
-        let customAlertResolve = null;
-        window.customAlert = (message, title = '系統提示') => {
-            return new Promise(resolve => {
-                document.getElementById('custom-alert-title').innerText = title;
-                document.getElementById('custom-alert-message').innerText = message;
-                openGlobalModal('custom-alert-modal');
-                customAlertResolve = resolve;
-            });
-        };
-        window.closeCustomAlert = () => {
-            closeGlobalModal('custom-alert-modal');
-            if (customAlertResolve) customAlertResolve();
-        };
-
-        let customConfirmResolve = null;
-        window.customConfirm = (message, title = '操作確認') => {
-            return new Promise(resolve => {
-                document.getElementById('custom-confirm-title').innerText = title;
-                document.getElementById('custom-confirm-message').innerText = message;
-                openGlobalModal('custom-confirm-modal');
-                customConfirmResolve = resolve;
-            });
-        };
-        window.closeCustomConfirm = (result) => {
-            closeGlobalModal('custom-confirm-modal');
-            if (customConfirmResolve) customConfirmResolve(result);
-        };
-
-        let customPromptResolve = null;
-        window.customPrompt = (message, defaultValue = '', title = '需要輸入') => {
-            return new Promise(resolve => {
-                document.getElementById('custom-prompt-title').innerText = title;
-                document.getElementById('custom-prompt-message').innerText = message;
-                const input = document.getElementById('custom-prompt-input');
-                input.value = defaultValue;
-                openGlobalModal('custom-prompt-modal');
-                setTimeout(() => input.focus(), 100);
-                customPromptResolve = resolve;
-            });
-        };
-        window.closeCustomPrompt = (result) => {
-            closeGlobalModal('custom-prompt-modal');
-            if (customPromptResolve) customPromptResolve(result);
-        };
-
-        // ==========================================
-        //  成績計算機邏輯
-        // ==========================================
-        window.openGradeCalcModal = () => {
-            document.getElementById('calc-total-q').value = '';
-            document.getElementById('calc-wrong-q').value = '';
-            openGlobalModal('grade-calc-modal');
-            setTimeout(() => document.getElementById('calc-wrong-q').focus(), 100);
-        };
-
-        window.calculateAndSelectGrade = async () => {
-            const totalStr = document.getElementById('calc-total-q').value;
-            const wrongStr = document.getElementById('calc-wrong-q').value;
-            
-            const total = parseInt(totalStr, 10);
-            const wrong = parseInt(wrongStr, 10);
-
-            if (isNaN(wrong) || wrong < 0) {
-                return await customAlert("請輸入有效的答錯題數！");
-            }
-            if (!isNaN(total) && wrong > total) {
-                return await customAlert("答錯題數不可大於全部題數！");
-            }
-
-            let resultGrade = 'C';
-            if (wrong >= 0 && wrong <= 2) resultGrade = 'A++';
-            else if (wrong === 3) resultGrade = 'A+';
-            else if (wrong >= 4 && wrong <= 5) resultGrade = 'A';
-            else if (wrong >= 6 && wrong <= 8) resultGrade = 'B++';
-            else if (wrong >= 9 && wrong <= 11) resultGrade = 'B+';
-            else if (wrong >= 12 && wrong <= 14) resultGrade = 'B';
-            else resultGrade = 'C';
-
-            closeGlobalModal('grade-calc-modal');
-            window.selectGrade(resultGrade);
         };
 
         // ==========================================
@@ -1261,7 +1117,7 @@
                 allGrades[username][dateStr][subSubject].reviews[idx] = isChecked;
             } catch (e) {
                 console.error(e);
-                await customAlert("更新失敗！請檢查網路連線。");
+                alert("更新失敗！請檢查網路連線。");
             }
         };
 
@@ -1347,25 +1203,24 @@
                                 formatter: function(value, context) { return context.chart.data.labels[context.dataIndex] + '\n' + value + ' 分'; },
                                 textAlign: 'center', align: 'end', anchor: 'end', offset: 5,
                                 listeners: {
-                                    click: async function(context) {
+                                    click: function(context) {
                                         const sub = context.chart.data.labels[context.dataIndex];
                                         const details = subjectDetails[sub];
                                         if(!details) return;
                                         const statsStr = `【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`;
-                                        await customAlert(statsStr); 
-                                        return true;
+                                        alert(statsStr); return true;
                                     }
                                 }
                             }
                         },
-                        onClick: async (e, elements) => {
+                        onClick: (e, elements) => {
                             if (elements.length > 0) {
                                 const idx = elements[0].index;
                                 const sub = analysisSubjects[idx];
                                 const details = subjectDetails[sub];
                                 if(!details) return;
                                 const statsStr = `【${sub}】統計數據\nA++ : ${details['A++']}次\nA+ : ${details['A+']}次\nA : ${details['A']}次\nB++ : ${details['B++']}次\nB+ : ${details['B+']}次\nB : ${details['B']}次\nC : ${details['C']}次\n總計 : ${subjectCounts[sub]}次`;
-                                await customAlert(statsStr);
+                                alert(statsStr);
                             }
                         }
                     }
@@ -1376,11 +1231,11 @@
         // ==========================================
         //  通用動作邏輯 (設定、登出、聊天等) 
         // ==========================================
-        window.saveFirebaseConfig = async () => {
+        window.saveFirebaseConfig = () => {
             const apiKey = document.getElementById('cfg-apiKey').value.trim();
-            if (!apiKey) return await customAlert("API Key 為必填欄位！");
+            if (!apiKey) return alert("API Key 為必填欄位！");
             localStorage.setItem('study_group_firebase_config', JSON.stringify({ apiKey }));
-            await customAlert("設定已儲存！系統將重新啟動。");
+            alert("設定已儲存！系統將重新啟動。");
             window.location.reload(); 
         };
 
@@ -1423,9 +1278,9 @@
         // ==========================================
         //  登入/註冊/個資 邏輯
         // ==========================================
-        window.initiateLogin = async (name) => {
+        window.initiateLogin = (name) => {
             const trimmed = name.trim();
-            if(!trimmed) return await customAlert("請傳入名稱！");
+            if(!trimmed) return alert("請傳入名稱！");
             
             if (globalUsers.includes(trimmed) && usersProfile[trimmed]) {
                 document.getElementById('login-pwd-username').value = trimmed;
@@ -1437,11 +1292,11 @@
             }
         };
 
-        window.confirmLoginPassword = async () => {
+        window.confirmLoginPassword = () => {
             const name = document.getElementById('login-pwd-username').value;
             const pwd = document.getElementById('login-pwd-input').value;
-            if (name === 'Nick' && pwd !== '2iligloi') return await customAlert("Nick 為管理員保留帳號，密碼錯誤！");
-            if (usersProfile[name] && usersProfile[name].password !== pwd) return await customAlert("密碼錯誤，請重試！");
+            if (name === 'Nick' && pwd !== '2iligloi') return alert("Nick 為管理員保留帳號，密碼錯誤！");
+            if (usersProfile[name] && usersProfile[name].password !== pwd) return alert("密碼錯誤，請重試！");
             
             closeGlobalModal('login-pwd-modal');
             doCompleteLogin(name);
@@ -1534,15 +1389,15 @@
             const pwdConfirm = document.getElementById('prof-pwd-confirm').value.trim();
             const nickname = document.getElementById('prof-nickname').value.trim();
             
-            if(!name) return await customAlert("請輸入真實姓名作為登入帳號！");
-            if(!pwd) return await customAlert("請務必設定登入密碼！");
-            if(pwd !== pwdConfirm) return await customAlert("兩次輸入的密碼不一致，請重新檢查！");
-            if(!nickname) return await customAlert("請輸入顯示暱稱！");
+            if(!name) return alert("請輸入真實姓名作為登入帳號！");
+            if(!pwd) return alert("請務必設定登入密碼！");
+            if(pwd !== pwdConfirm) return alert("兩次輸入的密碼不一致，請重新檢查！");
+            if(!nickname) return alert("請輸入顯示暱稱！");
 
             const isNewUser = !globalUsers.includes(name);
 
             if (!nameInput.disabled && !isNewUser) {
-                return await customAlert("此真實姓名已存在，請使用該名稱登入，或輸入另一個姓名！");
+                return alert("此真實姓名已存在，請使用該名稱登入，或輸入另一個姓名！");
             }
 
             let assignedColor = usersProfile[name]?.color;
@@ -1575,12 +1430,12 @@
                 if(username !== name) {
                     doCompleteLogin(name);
                 } else { 
-                    await customAlert("資料卡更新成功！"); 
+                    alert("資料卡更新成功！"); 
                     window.renderMainContent(); 
                 }
             } catch(e) {
                 console.error(e);
-                await customAlert("儲存失敗！");
+                alert("儲存失敗！");
             }
         };
 
@@ -1668,7 +1523,7 @@
         window.adminAddDate = async () => {
             const title = document.getElementById('admin-new-date-title').value.trim();
             const date = document.getElementById('admin-new-date-value').value;
-            if(!title || !date) return await customAlert("請填寫完整");
+            if(!title || !date) return alert("請填寫完整");
             const newDates = [...importantDates, { title, date }];
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
             document.getElementById('admin-new-date-title').value = '';
@@ -1689,7 +1544,7 @@
             const idx = parseInt(document.getElementById('edit-date-index').value);
             const title = document.getElementById('edit-date-title').value.trim();
             const date = document.getElementById('edit-date-value').value;
-            if(!title || !date) return await customAlert("不可留空");
+            if(!title || !date) return alert("不可留空");
             let newDates = [...importantDates];
             newDates[idx] = { title, date };
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'System', 'Dates'), { list: newDates });
@@ -1697,7 +1552,7 @@
         };
 
         window.adminDeleteDate = async (index) => {
-            if(!(await customConfirm("確定刪除此日程？"))) return;
+            if(!confirm("確定刪除此日程？")) return;
             const sortedDates = [...importantDates].sort((a, b) => new Date(a.date) - new Date(b.date));
             const item = sortedDates[index];
             const realIndex = importantDates.findIndex(d => d.title === item.title && d.date === item.date);
@@ -1726,17 +1581,14 @@
         };
 
         window.adminDeleteUser = async (userToDelete) => {
-            if(!(await customConfirm(`⚠️ 警告！確定要刪除帳號 [${userToDelete}] 嗎？此操作不可逆！`))) return;
+            if(!confirm(`⚠️ 警告！確定要刪除帳號 [${userToDelete}] 嗎？此操作不可逆！`)) return;
             
             let transferTarget = null;
             const others = globalUsers.filter(u => u !== userToDelete);
             if (others.length > 0) {
-                const ans = await customPrompt(`是否轉移其成績給其他人？\n(若不轉移請留空按確定，將連帶刪除所有成績)\n可選對象: ${others.join(', ')}`);
-                if (ans !== null && others.includes(ans.trim())) {
-                    transferTarget = ans.trim();
-                } else if (ans !== null && ans.trim() !== '') {
-                    return await customAlert("輸入的名稱無效，已取消刪除操作。");
-                }
+                const ans = prompt(`是否轉移其成績給其他人？\n(若不轉移請留空按確定，將連帶刪除所有成績)\n可選對象: ${others.join(', ')}`);
+                if (ans && others.includes(ans.trim())) transferTarget = ans.trim();
+                else if (ans) return alert("輸入的名稱無效，已取消刪除操作。");
             }
 
             try {
@@ -1775,11 +1627,11 @@
                         }
                     }
                 }
-                await customAlert(`已成功移除使用者 ${userToDelete} ${transferTarget ? '，成績已轉移至 ' + transferTarget : '，成績已連帶刪除'}。`);
+                alert(`已成功移除使用者 ${userToDelete} ${transferTarget ? '，成績已轉移至 ' + transferTarget : '，成績已連帶刪除'}。`);
                 renderAdminUsers();
             } catch(e) {
                 console.error(e);
-                await customAlert("移除操作失敗！");
+                alert("移除操作失敗！");
             }
         };
 
@@ -2205,7 +2057,7 @@
                 step2.classList.remove('hidden');
                 document.getElementById('textbook-selector').innerHTML = TEXTBOOKS[sub].map(tb => `
                     <div onclick="selectTextbook('${tb.id}')" id="btn-tb-${tb.id}" class="cursor-pointer border-4 border-transparent bg-white hover:border-blue-400 rounded-xl p-2 text-center transition-all shadow-sm w-32 md:w-36 group">
-                        <img src="${tb.img}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2YxZjVmOSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM5Y2EzYWYiPueEoeWcluAHfTwvdGV4dD48L3N2Zz4='" class="w-full h-32 md:h-36 object-contain bg-gray-50 rounded-lg mb-2 shadow-sm border border-gray-200 pointer-events-none group-hover:shadow-md transition-shadow">
+                        <img src="${tb.img}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2YxZjVmOSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM5Y2EzYWYiPueEoeWcluAHfTwvdGV4dD48L3N2Zz4='" class="w-full h-32 md:h-36 object-cover rounded-lg mb-2 shadow-sm border border-gray-200 pointer-events-none group-hover:shadow-md transition-shadow">
                         <div class="font-bold text-sm text-gray-700 pointer-events-none">${tb.name}</div>
                     </div>
                 `).join('');
@@ -2436,8 +2288,8 @@
         };
 
         window.saveGrade = async () => {
-            if(!modalState.subSubject) return await customAlert("請完整選擇科目與章節細項！");
-            if(!modalState.grade) return await customAlert("請選擇您的成績等級！");
+            if(!modalState.subSubject) return alert("請完整選擇科目與章節細項！");
+            if(!modalState.grade) return alert("請選擇您的成績等級！");
 
             const isWeakness = document.getElementById('is-weakness-check').checked;
             const weaknessNote = document.getElementById('weakness-note').value.trim();
@@ -2468,13 +2320,13 @@
                 closeGlobalModal('score-modal');
             } catch(e) {
                 console.error(e);
-                await customAlert("儲存失敗，請確認圖片是否過大！");
+                alert("儲存失敗，請確認圖片是否過大！");
             }
         };
 
         window.deleteGradeRecord = async () => {
             if(!modalState.subSubject) return;
-            if(!(await customConfirm(`確定要刪除 ${modalState.date} 的 ${modalState.subSubject} 紀錄嗎？`))) return;
+            if(!confirm(`確定要刪除 ${modalState.date} 的 ${modalState.subSubject} 紀錄嗎？`)) return;
 
             try {
                 const docId = `${username}_${modalState.date}_${modalState.subSubject}`;
@@ -2485,11 +2337,11 @@
             } catch(e) { console.error(e); }
         };
 
-        window.viewOthersScore = async (e, otherUser, dateStr) => {
+        window.viewOthersScore = (e, otherUser, dateStr) => {
             if (e) e.stopPropagation(); 
             const data = (allGrades[otherUser] && allGrades[otherUser][dateStr]) ? allGrades[otherUser][dateStr] : null;
             if(!data || Object.keys(data).length === 0) {
-                await customAlert(`${usersProfile[otherUser]?.nickname || otherUser} 在 ${dateStr} 尚未登錄成績！`);
+                alert(`${usersProfile[otherUser]?.nickname || otherUser} 在 ${dateStr} 尚未登錄成績！`);
                 return; 
             }
             
@@ -2562,14 +2414,14 @@
 
             const usersRef = doc(db, 'artifacts', appId, 'public', 'data', 'System', 'UsersList');
             if(unsubUsers) unsubUsers();
-            unsubUsers = onSnapshot(usersRef, async (snap) => {
+            unsubUsers = onSnapshot(usersRef, (snap) => {
                 if(snap.exists()) {
                     globalUsers = snap.data().users || [];
                 } else {
                     globalUsers = [];
                 }
                 if (username && !globalUsers.includes(username)) {
-                    await customAlert('⚠️ 系統提示：您的帳號已被管理員移除或系統重置，請重新註冊/登入！');
+                    alert('⚠️ 系統提示：您的帳號已被管理員移除或系統重置，請重新註冊/登入！');
                     window.logout(); 
                 }
             }, errHandler);
@@ -2653,14 +2505,10 @@
                 }
 
                 const initAuth = async () => {
-                    try {
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    } catch(e) {
-                        console.error("Authentication failed", e);
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
                     }
                 };
                 await initAuth();
@@ -2679,7 +2527,7 @@
                 });
             } catch (error) {
                 console.error("Firebase 連線失敗:", error);
-                await customAlert("Firebase 連線失敗，請檢查系統設定參數是否正確！");
+                alert("Firebase 連線失敗，請檢查系統設定參數是否正確！");
                 window.renderSetup();
             }
         };
