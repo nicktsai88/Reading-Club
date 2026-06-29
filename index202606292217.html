@@ -255,11 +255,7 @@
         };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-group-app';
         
-        // 將舊版含有錯字 (模撬考) 的 base64 自動取代為正確版 (模擬題本)
-        const oldMockBase64 = "PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxNicgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmkqzogIM8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE0JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZmlsbD0nI2Q5NzcwNicgdGV4dC1hbmNob3I9J21pZGRsZSc+6aGM5pysPC90ZXh0Pjwvc3ZnPg==";
-        const newMockBase64 = "PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxOCcgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmk5w8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE4JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyNkOTc3MDYnIHRleHQtYW5jaG9yPSdtaWRkbGUnPumhjOacrDwvdGV4dD48L3N2Zz4=";
-        const appDataRaw = document.getElementById('app-data').textContent;
-        const appData = JSON.parse(appDataRaw.split(oldMockBase64).join(newMockBase64));
+        const appData = JSON.parse(document.getElementById('app-data').textContent);
         
         const EXAM_DATE = new Date(appData.EXAM_DATE);
         const SUBJECTS = appData.SUBJECTS;
@@ -1153,9 +1149,9 @@
             html += buildHorizontalTable('地理\n(KO會考)', 'images/g1.jpg', GEO_CHAPTERS, (ch) => ch);
             html += buildHorizontalTable('公民\n(大滿貫)', 'images/ct1.jpg', CITIZEN_CHAPTERS, (ch) => ch);
             
-            const mockIcon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxOCcgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmk5w8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE4JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyNkOTc3MDYnIHRleHQtYW5jaG9yPSdtaWRkbGUnPumhjOacrDwvdGV4dD48L3N2Zz4=';
-            html += buildHorizontalTable('自然合科', null, SUB_SUBJECTS['自然'], (sub) => sub);
-            html += buildHorizontalTable('社會合科', null, SUB_SUBJECTS['社會'], (sub) => sub);
+            const mockIcon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxNicgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmkqzogIM8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE0JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZmlsbD0nI2Q5NzcwNicgdGV4dC1hbmNob3I9J21pZGRsZSc+6aGM5pysPC90ZXh0Pjwvc3ZnPg==';
+            html += buildHorizontalTable('自然合科\n(各版模考)', mockIcon, TEXTBOOKS['自然合科'] ? TEXTBOOKS['自然合科'][0].chapters : [], (ch) => ch);
+            html += buildHorizontalTable('社會合科\n(各版模考)', mockIcon, TEXTBOOKS['社會合科'] ? TEXTBOOKS['社會合科'][0].chapters : [], (ch) => ch);
             html += '</div>';
 
             document.getElementById('progress-content').innerHTML = html;
@@ -2243,15 +2239,7 @@
             if (TEXTBOOKS[sub]) {
                 // 有定義教科書，跳轉 Step 2
                 step2.classList.remove('hidden');
-                
-                // 確保「各版本模擬題本」固定排列在最後一個位置
-                const sortedTbs = [...TEXTBOOKS[sub]].sort((a, b) => {
-                    if (a.name === '各版本模擬題本') return 1;
-                    if (b.name === '各版本模擬題本') return -1;
-                    return 0;
-                });
-
-                document.getElementById('textbook-selector').innerHTML = sortedTbs.map(tb => `
+                document.getElementById('textbook-selector').innerHTML = TEXTBOOKS[sub].map(tb => `
                     <div onclick="selectTextbook('${tb.id}')" id="btn-tb-${tb.id}" class="cursor-pointer border-4 border-transparent bg-white hover:border-blue-400 rounded-xl p-2 text-center transition-all shadow-sm w-32 md:w-36 group">
                         <img src="${tb.img}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2YxZjVmOSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM5Y2EzYWYiPueEoeWcluAHfTwvdGV4dD48L3N2Zz4='" class="w-full h-32 md:h-36 object-contain bg-gray-50 rounded-lg mb-2 shadow-sm border border-gray-200 pointer-events-none group-hover:shadow-md transition-shadow">
                         <div class="font-bold text-sm text-gray-700 pointer-events-none">${tb.name}</div>
