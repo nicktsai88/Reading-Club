@@ -84,8 +84,11 @@
     <script type="application/json" id="app-data">
     {
       "EXAM_DATE": "2027-05-22T00:00:00",
-      "SUBJECTS": ["國文", "英文", "數學", "生物", "理化", "地球科學", "歷史", "地理", "公民", "自然合科", "社會合科"],
-      "SUB_SUBJECTS": {},
+      "SUBJECTS": ["國文", "英文", "數學", "生物", "理化", "地球科學", "歷史", "地理", "公民", "自然", "社會"],
+      "SUB_SUBJECTS": {
+        "自然": ["自然合科", "地科"],
+        "社會": ["社會合科", "地理", "公民"]
+      },
       "TEXTBOOKS": {
         "國文": [
           { "id": "c1", "name": "麻辣講義", "img": "images/c1.jpg", "chapters": [
@@ -97,9 +100,6 @@
             "單元14 第五冊 (6~10課 自學課)", "單元15 第五冊 (主題專區 含語文常識)", "會考模擬試題 1~5冊",
             "單元16 第六冊 (1~5課)", "單元17 第六冊 (6課 自學課)", "單元18 第六冊 (主題專區)",
             "會考模擬試題 1~6冊"
-          ]},
-          { "id": "c_mock", "name": "各版本模擬題本", "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxNicgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmkqzogIM8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE0JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZmlsbD0nI2Q5NzcwNicgdGV4dC1hbmNob3I9J21pZGRsZSc+6aGM5pysPC90ZXh0Pjwvc3ZnPg==", "chapters": [
-            "國模 第1冊", "國模 第2冊", "國模 第1~2冊", "國模 第3冊", "國模 第1~3冊", "國模 第4冊", "國模 第3~4冊", "國模 第1~4冊", "國模 第5冊", "國模 第5~6冊", "國模 第1~5冊", "國模 第1~6冊(一)", "國模 第1~6冊(二)"
           ]}
         ],
         "英文": [
@@ -115,9 +115,6 @@
             "會考模擬試題 1~5冊", 
             "單元15 第六冊 (1~2課)", "單元16 第六冊 (3~4課)", 
             "會考模擬試題 1~6冊"
-          ]},
-          { "id": "e_mock", "name": "各版本模擬題本", "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxNicgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmkqzogIM8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE0JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZmlsbD0nI2Q5NzcwNicgdGV4dC1hbmNob3I9J21pZGRsZSc+6aGM5pysPC90ZXh0Pjwvc3ZnPg==", "chapters": [
-            "英模 第1冊", "英模 第2冊", "英模 第1~2冊", "英模 第3冊", "英模 第1~3冊", "英模 第4冊", "英模 第3~4冊", "英模 第1~4冊", "英模 第5冊", "英模 第5~6冊", "英模 第1~5冊", "英模 第1~6冊(一)", "英模 第1~6冊(二)"
           ]}
         ],
         "數學": [
@@ -132,9 +129,6 @@
             "單元17 第五冊 (連比例與相似形)", "單元18 第五冊 (圓)", "單元19 第五冊 (推理證明與三角形的心)",
             "單元20 第六冊 (二次函數)", "單元21 第六冊 (統計與機率)", "單元22 第六冊 (立體圖形)",
             "會考模擬試題 1~6冊"
-          ]},
-          { "id": "m_mock", "name": "各版本模擬題本", "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxNicgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmkqzogIM8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE0JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZmlsbD0nI2Q5NzcwNicgdGV4dC1hbmNob3I9J21pZGRsZSc+6aGM5pysPC90ZXh0Pjwvc3ZnPg==", "chapters": [
-            "數模 第1冊", "數模 第2冊", "數模 第1~2冊", "數模 第3冊", "數模 第1~3冊", "數模 第4冊", "數模 第3~4冊", "數模 第1~4冊", "數模 第5冊", "數模 第5~6冊", "數模 第1~5冊", "數模 第1~6冊(一)", "數模 第1~6冊(二)"
           ]}
         ],
         "生物": [
@@ -148,9 +142,6 @@
             "單元4 第一冊 (協調作用)", "單元5 第一冊 (恆定)", "單元6 第二冊 (生殖)",
             "單元7 第二冊 (遺傳)", "單元8 第二冊 (演化與分類)", "單元9 第二冊 (生態系與環境保護)",
             "會考模擬試題 1~2冊"
-          ]},
-          { "id": "b_mock", "name": "各版本模擬題本", "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxNicgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmkqzogIM8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE0JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZmlsbD0nI2Q5NzcwNicgdGV4dC1hbmNob3I9J21pZGRsZSc+6aGM5pysPC90ZXh0Pjwvc3ZnPg==", "chapters": [
-            "生模 第1冊", "生模 第2冊", "生模 第1~2冊"
           ]}
         ],
         "理化": [
@@ -162,18 +153,12 @@
             "單元12 第五冊 (直線運動)", "單元13 第五冊 (力與運動)", "單元14 第五冊 (功與能)",
             "單元15 第五冊 (電)", "單元16 第六冊 (電與生活)", "單元17 第六冊 (電化學與電池)",
             "單元18 第六冊 (磁)", "會考模擬試題 5~6冊"
-          ]},
-          { "id": "p_mock", "name": "各版本模擬題本", "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxNicgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmkqzogIM8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE0JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZmlsbD0nI2Q5NzcwNicgdGV4dC1hbmNob3I9J21pZGRsZSc+6aGM5pysPC90ZXh0Pjwvc3ZnPg==", "chapters": [
-            "理模 第3冊", "理模 第4冊", "理模 第3~4冊", "理模 第5冊", "理模 第3~5冊", "理模 第6冊", "理模 第5~6冊", "理模 第3~6冊"
           ]}
         ],
         "地球科學": [
           { "id": "earth1", "name": "大滿貫", "img": "images/earth1.jpg", "chapters": [
             "單元1 第五冊 地表環境與資源", "單元2 第五冊 固體地球的變動", "單元3 第五冊 我們的宇宙",
             "單元4 第六冊 大氣變化", "單元5 第六冊 永續的地球", "會考模擬試題 5~6冊"
-          ]},
-          { "id": "ea_mock", "name": "各版本模擬題本", "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxNicgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmkqzogIM8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE0JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZmlsbD0nI2Q5NzcwNicgdGV4dC1hbmNob3I9J21pZGRsZSc+6aGM5pysPC90ZXh0Pjwvc3ZnPg==", "chapters": [
-            "地科模 第5冊", "地科模 第6冊", "地科模 第5~6冊"
           ]}
         ],
         "歷史": [
@@ -186,9 +171,6 @@
             "單元11 第五冊 (多元並立的古代文化)", "單元12 第五冊 (普世宗教與近代歐洲的興起)", "單元13 第五冊 (近代歐洲的變革與現代世界的形成)",
             "單元14 第六冊 (現代國家的誕生與第一次世界大戰)", "單元15 第六冊 (第二次世界大戰與戰後發展)",
             "會考模擬試題 1~6冊"
-          ]},
-          { "id": "h_mock", "name": "各版本模擬題本", "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxNicgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmkqzogIM8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE0JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZmlsbD0nI2Q5NzcwNicgdGV4dC1hbmNob3I9J21pZGRsZSc+6aGM5pysPC90ZXh0Pjwvc3ZnPg==", "chapters": [
-            "歷模 第1冊", "歷模 第2冊", "歷模 第1~2冊", "歷模 第3冊", "歷模 第1~3冊", "歷模 第4冊", "歷模 第3~4冊", "歷模 第1~4冊", "歷模 第5冊", "歷模 第5~6冊", "歷模 第1~5冊", "歷模 第1~6冊(一)", "歷模 第1~6冊(二)"
           ]}
         ],
         "地理": [
@@ -199,9 +181,6 @@
             "單元9 第三冊 全球氣候概述、東北亞", "單元10 第四冊 東南亞與南亞", "單元11 第四冊 西亞與北非", "單元12 第四冊 漠南非洲",
             "會考模擬試題 1~4冊", "單元13 第五冊 歐洲與俄羅斯", "單元14 第五冊 美洲", "單元15 第五冊 大洋洲、兩極與氣候變遷",
             "單元16 第六冊 臺灣的地名文化、產業與食品安全", "會考模擬試題 1~6冊"
-          ]},
-          { "id": "g_mock", "name": "各版本模擬題本", "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxNicgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmkqzogIM8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE0JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZmlsbD0nI2Q5NzcwNicgdGV4dC1hbmNob3I9J21pZGRsZSc+6aGM5pysPC90ZXh0Pjwvc3ZnPg==", "chapters": [
-            "地模 第1冊", "地模 第2冊", "地模 第1~2冊", "地模 第3冊", "地模 第1~3冊", "地模 第4冊", "地模 第3~4冊", "地模 第1~4冊", "地模 第5冊", "地模 第5~6冊", "地模 第1~5冊", "地模 第1~6冊(一)", "地模 第1~6冊(二)"
           ]}
         ],
         "公民": [
@@ -212,19 +191,6 @@
             "單元9 第四冊 權利救濟", "單元10 第四冊 青少年法律", "會考模擬試題 1~4冊", "單元11 第五冊 消費與生產",
             "單元12 第五冊 市場競爭與勞動參與", "單元13 第五冊 貨幣與國際貿易", "會考模擬試題 1~5冊",
             "單元14 第六冊 科技發展、全球化與國際參與", "會考模擬試題 1~6冊"
-          ]},
-          { "id": "ct_mock", "name": "各版本模擬題本", "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxNicgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmkqzogIM8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE0JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZmlsbD0nI2Q5NzcwNicgdGV4dC1hbmNob3I9J21pZGRsZSc+6aGM5pysPC90ZXh0Pjwvc3ZnPg==", "chapters": [
-            "公模 第1冊", "公模 第2冊", "公模 第1~2冊", "公模 第3冊", "公模 第1~3冊", "公模 第4冊", "公模 第3~4冊", "公模 第1~4冊", "公模 第5冊", "公模 第5~6冊", "公模 第1~5冊", "公模 第1~6冊(一)", "公模 第1~6冊(二)"
-          ]}
-        ],
-        "自然合科": [
-          { "id": "n_mock", "name": "各版本模擬題本", "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxNicgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmkqzogIM8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE0JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZmlsbD0nI2Q5NzcwNicgdGV4dC1hbmNob3I9J21pZGRsZSc+6aGM5pysPC90ZXh0Pjwvc3ZnPg==", "chapters": [
-            "自模 第1冊", "自模 第2冊", "自模 第1~2冊", "自模 第3冊", "自模 第1~3冊", "自模 第4冊", "自模 第3~4冊", "自模 第1~4冊", "自模 第5冊", "自模 第5~6冊", "自模 第1~5冊", "自模 第1~6冊(一)", "自模 第1~6冊(二)"
-          ]}
-        ],
-        "社會合科": [
-          { "id": "s_mock", "name": "各版本模擬題本", "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxNicgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmkqzogIM8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE0JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZmlsbD0nI2Q5NzcwNicgdGV4dC1hbmNob3I9J21pZGRsZSc+6aGM5pysPC90ZXh0Pjwvc3ZnPg==", "chapters": [
-            "社模 第1冊", "社模 第2冊", "社模 第1~2冊", "社模 第3冊", "社模 第1~3冊", "社模 第4冊", "社模 第3~4冊", "社模 第1~4冊", "社模 第5冊", "社模 第5~6冊", "社模 第1~5冊", "社模 第1~6冊(一)", "社模 第1~6冊(二)"
           ]}
         ]
       },
@@ -369,7 +335,7 @@
                 return formatted;
             }
             formatted = formatted.replace(/(單元\d+)/g, '<span class="step3-color-unit">$1</span>');
-            formatted = formatted.replace(/(第[一二三四五六七八九十\d~-]+冊)/g, '<span class="step3-color-book">$1</span>');
+            formatted = formatted.replace(/(第[一二三四五六七八九十\d]+冊)/g, '<span class="step3-color-book">$1</span>');
             formatted = formatted.replace(/(\(.*?\)|（.*?）)/g, '<span class="step3-color-desc">$1</span>');
             return formatted;
         };
@@ -1148,10 +1114,8 @@
             html += buildHorizontalTable('歷史\n(大滿貫)', 'images/h1.jpg', HISTORY_CHAPTERS, (ch) => ch);
             html += buildHorizontalTable('地理\n(KO會考)', 'images/g1.jpg', GEO_CHAPTERS, (ch) => ch);
             html += buildHorizontalTable('公民\n(大滿貫)', 'images/ct1.jpg', CITIZEN_CHAPTERS, (ch) => ch);
-            
-            const mockIcon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48cmVjdCB3aWR0aD0nMTAwJyBoZWlnaHQ9JzEwMCcgZmlsbD0nI2ZlZjNjNycvPjx0ZXh0IHg9JzUwJyB5PSc0NScgZm9udC1zaXplPScxNicgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZDk3NzA2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz7mqKHmkqzogIM8L3RleHQ+PHRleHQgeD0nNTAnIHk9JzY1JyBmb250LXNpemU9JzE0JyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZmlsbD0nI2Q5NzcwNicgdGV4dC1hbmNob3I9J21pZGRsZSc+6aGM5pysPC90ZXh0Pjwvc3ZnPg==';
-            html += buildHorizontalTable('自然合科\n(各版模考)', mockIcon, TEXTBOOKS['自然合科'] ? TEXTBOOKS['自然合科'][0].chapters : [], (ch) => ch);
-            html += buildHorizontalTable('社會合科\n(各版模考)', mockIcon, TEXTBOOKS['社會合科'] ? TEXTBOOKS['社會合科'][0].chapters : [], (ch) => ch);
+            html += buildHorizontalTable('自然合科', null, SUB_SUBJECTS['自然'], (sub) => sub);
+            html += buildHorizontalTable('社會合科', null, SUB_SUBJECTS['社會'], (sub) => sub);
             html += '</div>';
 
             document.getElementById('progress-content').innerHTML = html;
